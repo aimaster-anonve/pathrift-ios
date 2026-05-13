@@ -5,7 +5,10 @@ enum EconomyConstants {
     static let startingLives: Int = 5         // more forgiving for new players
 
     static func goldRewardForWave(_ wave: Int) -> Int {
-        return 60 + (wave * 8)               // more generous scaling
+        // Less passive income at higher waves — spending more keeps engagement up
+        let base = 55
+        let waveBonus = min(wave * 4, 80)    // capped so gold doesn't balloon endlessly
+        return base + waveBonus
     }
 
     enum TowerCost {

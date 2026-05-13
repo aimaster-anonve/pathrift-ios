@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HomeScreen: View {
     @EnvironmentObject var appState: AppState
+    @ObservedObject private var lang = LanguageManager.shared
     @State private var titleScale: CGFloat = 1.0
     @State private var titleGlow: CGFloat = 0.3
     @State private var highScore: Int = 0
@@ -115,7 +116,7 @@ struct HomeScreen: View {
                 HStack(spacing: 10) {
                     Image(systemName: "play.fill")
                         .font(.system(size: 16, weight: .bold))
-                    Text("PLAY")
+                    Text(lang.s(L.play))
                         .font(.system(size: 18, weight: .black, design: .rounded))
                         .kerning(2)
                 }
@@ -138,7 +139,7 @@ struct HomeScreen: View {
                 HStack(spacing: 8) {
                     Image(systemName: "questionmark.circle")
                         .font(.system(size: 14))
-                    Text("HOW TO PLAY")
+                    Text(lang.s(L.howToPlay))
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
                         .kerning(1)
                 }
@@ -151,6 +152,43 @@ struct HomeScreen: View {
                     .strokeBorder(Color.pathriftTextSecondary.opacity(0.2), lineWidth: 1))
             }
             .buttonStyle(ScaleButtonStyle())
+
+            // Settings and Store row
+            HStack(spacing: 12) {
+                Button(action: { appState.showSettings() }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 14))
+                        Text(lang.s(L.settings))
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundColor(.pathriftTextSecondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(Color.pathriftSurface)
+                    .cornerRadius(12)
+                }
+                .buttonStyle(ScaleButtonStyle())
+
+                Button(action: { appState.showStore() }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "diamond.fill")
+                            .font(.system(size: 14))
+                        Text(lang.s(L.store))
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundColor(.pathriftNeonBlue)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(Color.pathriftNeonBlue.opacity(0.12))
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(Color.pathriftNeonBlue.opacity(0.3), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(ScaleButtonStyle())
+            }
 
             // Tower reference
             towerLegend

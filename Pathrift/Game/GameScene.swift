@@ -65,6 +65,7 @@ final class GameScene: SKScene {
     var onGameOver: ((RunResult) -> Void)?
     var onWaveComplete: ((Int) -> Void)?
     var onTowerTapped: ((Int) -> Void)?
+    var onRiftShift: (() -> Void)?
     var onSelectedTowerSlotId: Int? {
         didSet {
             if onSelectedTowerSlotId == nil { hideRangeRing() }
@@ -376,6 +377,16 @@ final class GameScene: SKScene {
         activeTowers.append(tower)
         towerLayer.addChild(tower.node)
 
+        // Hidden slot node is NOT hit-testable, so add a transparent tap detector
+        // directly on the tower layer so tapping the tower triggers the info panel.
+        let tapDetector = SKShapeNode(circleOfRadius: 28)
+        tapDetector.fillColor = SKColor.clear
+        tapDetector.strokeColor = SKColor.clear
+        tapDetector.name = "slot_\(slotId)"
+        tapDetector.position = slot.position
+        tapDetector.zPosition = 6
+        towerLayer.addChild(tapDetector)
+
         if let slotNode = towerSlotLayer.childNode(withName: "slot_\(slotId)") {
             slotNode.isHidden = true
         }
@@ -399,18 +410,35 @@ final class GameScene: SKScene {
     }
 
     private func showWaveBanner(wave: Int) {
-        let banner = SKLabelNode(text: "WAVE \(wave)")
-        banner.fontSize = 28
-        banner.fontColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 1)
+        let isBoss = waveSystem.isBossWave(wave)
+        let text = isBoss ? "⚠️ BOSS WAVE \(wave) ⚠️" : "WAVE \(wave)"
+        let fontSize: CGFloat = isBoss ? 24 : 28
+        let color = isBoss
+            ? SKColor(red: 1.0, green: 0.3, blue: 0.8, alpha: 1)
+            : SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 1)
+
+        let banner = SKLabelNode(text: text)
+        banner.fontSize = fontSize
+        banner.fontColor = color
         banner.fontName = "AvenirNext-Bold"
         banner.position = CGPoint(x: size.width / 2, y: size.height * 0.55)
         banner.zPosition = 10
         banner.alpha = 0
         addChild(banner)
 
+        if isBoss {
+            let shake = SKAction.sequence([
+                SKAction.moveBy(x: 8, y: 0, duration: 0.05),
+                SKAction.moveBy(x: -16, y: 0, duration: 0.05),
+                SKAction.moveBy(x: 16, y: 0, duration: 0.05),
+                SKAction.moveBy(x: -8, y: 0, duration: 0.05),
+            ])
+            run(SKAction.repeat(shake, count: 3))
+        }
+
         banner.run(SKAction.sequence([
             SKAction.fadeIn(withDuration: 0.3),
-            SKAction.wait(forDuration: 1.0),
+            SKAction.wait(forDuration: isBoss ? 1.5 : 1.0),
             SKAction.fadeOut(withDuration: 0.3),
             SKAction.removeFromParent()
         ]))
@@ -441,6 +469,8 @@ final class GameScene: SKScene {
             enemy = RunnerEnemy(hpMultiplier: hpMult)
         case .tank:
             enemy = TankEnemy(hpMultiplier: hpMult)
+        case .boss:
+            enemy = BossEnemy(waveNumber: currentWaveNumber)
         }
 
         activeEnemies.append(enemy)
@@ -530,6 +560,7 @@ final class GameScene: SKScene {
             isWaveActive = false
             goldManager.awardWaveReward(wave: currentWaveNumber)
             onWaveComplete?(currentWaveNumber)
+            riftShiftCheck(completedWave: currentWaveNumber)
         }
     }
 
@@ -590,6 +621,8 @@ final class GameScene: SKScene {
         let refund = Int(Double(tower.totalInvested) * EconomyConstants.TowerSellRefund.manualPercent)
         goldManager.earn(refund)
         tower.node.removeFromParent()
+        // Also remove the tap detector we added on placement
+        towerLayer.childNode(withName: "slot_\(slotId)")?.removeFromParent()
         activeTowers.remove(at: towerIdx)
         gridSystem.removeTower(at: slotId)
         hideRangeRing()
@@ -618,5 +651,141 @@ final class GameScene: SKScene {
 
     func resumeGame() {
         isPaused = false
+    }
+
+    // MARK: - Rift Shift
+
+    private func riftShiftCheck(completedWave: Int) {
+        guard completedWave % 5 == 0 else { return }
+        triggerRiftShift()
+    }
+
+    private func triggerRiftShift() {
+        showRiftShiftBanner()
+
+        run(SKAction.wait(forDuration: 1.5)) { [weak self] in
+            self?.performRiftShift()
+            self?.onRiftShift?()
+        }
+    }
+
+    private func showRiftShiftBanner() {
+        let overlay = SKShapeNode(rectOf: CGSize(width: size.width, height: 60))
+        overlay.fillColor = SKColor(red: 0.55, green: 0.31, blue: 1.0, alpha: 0.85)
+        overlay.strokeColor = SKColor(red: 0.7, green: 0.5, blue: 1.0, alpha: 1)
+        overlay.lineWidth = 2
+        overlay.position = CGPoint(x: size.width / 2, y: size.height * 0.55)
+        overlay.zPosition = 15
+        overlay.alpha = 0
+        addChild(overlay)
+
+        let label = SKLabelNode(text: "⚡ RIFT SHIFT ⚡")
+        label.fontSize = 22
+        label.fontName = "AvenirNext-Black"
+        label.fontColor = .white
+        label.verticalAlignmentMode = .center
+        label.horizontalAlignmentMode = .center
+        overlay.addChild(label)
+
+        overlay.run(SKAction.sequence([
+            SKAction.fadeIn(withDuration: 0.2),
+            SKAction.wait(forDuration: 1.0),
+            SKAction.fadeOut(withDuration: 0.3),
+            SKAction.removeFromParent()
+        ]))
+
+        // Screen flash effect
+        let flash = SKShapeNode(rectOf: size)
+        flash.fillColor = SKColor(red: 0.55, green: 0.31, blue: 1.0, alpha: 0.15)
+        flash.strokeColor = SKColor.clear
+        flash.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        flash.zPosition = 14
+        addChild(flash)
+        flash.run(SKAction.sequence([
+            SKAction.wait(forDuration: 0.1),
+            SKAction.fadeOut(withDuration: 0.4),
+            SKAction.removeFromParent()
+        ]))
+    }
+
+    private func performRiftShift() {
+        let W = size.width
+        let H = size.height
+
+        let shiftType = Int.random(in: 0..<4)
+
+        let y1_base = H * 0.20
+        let y2_base = H * 0.50
+        let y3_base = H * 0.78
+        let xR_base = W * 0.74
+        let xL_base = W * 0.26
+
+        let variance: CGFloat = H * 0.06   // ±6% of height
+
+        var y1 = y1_base
+        var y2 = y2_base
+        var y3 = y3_base
+        var xR = xR_base
+        let xL = xL_base
+
+        switch shiftType {
+        case 0:  // Bottom lane shifts up or down
+            y1 = y1_base + CGFloat.random(in: -variance...variance)
+            y1 = max(H * 0.12, min(H * 0.30, y1))
+        case 1:  // Middle lane shifts
+            y2 = y2_base + CGFloat.random(in: -variance...variance)
+            y2 = max(y1 + H * 0.15, min(H * 0.60, y2))
+        case 2:  // Right vertical shifts left/right
+            let xVariance = W * 0.05
+            xR = xR_base + CGFloat.random(in: -xVariance...xVariance)
+            xR = max(W * 0.60, min(W * 0.82, xR))
+        case 3:  // Top lane shifts
+            y3 = y3_base + CGFloat.random(in: -variance...variance)
+            y3 = max(y2 + H * 0.15, min(H * 0.88, y3))
+        default: break
+        }
+
+        // Update PathSystem with new waypoints
+        PathSystem.waypoints = [
+            CGPoint(x: -10,  y: y1),
+            CGPoint(x: xR,   y: y1),
+            CGPoint(x: xR,   y: y2),
+            CGPoint(x: xL,   y: y2),
+            CGPoint(x: xL,   y: y3),
+            CGPoint(x: W+10, y: y3)
+        ]
+
+        // Update tower slot positions
+        let vGap: CGFloat = 85
+        let hGap: CGFloat = 58
+        let safeRight = min(xR + hGap, W - 30)
+
+        gridSystem.updateSlots([
+            CGPoint(x: W*0.14, y: y1+vGap),
+            CGPoint(x: W*0.40, y: y1+vGap),
+            CGPoint(x: W*0.64, y: y1+vGap),
+            CGPoint(x: safeRight, y: y1+(y2-y1)*0.28),
+            CGPoint(x: safeRight, y: y1+(y2-y1)*0.72),
+            CGPoint(x: W*0.36, y: y2-vGap),
+            CGPoint(x: W*0.62, y: y2-vGap),
+            CGPoint(x: xL+hGap, y: y2+(y3-y2)*0.42),
+            CGPoint(x: safeRight, y: y2+(y3-y2)*0.38),
+            CGPoint(x: xL+hGap+5, y: y3-vGap),
+            CGPoint(x: (xL+W)*0.5+10, y: y3-vGap),
+            CGPoint(x: min(W*0.84, W-32), y: y3-vGap),
+        ])
+
+        // Redraw path and slots
+        pathLayer.removeAllChildren()
+        towerSlotLayer.removeAllChildren()
+        setupPath()
+        setupTowerSlots()
+
+        // Re-hide slots that still have towers placed
+        for tower in activeTowers {
+            if let slotNode = towerSlotLayer.childNode(withName: "slot_\(tower.slotId)") {
+                slotNode.isHidden = true
+            }
+        }
     }
 }

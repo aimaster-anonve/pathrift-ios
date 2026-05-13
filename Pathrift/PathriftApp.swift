@@ -27,6 +27,10 @@ struct ContentRootView: View {
                 RunEndScreen()
             case .howToPlay:
                 HowToPlayScreen()
+            case .settings:
+                SettingsScreen()
+            case .store:
+                StoreScreen()
             }
         }
         .animation(.easeInOut(duration: 0.3), value: appState.currentScreen)

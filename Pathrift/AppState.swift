@@ -6,6 +6,8 @@ enum Screen: Equatable {
     case game
     case runEnd
     case howToPlay
+    case settings
+    case store
 }
 
 final class AppState: ObservableObject {
@@ -32,5 +34,13 @@ final class AppState: ObservableObject {
 
     func showHowToPlay() {
         currentScreen = .howToPlay
+    }
+
+    func showSettings() {
+        currentScreen = .settings
+    }
+
+    func showStore() {
+        currentScreen = .store
     }
 }

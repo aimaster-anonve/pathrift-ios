@@ -13,6 +13,7 @@ final class GameViewModel: ObservableObject {
     @Published var runResult: RunResult? = nil
     @Published var selectedTowerSlotId: Int? = nil
     @Published var selectedTowerInfo: TowerInfo? = nil
+    @Published var riftShiftTriggered: Bool = false
 
     struct TowerInfo {
         let slotId: Int
@@ -87,6 +88,14 @@ final class GameViewModel: ObservableObject {
                 } else {
                     self.selectedTowerSlotId = nil
                     self.selectedTowerInfo = nil
+                }
+            }
+        }
+        scene.onRiftShift = { [weak self] in
+            DispatchQueue.main.async {
+                self?.riftShiftTriggered = true
+                DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+                    self?.riftShiftTriggered = false
                 }
             }
         }

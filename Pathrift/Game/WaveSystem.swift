@@ -4,6 +4,7 @@ import CoreGraphics
 enum EnemyType: String, CaseIterable {
     case runner = "Runner"
     case tank   = "Tank"
+    case boss   = "Boss"
 }
 
 struct EnemySpawnEntry {
@@ -22,52 +23,90 @@ struct WaveDefinition {
 }
 
 final class WaveSystem {
-    // Wave 1-5 base patterns — tuned for fair first-play experience.
+    // 9-wave base cycle (wave 10 is boss, handled separately).
     // Players have 250 gold = ~3 towers by wave 1.
     private let basePatterns: [WaveDefinition] = [
         // Wave 1: easy intro — 3 slow runners, generous interval
         WaveDefinition(waveNumber: 1,
                        spawns: [EnemySpawnEntry(type: .runner, count: 3)],
                        spawnInterval: 2.5),
-
         // Wave 2: slightly more, introduce spacing challenge
         WaveDefinition(waveNumber: 2,
                        spawns: [EnemySpawnEntry(type: .runner, count: 4)],
                        spawnInterval: 2.2),
-
         // Wave 3: first tank — teaches armor counter
         WaveDefinition(waveNumber: 3,
                        spawns: [EnemySpawnEntry(type: .runner, count: 4),
                                 EnemySpawnEntry(type: .tank,   count: 1)],
                        spawnInterval: 2.0),
-
         // Wave 4: pressure ramps up
         WaveDefinition(waveNumber: 4,
                        spawns: [EnemySpawnEntry(type: .runner, count: 6),
                                 EnemySpawnEntry(type: .tank,   count: 1)],
                        spawnInterval: 1.8),
-
-        // Wave 5: dual tanks test
+        // Wave 5: dual tanks test + Rift Shift fires after this wave
         WaveDefinition(waveNumber: 5,
                        spawns: [EnemySpawnEntry(type: .runner, count: 5),
                                 EnemySpawnEntry(type: .tank,   count: 2)],
                        spawnInterval: 1.6),
+        // Wave 6: heavier runner pressure
+        WaveDefinition(waveNumber: 6,
+                       spawns: [EnemySpawnEntry(type: .runner, count: 7),
+                                EnemySpawnEntry(type: .tank,   count: 2)],
+                       spawnInterval: 1.5),
+        // Wave 7: sustained DPS test
+        WaveDefinition(waveNumber: 7,
+                       spawns: [EnemySpawnEntry(type: .runner, count: 8),
+                                EnemySpawnEntry(type: .tank,   count: 3)],
+                       spawnInterval: 1.4),
+        // Wave 8: runner swarm
+        WaveDefinition(waveNumber: 8,
+                       spawns: [EnemySpawnEntry(type: .runner, count: 10),
+                                EnemySpawnEntry(type: .tank,   count: 2)],
+                       spawnInterval: 1.2),
+        // Wave 9: pre-boss gauntlet
+        WaveDefinition(waveNumber: 9,
+                       spawns: [EnemySpawnEntry(type: .runner, count: 8),
+                                EnemySpawnEntry(type: .tank,   count: 4)],
+                       spawnInterval: 1.3),
     ]
 
     private(set) var currentWave: Int = 0
-    private let cycleSize: Int = 5
+    // 9-wave non-boss cycle; wave 10, 20, 30... are boss waves handled separately
+    private let cycleSize: Int = 9
 
     func nextWave() -> WaveDefinition {
         currentWave += 1
         return waveDefinition(for: currentWave)
     }
 
+    func isBossWave(_ waveNumber: Int) -> Bool {
+        return waveNumber % 10 == 0
+    }
+
+    func bossWaveDefinition(for waveNumber: Int) -> WaveDefinition {
+        return WaveDefinition(
+            waveNumber: waveNumber,
+            spawns: [EnemySpawnEntry(type: .boss, count: 1)],
+            spawnInterval: 5.0
+        )
+    }
+
     func waveDefinition(for waveNumber: Int) -> WaveDefinition {
-        let patternIndex = (waveNumber - 1) % cycleSize
-        let cycleNumber  = (waveNumber - 1) / cycleSize
+        // Boss every 10 waves — exempt from normal pattern cycling
+        if isBossWave(waveNumber) {
+            return bossWaveDefinition(for: waveNumber)
+        }
+
+        // Map non-boss wave into 9-wave cycle.
+        // Skip every 10th number: wave 1-9 → index 0-8, wave 11-19 → index 0-8, etc.
+        let bossesBeforeThisWave = waveNumber / 10
+        let positionInNonBoss = waveNumber - bossesBeforeThisWave  // position excluding boss waves
+        let patternIndex = (positionInNonBoss - 1) % cycleSize
+        let cycleNumber  = (positionInNonBoss - 1) / cycleSize
         let base = basePatterns[patternIndex]
 
-        if cycleNumber == 0 { return base }
+        if cycleNumber == 0 { return WaveDefinition(waveNumber: waveNumber, spawns: base.spawns, spawnInterval: base.spawnInterval) }
 
         let scaledSpawns = base.spawns.map { entry in
             EnemySpawnEntry(type: entry.type, count: entry.count + cycleNumber)
@@ -76,9 +115,12 @@ final class WaveSystem {
         return WaveDefinition(waveNumber: waveNumber, spawns: scaledSpawns, spawnInterval: adjustedInterval)
     }
 
+    // Aggressive exponential HP scaling
     func hpScaleMultiplier(for waveNumber: Int) -> CGFloat {
-        let cycleNumber = CGFloat((waveNumber - 1) / cycleSize)
-        return 1.0 + cycleNumber * 0.20
+        if waveNumber <= 5  { return 1.0 }
+        if waveNumber <= 10 { return 1.0 + CGFloat(waveNumber - 5) * 0.15 }
+        if waveNumber <= 20 { return 1.75 + CGFloat(waveNumber - 10) * 0.20 }
+        return 3.75 + CGFloat(waveNumber - 20) * 0.30
     }
 
     func reset() { currentWave = 0 }
