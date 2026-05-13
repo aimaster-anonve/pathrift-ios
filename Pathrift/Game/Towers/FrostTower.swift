@@ -5,7 +5,7 @@ import SpriteKit
 final class FrostTower: Tower {
     let type: TowerType = .frost
     var position: CGPoint
-    let slotId: Int
+    var slotId: Int
     var lastFiredTime: TimeInterval = 0
     let node: SKNode
     var level: Int = 1

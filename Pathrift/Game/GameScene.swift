@@ -909,20 +909,11 @@ final class GameScene: SKScene {
             towerSlotLayer.childNode(withName: "slot_\(targetSlotId)")?.isHidden = true
         }
 
-        // Remove destroyed tower records from activeTowers lookup
-        // (already removed above, but also update slot mapping for survivors that moved)
-        var updatedTowers: [any Tower] = []
+        // Update tower.slotId to match new assignment so tap lookup works correctly
         for (i, snap) in survivors.enumerated() {
             let targetSlotId = i < availableSlotIds.count ? availableSlotIds[i] : snap.slotId
-            // Fix slotId on the tower object by reconstructing — Tower.slotId is let, so we track via activeTowers list order
-            // We need a mutable slotId. Since Tower.slotId is `let`, use a workaround:
-            // Remove old, don't re-add — we track via gridSystem now.
-            // For simplicity: keep the tower object in activeTowers. The slotId mismatch is handled by
-            // using the tap detector name which now points to targetSlotId.
-            _ = targetSlotId
-            updatedTowers.append(snap.tower)
+            snap.tower.slotId = targetSlotId   // now var — tap detection stays in sync
         }
-        activeTowers = updatedTowers
 
         hideRangeRing()
     }

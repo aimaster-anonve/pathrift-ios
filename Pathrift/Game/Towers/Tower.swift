@@ -88,7 +88,7 @@ enum TowerType: String, CaseIterable, Identifiable {
 protocol Tower: AnyObject {
     var type: TowerType { get }
     var position: CGPoint { get set }
-    var slotId: Int { get }
+    var slotId: Int { get set }
     var lastFiredTime: TimeInterval { get set }
     var node: SKNode { get }
     var level: Int { get set }

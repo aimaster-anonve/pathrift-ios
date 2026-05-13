@@ -5,7 +5,7 @@ import SpriteKit
 final class BoltTower: Tower {
     let type: TowerType = .bolt
     var position: CGPoint
-    let slotId: Int
+    var slotId: Int
     var lastFiredTime: TimeInterval = 0
     let node: SKNode
     var level: Int = 1
