@@ -12,9 +12,14 @@ enum EconomyConstants {
     }
 
     enum TowerCost {
-        static let bolt: Int  = 80            // cheaper to encourage building
-        static let blast: Int = 130
-        static let frost: Int = 100
+        static let bolt: Int    = 80           // cheaper to encourage building
+        static let blast: Int   = 130
+        static let frost: Int   = 100
+        static let pierce: Int  = 130
+        static let core: Int    = 180
+        static let inferno: Int = 200
+        static let tesla: Int   = 300
+        static let nova: Int    = 500
     }
 
     enum EnemyGoldReward {

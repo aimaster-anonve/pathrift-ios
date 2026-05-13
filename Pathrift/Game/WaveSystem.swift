@@ -2,12 +2,14 @@ import Foundation
 import CoreGraphics
 
 enum EnemyType: String, CaseIterable {
-    case runner = "Runner"
-    case tank   = "Tank"
-    case boss   = "Boss"
-    case shield = "Shield"   // intro cycle 2 (wave 8+): absorbs first 80 dmg
-    case swarm  = "Swarm"    // intro cycle 3 (wave 19+): fast packs, low HP
-    case ghost  = "Ghost"    // intro cycle 4 (wave 28+): 90% frost immune
+    case runner   = "Runner"
+    case tank     = "Tank"
+    case boss     = "Boss"
+    case shield   = "Shield"   // intro cycle 2 (wave 8+): absorbs first 80 dmg
+    case swarm    = "Swarm"    // intro cycle 3 (wave 19+): fast packs, low HP
+    case ghost    = "Ghost"    // intro cycle 4 (wave 28+): 90% frost immune
+    case splitter = "Splitter" // cycle 2+: splits into 2 Swarm on death
+    case jumper   = "Jumper"   // cycle 2+: jumps forward 20% path every 3s
 }
 
 struct EnemySpawnEntry {
@@ -125,6 +127,16 @@ final class WaveSystem {
         // Cycle 3+ (wave 28+): inject ghost enemies every 4th pattern slot (offset by 1)
         if cycleNumber >= 3 && patternIndex % 4 == 1 {
             scaledSpawns.append(EnemySpawnEntry(type: .ghost, count: 2 + cycleNumber))
+        }
+
+        // Cycle 2+: inject splitter enemies every 3rd pattern slot (offset by 1)
+        if cycleNumber >= 2 && patternIndex % 3 == 1 {
+            scaledSpawns.append(EnemySpawnEntry(type: .splitter, count: 2 + cycleNumber))
+        }
+
+        // Cycle 2+: inject jumper enemies every 4th pattern slot (offset by 2)
+        if cycleNumber >= 2 && patternIndex % 4 == 2 {
+            scaledSpawns.append(EnemySpawnEntry(type: .jumper, count: 1 + cycleNumber))
         }
 
         let adjustedInterval = max(0.8, base.spawnInterval - Double(cycleNumber) * 0.08)

@@ -16,6 +16,7 @@ final class GameViewModel: ObservableObject {
     @Published var riftShiftTriggered: Bool = false
     @Published var waveEnemyTotal: Int = 1
     @Published var waveEnemiesCleared: Int = 0
+    @Published var diamonds: Int = DiamondStore.shared.balance
 
     var waveProgress: Double {
         guard waveEnemyTotal > 0 else { return 0 }
@@ -85,8 +86,8 @@ final class GameViewModel: ObservableObject {
                         slotId: slotId,
                         towerType: tower.type,
                         level: tower.level,
-                        damage: tower.type.damage,
-                        attackSpeed: tower.type.attackSpeed,
+                        damage: tower.scaledDamage(),
+                        attackSpeed: tower.effectiveAttackInterval(),
                         range: tower.type.range,
                         sellValue: Int(Double(tower.totalInvested) * EconomyConstants.TowerSellRefund.manualPercent),
                         upgradeCost: Int(Double(EconomyConstants.TowerUpgrade.baseCost) * pow(EconomyConstants.TowerUpgrade.growthRate, Double(tower.level - 1))),
@@ -111,6 +112,9 @@ final class GameViewModel: ObservableObject {
                     self?.riftShiftTriggered = false
                 }
             }
+        }
+        scene.onDiamondsChanged = { [weak self] balance in
+            DispatchQueue.main.async { self?.diamonds = balance }
         }
     }
 
@@ -143,13 +147,19 @@ final class GameViewModel: ObservableObject {
                 slotId: slotId,
                 towerType: tower.type,
                 level: tower.level,
-                damage: tower.type.damage * (1.0 + 0.25 * CGFloat(tower.level - 1)),
-                attackSpeed: tower.type.attackSpeed,
+                damage: tower.scaledDamage(),
+                attackSpeed: tower.effectiveAttackInterval(),
                 range: tower.type.range,
                 sellValue: Int(Double(tower.totalInvested) * EconomyConstants.TowerSellRefund.manualPercent),
                 upgradeCost: Int(Double(EconomyConstants.TowerUpgrade.baseCost) * pow(EconomyConstants.TowerUpgrade.growthRate, Double(tower.level - 1))),
                 totalInvested: tower.totalInvested
             )
+        }
+    }
+
+    func unlockTower(_ type: TowerType) {
+        if DiamondStore.shared.unlock(type) {
+            diamonds = DiamondStore.shared.balance
         }
     }
 }

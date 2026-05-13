@@ -24,6 +24,31 @@ protocol EnemyNode: AnyObject {
 }
 
 extension EnemyNode {
+    // Pierce: bypasses shield HP, goes straight to currentHP
+    func applyDamagePiercing(_ rawAmount: CGFloat) {
+        let reducedDamage = rawAmount * (1.0 - armor)
+        currentHP = max(0, currentHP - reducedDamage)
+        refreshHealthBar()
+        if isDead {
+            spawnDeathParticles()
+            node.removeFromParent()
+        }
+    }
+
+    // Core: armor is halved (penetration factor applied)
+    func applyDamageWithPenetration(_ rawAmount: CGFloat, penetration: CGFloat) {
+        let effectiveArmor = armor * (1.0 - penetration)
+        let reducedDamage = rawAmount * (1.0 - effectiveArmor)
+        currentHP = max(0, currentHP - reducedDamage)
+        refreshHealthBar()
+        if isDead {
+            spawnDeathParticles()
+            node.removeFromParent()
+        }
+    }
+}
+
+extension EnemyNode {
     var isAlive: Bool { currentHP > 0 && !hasReachedEnd }
     var isDead: Bool { currentHP <= 0 }
 

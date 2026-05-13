@@ -74,6 +74,7 @@ final class GameScene: SKScene {
     var onWaveChanged: ((Int) -> Void)?
     var onKillsChanged: ((Int) -> Void)?
     var onWaveProgress: ((Int, Int) -> Void)?  // (cleared, total)
+    var onDiamondsChanged: ((Int) -> Void)?
 
     private var waveEnemyTotal: Int = 0
     private var waveEnemiesCleared: Int = 0
@@ -346,6 +347,28 @@ final class GameScene: SKScene {
             tower = blastTower
         case .frost:
             tower = FrostTower(position: slot.position, slotId: slotId)
+        case .pierce:
+            tower = PierceTower(position: slot.position, slotId: slotId)
+        case .core:
+            tower = CoreTower(position: slot.position, slotId: slotId)
+        case .inferno:
+            tower = InfernoTower(position: slot.position, slotId: slotId)
+        case .tesla:
+            tower = TeslaTower(position: slot.position, slotId: slotId)
+        case .nova:
+            let novaTower = NovaTower(position: slot.position, slotId: slotId)
+            novaTower.novaDamageCallback = { [weak self] center, radius, damage in
+                guard let self = self else { return }
+                for enemy in self.activeEnemies {
+                    guard enemy.isAlive else { continue }
+                    let dx = enemy.node.position.x - center.x
+                    let dy = enemy.node.position.y - center.y
+                    if sqrt(dx * dx + dy * dy) <= radius {
+                        enemy.applyDamage(damage)
+                    }
+                }
+            }
+            tower = novaTower
         }
 
         activeTowers.append(tower)
@@ -454,6 +477,10 @@ final class GameScene: SKScene {
             enemy = SwarmEnemy(hpMultiplier: hpMult)
         case .ghost:
             enemy = GhostEnemy(hpMultiplier: hpMult)
+        case .splitter:
+            enemy = SplitterEnemy(hpMultiplier: hpMult)
+        case .jumper:
+            enemy = JumperEnemy(hpMultiplier: hpMult)
         }
 
         activeEnemies.append(enemy)
@@ -502,6 +529,10 @@ final class GameScene: SKScene {
                 waveEnemiesCleared += 1
                 onKillsChanged?(enemyKills)
                 onWaveProgress?(waveEnemiesCleared, waveEnemyTotal)
+                // Splitter spawns 2 Swarm children on death
+                if enemy.type == .splitter {
+                    spawnSplitterChildren(at: enemy.pathProgress, position: enemy.node.position)
+                }
             } else if enemy.hasReachedEnd {
                 endReachedIndices.append(idx)
                 waveEnemiesCleared += 1
@@ -547,6 +578,19 @@ final class GameScene: SKScene {
             isWaveActive = false
             goldManager.awardWaveReward(wave: currentWaveNumber)
             onWaveComplete?(currentWaveNumber)
+
+            // Diamond reward every 10 waves
+            if currentWaveNumber % 10 == 0 {
+                let reward: Int
+                switch currentWaveNumber {
+                case 1...30:  reward = 2
+                case 31...60: reward = 3
+                default:      reward = 4
+                }
+                DiamondStore.shared.earn(reward)
+                onDiamondsChanged?(DiamondStore.shared.balance)
+            }
+
             riftShiftCheck(completedWave: currentWaveNumber)
         }
     }
@@ -895,6 +939,36 @@ final class GameScene: SKScene {
         }
 
         hideRangeRing()
+    }
+
+    // MARK: - Splitter Children Spawner
+
+    private func spawnSplitterChildren(at progress: CGFloat, position: CGPoint) {
+        let hpMult = waveSystem.hpScaleMultiplier(for: currentWaveNumber)
+        for _ in 0..<2 {
+            let swarm = SwarmEnemy(hpMultiplier: hpMult)
+            swarm.pathProgress = progress
+            swarm.node.position = position
+            activeEnemies.append(swarm)
+            enemyLayer.addChild(swarm.node)
+            waveEnemyTotal += 1
+            onWaveProgress?(waveEnemiesCleared, waveEnemyTotal)
+        }
+    }
+
+    // MARK: - Tesla Chain Damage Helper
+
+    func applyChainDamage(from center: CGPoint, excluding excludedEnemy: any EnemyNode, radius: CGFloat, damage: CGFloat) {
+        let chainTargets = activeEnemies.filter { target in
+            guard target.isAlive && target !== excludedEnemy else { return false }
+            let dx = target.node.position.x - center.x
+            let dy = target.node.position.y - center.y
+            return sqrt(dx * dx + dy * dy) <= radius
+        }.prefix(2)
+
+        for chainTarget in chainTargets {
+            chainTarget.applyDamage(damage)
+        }
     }
 
     private func spawnDestroyedTowerEffect(at pos: CGPoint) {

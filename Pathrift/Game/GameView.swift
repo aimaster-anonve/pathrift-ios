@@ -30,10 +30,14 @@ struct GameView: View {
                 TowerMenuView(
                     slotId: slotId,
                     goldAvailable: viewModel.gold,
+                    diamonds: viewModel.diamonds,
                     onSelect: { towerType in
                         viewModel.placeTower(type: towerType, at: slotId)
                         showTowerMenu = false
                         selectedSlotId = nil
+                    },
+                    onUnlockTower: { towerType in
+                        viewModel.unlockTower(towerType)
                     },
                     onDismiss: {
                         showTowerMenu = false

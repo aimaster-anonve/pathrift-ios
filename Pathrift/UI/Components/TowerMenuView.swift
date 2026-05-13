@@ -4,10 +4,13 @@ import SpriteKit
 struct TowerMenuView: View {
     let slotId: Int
     let goldAvailable: Int
+    let diamonds: Int
     let onSelect: (TowerType) -> Void
+    let onUnlockTower: (TowerType) -> Void
     let onDismiss: () -> Void
 
     @State private var selectedType: TowerType? = nil
+    @State private var showUnlockConfirm: Bool = false
 
     var body: some View {
         ZStack {
@@ -35,7 +38,7 @@ struct TowerMenuView: View {
                     towerDetailPanel(type)
                         .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 }
-                confirmButton
+                actionButton
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 36)
@@ -60,39 +63,64 @@ struct TowerMenuView: View {
                 .foregroundColor(.pathriftTextPrimary)
                 .kerning(1)
             Spacer()
-            HStack(spacing: 4) {
-                Image(systemName: "dollarsign.circle.fill")
-                    .foregroundColor(.pathriftGold)
-                    .font(.caption)
-                Text("\(goldAvailable)")
-                    .font(.system(size: 14, weight: .bold, design: .monospaced))
-                    .foregroundColor(.pathriftGold)
-            }
-        }
-    }
-
-    private var towerGrid: some View {
-        HStack(spacing: 10) {
-            ForEach(TowerType.allCases) { type in
-                TowerCardButton(
-                    type: type,
-                    isSelected: selectedType == type,
-                    canAfford: goldAvailable >= type.cost
-                ) {
-                    withAnimation(.spring(response: 0.25)) {
-                        selectedType = selectedType == type ? nil : type
-                    }
+            HStack(spacing: 12) {
+                HStack(spacing: 4) {
+                    Image(systemName: "dollarsign.circle.fill")
+                        .foregroundColor(.pathriftGold)
+                        .font(.caption)
+                    Text("\(goldAvailable)")
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .foregroundColor(.pathriftGold)
+                }
+                HStack(spacing: 4) {
+                    Text("♦")
+                        .foregroundColor(Color(red: 0.4, green: 0.8, blue: 1.0))
+                        .font(.system(size: 13, weight: .bold))
+                    Text("\(diamonds)")
+                        .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        .foregroundColor(Color(red: 0.4, green: 0.8, blue: 1.0))
                 }
             }
         }
     }
 
+    private var towerGrid: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(TowerType.allCases) { type in
+                    TowerCardButton(
+                        type: type,
+                        isSelected: selectedType == type,
+                        canAfford: goldAvailable >= type.cost,
+                        isUnlocked: DiamondStore.shared.isUnlocked(type),
+                        diamonds: diamonds
+                    ) {
+                        withAnimation(.spring(response: 0.25)) {
+                            selectedType = selectedType == type ? nil : type
+                            showUnlockConfirm = false
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 4)
+        }
+    }
+
     private func towerDetailPanel(_ type: TowerType) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             Text(type.description)
                 .font(.system(size: 12, design: .monospaced))
                 .foregroundColor(.pathriftTextSecondary)
                 .multilineTextAlignment(.leading)
+            if let hint = type.typeAdvantageHint {
+                HStack(spacing: 4) {
+                    Text("⚡")
+                        .font(.system(size: 11))
+                    Text(hint)
+                        .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.pathriftGold)
+                }
+            }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -100,9 +128,47 @@ struct TowerMenuView: View {
         .cornerRadius(10)
     }
 
-    private var confirmButton: some View {
-        Group {
-            if let type = selectedType {
+    @ViewBuilder
+    private var actionButton: some View {
+        if let type = selectedType {
+            let isUnlocked = DiamondStore.shared.isUnlocked(type)
+
+            if !isUnlocked {
+                // Premium locked tower — show unlock button
+                let canAffordDiamonds = diamonds >= type.diamondCost
+                Button(action: {
+                    if canAffordDiamonds {
+                        onUnlockTower(type)
+                    }
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: canAffordDiamonds ? "lock.open.fill" : "lock.fill")
+                        Text(canAffordDiamonds
+                             ? "UNLOCK \(type.displayName.uppercased()) — \(type.diamondCost)♦"
+                             : "NEED \(type.diamondCost)♦ DIAMONDS")
+                            .kerning(0.5)
+                    }
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
+                    .foregroundColor(canAffordDiamonds ? .black : .pathriftTextSecondary)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 48)
+                    .background(canAffordDiamonds
+                                ? Color(red: 0.4, green: 0.8, blue: 1.0)
+                                : Color.pathriftSurface)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(
+                                canAffordDiamonds
+                                    ? Color.clear
+                                    : Color.pathriftTextSecondary.opacity(0.3),
+                                lineWidth: 1
+                            )
+                    )
+                }
+                .disabled(!canAffordDiamonds)
+            } else {
+                // Unlocked tower — normal build flow
                 let canAfford = goldAvailable >= type.cost
                 Button(action: {
                     if canAfford { onSelect(type) }
@@ -124,13 +190,13 @@ struct TowerMenuView: View {
                     )
                 }
                 .disabled(!canAfford)
-            } else {
-                Text("Select a tower type above")
-                    .font(.system(size: 12, design: .monospaced))
-                    .foregroundColor(.pathriftTextSecondary)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 48)
             }
+        } else {
+            Text("Select a tower type above")
+                .font(.system(size: 12, design: .monospaced))
+                .foregroundColor(.pathriftTextSecondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 48)
         }
     }
 }
@@ -139,13 +205,20 @@ struct TowerCardButton: View {
     let type: TowerType
     let isSelected: Bool
     let canAfford: Bool
+    let isUnlocked: Bool
+    let diamonds: Int
     let action: () -> Void
 
     var towerColor: Color {
         switch type {
-        case .bolt:  return Color(red: 0.0,  green: 0.78, blue: 1.0)
-        case .blast: return Color(red: 1.0,  green: 0.42, blue: 0.0)
-        case .frost: return Color(red: 0.55, green: 0.31, blue: 1.0)
+        case .bolt:    return Color(red: 0.0,  green: 0.78, blue: 1.0)
+        case .blast:   return Color(red: 1.0,  green: 0.42, blue: 0.0)
+        case .frost:   return Color(red: 0.55, green: 0.31, blue: 1.0)
+        case .pierce:  return Color(red: 0.6,  green: 1.0,  blue: 0.2)
+        case .core:    return Color(red: 1.0,  green: 0.27, blue: 0.0)
+        case .inferno: return Color(red: 1.0,  green: 0.15, blue: 0.0)
+        case .tesla:   return Color(red: 0.4,  green: 0.8,  blue: 1.0)
+        case .nova:    return Color(red: 1.0,  green: 0.95, blue: 0.5)
         }
     }
 
@@ -159,9 +232,15 @@ struct TowerCardButton: View {
                     Circle()
                         .strokeBorder(isSelected ? towerColor : towerColor.opacity(0.4), lineWidth: isSelected ? 2.5 : 1)
                         .frame(width: 44, height: 44)
-                    Image(systemName: towerIcon)
-                        .foregroundColor(isSelected ? .white : towerColor)
-                        .font(.system(size: 18, weight: .bold))
+                    if !isUnlocked {
+                        Image(systemName: "lock.fill")
+                            .foregroundColor(isSelected ? .white : towerColor.opacity(0.7))
+                            .font(.system(size: 16, weight: .bold))
+                    } else {
+                        Image(systemName: towerIcon)
+                            .foregroundColor(isSelected ? .white : towerColor)
+                            .font(.system(size: 18, weight: .bold))
+                    }
                 }
                 .shadow(color: isSelected ? towerColor.opacity(0.5) : .clear, radius: 8)
 
@@ -169,11 +248,19 @@ struct TowerCardButton: View {
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
                     .foregroundColor(isSelected ? .pathriftTextPrimary : .pathriftTextSecondary)
 
-                Text("\(type.cost)g")
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundColor(canAfford ? .pathriftGold : .pathriftDanger)
+                if !isUnlocked {
+                    Text("\(type.diamondCost)♦")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundColor(diamonds >= type.diamondCost
+                                         ? Color(red: 0.4, green: 0.8, blue: 1.0)
+                                         : .pathriftDanger)
+                } else {
+                    Text("\(type.cost)g")
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
+                        .foregroundColor(canAfford ? .pathriftGold : .pathriftDanger)
+                }
             }
-            .frame(maxWidth: .infinity)
+            .frame(width: 68)
             .padding(.vertical, 10)
             .background(isSelected ? towerColor.opacity(0.12) : Color.clear)
             .cornerRadius(12)
@@ -183,14 +270,19 @@ struct TowerCardButton: View {
             )
         }
         .buttonStyle(ScaleButtonStyle())
-        .opacity(canAfford ? 1.0 : 0.5)
+        .opacity((isUnlocked && !canAfford) ? 0.5 : 1.0)
     }
 
     private var towerIcon: String {
         switch type {
-        case .bolt:  return "bolt.fill"
-        case .blast: return "flame.fill"
-        case .frost: return "snowflake"
+        case .bolt:    return "bolt.fill"
+        case .blast:   return "flame.fill"
+        case .frost:   return "snowflake"
+        case .pierce:  return "arrow.right.to.line.alt"
+        case .core:    return "shield.slash.fill"
+        case .inferno: return "flame.circle.fill"
+        case .tesla:   return "bolt.circle.fill"
+        case .nova:    return "sun.max.fill"
         }
     }
 }

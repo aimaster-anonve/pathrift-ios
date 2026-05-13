@@ -83,7 +83,7 @@ final class FrostTower: Tower {
         projectile.zPosition = 5
         scene.addChild(projectile)
 
-        let damage = type.damage
+        let damage = scaledDamage() * type.damageMultiplier(against: enemy.type)
         let slowFactor = type.slowFactor ?? 0.4
 
         let targetPos = enemy.node.position

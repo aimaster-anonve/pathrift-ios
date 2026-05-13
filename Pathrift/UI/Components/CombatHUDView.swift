@@ -25,7 +25,8 @@ struct CombatHUDView: View {
             Spacer()
             waveStat
             Spacer()
-            HStack(spacing: 14) {
+            HStack(spacing: 10) {
+                diamondStat
                 livesStat
                 pauseBtn
             }
@@ -64,6 +65,18 @@ struct CombatHUDView: View {
             Text(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")
                 .font(.system(size: 24, weight: .black, design: .rounded))
                 .foregroundColor(.pathriftNeonBlue).monospacedDigit()
+        }
+    }
+
+    private var diamondStat: some View {
+        HStack(spacing: 3) {
+            Text("♦")
+                .foregroundColor(Color(red: 0.4, green: 0.8, blue: 1.0))
+                .font(.system(size: 14, weight: .bold))
+            Text("\(viewModel.diamonds)")
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .foregroundColor(Color(red: 0.4, green: 0.8, blue: 1.0))
+                .monospacedDigit()
         }
     }
 

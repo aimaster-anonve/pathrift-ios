@@ -91,7 +91,7 @@ final class BlastTower: Tower {
 
         let targetPos = enemy.node.position
         let blastRadius = type.blastRadius ?? 96
-        let damage = type.damage
+        let damage = scaledDamage() * type.damageMultiplier(against: enemy.type)
 
         let move = SKAction.move(to: targetPos, duration: 0.25)
         let blastCallback = blastDamageCallback

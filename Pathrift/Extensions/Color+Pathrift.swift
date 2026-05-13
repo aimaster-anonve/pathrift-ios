@@ -37,9 +37,14 @@ extension Color {
 extension TowerType {
     var swiftUIColor: Color {
         switch self {
-        case .bolt:  return Color(red: 0.0,  green: 0.78, blue: 1.0)
-        case .blast: return Color(red: 1.0,  green: 0.42, blue: 0.0)
-        case .frost: return Color(red: 0.55, green: 0.31, blue: 1.0)
+        case .bolt:    return Color(red: 0.0,  green: 0.78, blue: 1.0)
+        case .blast:   return Color(red: 1.0,  green: 0.42, blue: 0.0)
+        case .frost:   return Color(red: 0.55, green: 0.31, blue: 1.0)
+        case .pierce:  return Color(red: 0.6,  green: 1.0,  blue: 0.2)
+        case .core:    return Color(red: 1.0,  green: 0.27, blue: 0.0)
+        case .inferno: return Color(red: 1.0,  green: 0.15, blue: 0.0)
+        case .tesla:   return Color(red: 0.4,  green: 0.8,  blue: 1.0)
+        case .nova:    return Color(red: 1.0,  green: 0.95, blue: 0.5)
         }
     }
 }

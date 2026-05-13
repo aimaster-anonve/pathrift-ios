@@ -83,7 +83,7 @@ final class BoltTower: Tower {
 
         scene.addChild(projectile)
 
-        let damage = type.damage
+        let finalDamage = scaledDamage() * type.damageMultiplier(against: enemy.type)
         let targetPosition = enemy.node.position
 
         let move = SKAction.move(to: targetPosition, duration: 0.15)
@@ -92,7 +92,7 @@ final class BoltTower: Tower {
             SKAction.fadeAlpha(to: 1.0, duration: 0.05)
         ])
         let impact = SKAction.run {
-            enemy.applyDamage(damage)
+            enemy.applyDamage(finalDamage)
             projectile.removeFromParent()
         }
 

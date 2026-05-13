@@ -58,7 +58,7 @@ struct TowerInfoPanel: View {
                 // Stats row
                 HStack(spacing: 0) {
                     statItem(icon: "bolt.fill", label: "DMG",
-                             value: String(format: "%.0f", info.damage * (1 + 0.25 * CGFloat(info.level - 1))),
+                             value: String(format: "%.0f", info.damage),
                              color: .pathriftOrange)
                     Divider().background(Color.pathriftTextSecondary.opacity(0.2)).frame(height: 32)
                     statItem(icon: "scope", label: "RNG",
@@ -72,6 +72,24 @@ struct TowerInfoPanel: View {
                 .padding(.vertical, 4)
                 .background(Color.black.opacity(0.2))
                 .cornerRadius(10)
+
+                // Type advantage hint
+                if let hint = info.towerType.typeAdvantageHint {
+                    HStack(spacing: 6) {
+                        Image(systemName: "bolt.circle.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(.pathriftGold)
+                        Text(hint)
+                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                            .foregroundColor(.pathriftGold)
+                        Spacer()
+                    }
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 6)
+                    .background(Color.pathriftGold.opacity(0.1))
+                    .cornerRadius(8)
+                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.pathriftGold.opacity(0.25), lineWidth: 1))
+                }
 
                 // Upgrade & Sell buttons
                 HStack(spacing: 12) {
