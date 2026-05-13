@@ -267,15 +267,17 @@ final class GameScene: SKScene {
                 pathLayer.addChild(dot)
             }
         }
-        // Start indicator — elite glowing entry
+        // Start indicator — elite glowing entry (positioned at screen edge, not off-screen waypoint)
         if let first = PathSystem.waypoints.first {
+            let entryPos = CGPoint(x: 24, y: first.y)
+
             // Outer glow ring
             let glowRing = SKShapeNode(circleOfRadius: 20)
             glowRing.fillColor = SKColor(red: 0.0, green: 0.9, blue: 0.3, alpha: 0.08)
             glowRing.strokeColor = SKColor(red: 0.0, green: 0.9, blue: 0.3, alpha: 0.5)
             glowRing.lineWidth = 2
-            glowRing.position = first
-            glowRing.zPosition = 1.8
+            glowRing.position = entryPos
+            glowRing.zPosition = 3.0
             glowRing.run(SKAction.repeatForever(SKAction.sequence([
                 SKAction.scale(to: 1.2, duration: 0.8),
                 SKAction.scale(to: 0.9, duration: 0.8)
@@ -286,8 +288,8 @@ final class GameScene: SKScene {
             let dot = SKShapeNode(circleOfRadius: 8)
             dot.fillColor = SKColor(red: 0.0, green: 0.9, blue: 0.3, alpha: 0.9)
             dot.strokeColor = .clear
-            dot.position = first
-            dot.zPosition = 1.9
+            dot.position = entryPos
+            dot.zPosition = 3.0
             pathLayer.addChild(dot)
 
             // Arrow symbol
@@ -296,16 +298,16 @@ final class GameScene: SKScene {
             arrow.fontColor = .white
             arrow.verticalAlignmentMode = .center
             arrow.horizontalAlignmentMode = .center
-            arrow.position = first
-            arrow.zPosition = 2.0
+            arrow.position = entryPos
+            arrow.zPosition = 3.0
             pathLayer.addChild(arrow)
 
             // "IN" badge above
             let badge = SKShapeNode(rectOf: CGSize(width: 28, height: 14), cornerRadius: 4)
             badge.fillColor = SKColor(red: 0.0, green: 0.9, blue: 0.3, alpha: 0.85)
             badge.strokeColor = .clear
-            badge.position = CGPoint(x: first.x, y: first.y + 28)
-            badge.zPosition = 1.9
+            badge.position = CGPoint(x: entryPos.x, y: entryPos.y + 28)
+            badge.zPosition = 3.0
             let badgeLabel = SKLabelNode(text: "IN")
             badgeLabel.fontSize = 8
             badgeLabel.fontName = "AvenirNext-Bold"
@@ -316,15 +318,17 @@ final class GameScene: SKScene {
             pathLayer.addChild(badge)
         }
 
-        // End indicator — elite glowing exit
+        // End indicator — elite glowing exit (positioned at screen edge, not off-screen waypoint)
         if let last = PathSystem.waypoints.last {
+            let exitPos = CGPoint(x: size.width - 24, y: last.y)
+
             // Outer glow ring — red danger
             let glowRing = SKShapeNode(circleOfRadius: 20)
             glowRing.fillColor = SKColor(red: 0.9, green: 0.1, blue: 0.1, alpha: 0.08)
             glowRing.strokeColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 0.5)
             glowRing.lineWidth = 2
-            glowRing.position = last
-            glowRing.zPosition = 1.8
+            glowRing.position = exitPos
+            glowRing.zPosition = 3.0
             glowRing.run(SKAction.repeatForever(SKAction.sequence([
                 SKAction.scale(to: 1.15, duration: 0.7),
                 SKAction.scale(to: 0.95, duration: 0.7)
@@ -335,8 +339,8 @@ final class GameScene: SKScene {
             let dot = SKShapeNode(circleOfRadius: 8)
             dot.fillColor = SKColor(red: 0.9, green: 0.1, blue: 0.1, alpha: 0.9)
             dot.strokeColor = .clear
-            dot.position = last
-            dot.zPosition = 1.9
+            dot.position = exitPos
+            dot.zPosition = 3.0
             pathLayer.addChild(dot)
 
             // X symbol
@@ -345,16 +349,16 @@ final class GameScene: SKScene {
             x.fontColor = .white
             x.verticalAlignmentMode = .center
             x.horizontalAlignmentMode = .center
-            x.position = last
-            x.zPosition = 2.0
+            x.position = exitPos
+            x.zPosition = 3.0
             pathLayer.addChild(x)
 
             // "OUT" badge above
             let badge = SKShapeNode(rectOf: CGSize(width: 28, height: 14), cornerRadius: 4)
             badge.fillColor = SKColor(red: 0.9, green: 0.1, blue: 0.1, alpha: 0.85)
             badge.strokeColor = .clear
-            badge.position = CGPoint(x: last.x, y: last.y + 28)
-            badge.zPosition = 1.9
+            badge.position = CGPoint(x: exitPos.x, y: exitPos.y + 28)
+            badge.zPosition = 3.0
             let badgeLabel = SKLabelNode(text: "OUT")
             badgeLabel.fontSize = 8
             badgeLabel.fontName = "AvenirNext-Bold"
@@ -699,6 +703,13 @@ final class GameScene: SKScene {
             guard let target = inRange.max(by: { $0.pathProgress < $1.pathProgress }) else {
                 continue
             }
+
+            // Rotate tower to face target before firing — barrel points up (+y) by default,
+            // so offset atan2 by -π/2 to align the barrel with the direction to enemy.
+            let dx = target.node.position.x - tower.position.x
+            let dy = target.node.position.y - tower.position.y
+            let angle = atan2(dy, dx) - .pi / 2
+            tower.node.run(SKAction.rotate(toAngle: angle, duration: 0.08, shortestUnitArc: true))
 
             tower.fire(at: target, scene: self, currentTime: currentTime)
         }

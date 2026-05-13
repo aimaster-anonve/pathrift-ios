@@ -27,65 +27,70 @@ struct CombatHUDView: View {
         .animation(.spring(response: 0.3), value: viewModel.waveCompleteMessage)
     }
 
-    // MARK: - Landscape Top Bar (48pt compact single-row)
+    // MARK: - Landscape Top Bar (three-section: wave | stats | speed+pause)
 
     private var landscapeTopBar: some View {
-        HStack(spacing: 10) {
-            // Wave stat
-            VStack(spacing: 0) {
-                Text(viewModel.currentWave == 0 ? "READY" : "WAVE")
-                    .font(.system(size: 7, weight: .semibold, design: .monospaced))
-                    .foregroundColor(.pathriftTextSecondary)
-                Text(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")
-                    .font(.system(size: 16, weight: .black, design: .rounded))
-                    .foregroundColor(.pathriftTextPrimary)
-            }
+        HStack(spacing: 0) {
+            // LEFT: Wave number
+            Text("W\(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")")
+                .font(.system(size: 15, weight: .black, design: .monospaced))
+                .foregroundColor(.pathriftNeonBlue)
+                .frame(width: 60, alignment: .leading)
+                .padding(.leading, 16)
 
-            // Lives
-            HStack(spacing: 3) {
-                ForEach(0..<max(0, viewModel.lives), id: \.self) { _ in
-                    Text("❤️").font(.system(size: 11))
+            Spacer()
+
+            // CENTER: Lives + Gold + Diamond (clustered together)
+            HStack(spacing: 12) {
+                // Lives hearts
+                HStack(spacing: 2) {
+                    ForEach(0..<max(0, viewModel.lives), id: \.self) { _ in
+                        Image(systemName: "heart.fill")
+                            .font(.system(size: 11))
+                            .foregroundColor(.pathriftDanger)
+                    }
+                    ForEach(viewModel.lives..<EconomyConstants.startingLives, id: \.self) { _ in
+                        Image(systemName: "heart")
+                            .font(.system(size: 11))
+                            .foregroundColor(.pathriftTextSecondary.opacity(0.3))
+                    }
+                }
+
+                // Gold
+                HStack(spacing: 3) {
+                    Image(systemName: "dollarsign.circle.fill")
+                        .font(.system(size: 11))
+                        .foregroundColor(.pathriftGold)
+                    Text("\(viewModel.gold)")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .foregroundColor(.pathriftGold)
+                }
+
+                // Diamond
+                HStack(spacing: 3) {
+                    Text("♦")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundColor(Color(red: 0, green: 0.78, blue: 1))
+                    Text("\(viewModel.diamonds)")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .foregroundColor(Color(red: 0, green: 0.78, blue: 1))
                 }
             }
 
-            // Gold
-            landscapeStatPill(icon: "dollarsign.circle.fill", value: "\(viewModel.gold)", color: .pathriftGold)
+            Spacer()
 
-            // Diamonds
-            HStack(spacing: 3) {
-                Text("♦")
-                    .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(Color(red: 0, green: 0.8, blue: 1))
-                Text("\(viewModel.diamonds)")
-                    .font(.system(size: 12, weight: .bold, design: .monospaced))
-                    .foregroundColor(Color(red: 0, green: 0.8, blue: 1))
+            // RIGHT: Speed + Pause
+            HStack(spacing: 6) {
+                speedBtn
+                pauseBtn
             }
-
-            // Speed button
-            speedBtn
-
-            // Pause button
-            pauseBtn
+            .padding(.trailing, 16)
         }
-        .padding(.horizontal, 12)
-        .padding(.bottom, 6)
-        .padding(.top, 6)
+        .frame(height: 44)
         .background(
-            LinearGradient(
-                colors: [Color.pathriftBackground.opacity(0.88), .clear],
-                startPoint: .top, endPoint: .bottom
-            )
-            .ignoresSafeArea(edges: .top)
+            Color.pathriftBackground.opacity(0.88)
+                .ignoresSafeArea(edges: .top)
         )
-    }
-
-    private func landscapeStatPill(icon: String, value: String, color: Color) -> some View {
-        HStack(spacing: 3) {
-            Image(systemName: icon).font(.system(size: 11)).foregroundColor(color)
-            Text(value)
-                .font(.system(size: 12, weight: .bold, design: .monospaced))
-                .foregroundColor(color)
-        }
     }
 
     // MARK: - Portrait Top Bar (original)
@@ -191,22 +196,39 @@ struct CombatHUDView: View {
     // MARK: - Bottom Bar
 
     private var bottomBar: some View {
-        HStack(spacing: 12) {
-            if !isLandscape {
+        HStack {
+            // LEFT: kills stat (compact in landscape, full in portrait)
+            if isLandscape {
+                HStack(spacing: 4) {
+                    Image(systemName: "bolt.fill")
+                        .font(.system(size: 10))
+                        .foregroundColor(.pathriftOrange)
+                    Text("\(viewModel.enemyKills)")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .foregroundColor(.pathriftOrange)
+                }
+                .padding(.leading, 16)
+            } else {
                 killsStat
+                    .padding(.leading, 20)
             }
+
             Spacer()
-            if !viewModel.isWaveActive && !viewModel.isGameOver {
-                sendWaveButton
-            } else if viewModel.isWaveActive {
-                waveProgressIndicator
+
+            // RIGHT: Wave progress or send wave button
+            Group {
+                if !viewModel.isWaveActive && !viewModel.isGameOver {
+                    sendWaveButton
+                } else if viewModel.isWaveActive {
+                    waveProgressIndicator
+                }
             }
+            .padding(.trailing, isLandscape ? 16 : 20)
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, isLandscape ? 10 : 14)
+        .frame(height: 44)
         .background(
             LinearGradient(
-                colors: [.clear, Color.pathriftBackground.opacity(0.9)],
+                colors: [.clear, Color.pathriftBackground.opacity(0.88)],
                 startPoint: .top, endPoint: .bottom
             )
         )

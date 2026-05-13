@@ -100,8 +100,5 @@ final class BoltTower: Tower {
             SKAction.group([move, SKAction.repeat(flash, count: 3)]),
             impact
         ]))
-
-        let rotateBarrel = SKAction.rotate(byAngle: .pi * 2, duration: 0.2)
-        node.run(rotateBarrel)
     }
 }

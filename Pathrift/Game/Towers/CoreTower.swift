@@ -111,9 +111,5 @@ final class CoreTower: Tower {
         }
 
         projectile.run(SKAction.sequence([move, impact]))
-
-        // Drill spin on node
-        let spin = SKAction.rotate(byAngle: .pi, duration: 0.3)
-        node.run(spin)
     }
 }
