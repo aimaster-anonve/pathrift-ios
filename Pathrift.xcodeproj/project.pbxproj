@@ -20,6 +20,7 @@
 		5751EAE39AD3E066F9463448 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 984F7E26DF60568DD6333A5B /* PrivacyInfo.xcprivacy */; };
 		57A93C99342E771C6DD19861 /* EventBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77B180B11BA7DE5AD28C33D6 /* EventBannerView.swift */; };
 		6333CB55385FFFE8DE0A1CD6 /* PathSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E493FFA3EFB068BA379A4382 /* PathSystem.swift */; };
+		6EAA670285A4474295A0D9CD /* ViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95376E451D1C715286855AB2 /* ViewExtensions.swift */; };
 		712B1BEAA01E682F934241D1 /* ScoreCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25795B44C8A7319D7061E5C7 /* ScoreCalculator.swift */; };
 		735831476BEFCFD38F17CC6A /* GoldManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66B9E3A197BF73F3FD984E35 /* GoldManager.swift */; };
 		7BD72EB0B7DE02854FB2CD71 /* Color+Pathrift.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD2F2647DDA468FE9435C5D0 /* Color+Pathrift.swift */; };
@@ -64,6 +65,7 @@
 		85522E925323C39619BD7467 /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
 		88CDBB48B13880491055CEB0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8C96FE3ED23408AF336BABA6 /* CombatHUDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatHUDView.swift; sourceTree = "<group>"; };
+		95376E451D1C715286855AB2 /* ViewExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewExtensions.swift; sourceTree = "<group>"; };
 		984F7E26DF60568DD6333A5B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		A489DA2D996FBB0D340B7198 /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
 		AC415A9CA4B47AD1A5CADAB0 /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
@@ -95,6 +97,7 @@
 			isa = PBXGroup;
 			children = (
 				CD2F2647DDA468FE9435C5D0 /* Color+Pathrift.swift */,
+				95376E451D1C715286855AB2 /* ViewExtensions.swift */,
 			);
 			path = Extensions;
 			sourceTree = "<group>";
@@ -339,6 +342,7 @@
 				859C2576630E44C0CAAB4CD4 /* TankEnemy.swift in Sources */,
 				A4B75A2203FE418D18002D4A /* Tower.swift in Sources */,
 				9EE1E38AB9BC70B93E87E1D5 /* TowerMenuView.swift in Sources */,
+				6EAA670285A4474295A0D9CD /* ViewExtensions.swift in Sources */,
 				A7159071F3F8089A72FEAA34 /* WaveSystem.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

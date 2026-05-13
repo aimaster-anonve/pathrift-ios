@@ -46,7 +46,9 @@ final class GameScene: SKScene {
     // MARK: - Setup
 
     override func didMove(to view: SKView) {
+        anchorPoint = .zero   // CRITICAL: (0,0) = bottom-left corner
         backgroundColor = SKColor(red: 0.04, green: 0.04, blue: 0.06, alpha: 1)
+        buildDynamicLayout()
         setupLayers()
         setupGround()
         setupPath()
@@ -57,6 +59,50 @@ final class GameScene: SKScene {
         onGoldChanged?(goldManager.gold)
         onLivesChanged?(lives)
         onWaveChanged?(currentWaveNumber)
+    }
+
+    private func buildDynamicLayout() {
+        let W = size.width
+        let H = size.height
+
+        // Z-shaped path (3 horizontal lanes, 2 vertical connectors)
+        // SpriteKit Y: 0=bottom, H=top
+        let y1 = H * 0.20  // bottom lane
+        let y2 = H * 0.50  // middle lane
+        let y3 = H * 0.78  // top lane
+        let xR = W * 0.74  // right vertical x
+        let xL = W * 0.26  // left vertical x
+
+        PathSystem.waypoints = [
+            CGPoint(x: -10,  y: y1),
+            CGPoint(x: xR,   y: y1),
+            CGPoint(x: xR,   y: y2),
+            CGPoint(x: xL,   y: y2),
+            CGPoint(x: xL,   y: y3),
+            CGPoint(x: W+10, y: y3)
+        ]
+
+        let gap: CGFloat = 70  // clear distance from path center
+
+        gridSystem.updateSlots([
+            // Above bottom lane (y1), x scattered
+            CGPoint(x: W*0.13, y: y1+gap),
+            CGPoint(x: W*0.34, y: y1+gap),
+            CGPoint(x: W*0.55, y: y1+gap),
+            // Right of right vertical (xR)
+            CGPoint(x: xR+gap, y: y1+(y2-y1)*0.30),
+            CGPoint(x: xR+gap, y: y1+(y2-y1)*0.70),
+            // Below middle lane (y2)
+            CGPoint(x: W*0.40, y: y2-gap),
+            CGPoint(x: W*0.60, y: y2-gap),
+            // Right of left vertical (xL)
+            CGPoint(x: xL+gap, y: y2+(y3-y2)*0.28),
+            CGPoint(x: xL+gap, y: y2+(y3-y2)*0.68),
+            // Below top lane (y3)
+            CGPoint(x: W*0.30, y: y3-gap),
+            CGPoint(x: W*0.52, y: y3-gap),
+            CGPoint(x: W*0.72, y: y3-gap),
+        ])
     }
 
     private func setupLayers() {
@@ -75,23 +121,19 @@ final class GameScene: SKScene {
     }
 
     private func setupGround() {
-        let tileSize = gridSystem.tileSize
-        let cols = gridSystem.columns
-        let rows = gridSystem.rows
-
+        let gridColor1 = SKColor(red: 0.07, green: 0.07, blue: 0.10, alpha: 1)
+        let gridColor2 = SKColor(red: 0.09, green: 0.09, blue: 0.13, alpha: 1)
+        let cols = 12
+        let rows = 20
+        let tileW = size.width / CGFloat(cols)
+        let tileH = size.height / CGFloat(rows)
         for col in 0..<cols {
             for row in 0..<rows {
-                let tile = SKShapeNode(rectOf: CGSize(width: tileSize - 1, height: tileSize - 1), cornerRadius: 2)
-                let dark = (col + row) % 2 == 0
-                tile.fillColor = dark
-                    ? SKColor(red: 0.07, green: 0.07, blue: 0.10, alpha: 1)
-                    : SKColor(red: 0.09, green: 0.09, blue: 0.13, alpha: 1)
-                tile.strokeColor = SKColor(red: 0.15, green: 0.15, blue: 0.20, alpha: 0.5)
+                let tile = SKShapeNode(rectOf: CGSize(width: tileW-0.5, height: tileH-0.5), cornerRadius: 1)
+                tile.fillColor = (col+row) % 2 == 0 ? gridColor1 : gridColor2
+                tile.strokeColor = SKColor(red: 0.15, green: 0.15, blue: 0.20, alpha: 0.3)
                 tile.lineWidth = 0.5
-                tile.position = CGPoint(
-                    x: CGFloat(col) * tileSize + tileSize / 2,
-                    y: CGFloat(row) * tileSize + tileSize / 2
-                )
+                tile.position = CGPoint(x: CGFloat(col)*tileW + tileW/2, y: CGFloat(row)*tileH + tileH/2)
                 groundLayer.addChild(tile)
             }
         }
@@ -100,50 +142,45 @@ final class GameScene: SKScene {
     private func setupPath() {
         let waypoints = PathSystem.waypoints
         guard waypoints.count >= 2 else { return }
-
-        let pathThickness: CGFloat = 20
-
+        let thickness: CGFloat = 24
         for i in 1..<waypoints.count {
-            let from = waypoints[i - 1]
+            let from = waypoints[i-1]
             let to = waypoints[i]
             let dx = to.x - from.x
             let dy = to.y - from.y
-            let length = sqrt(dx * dx + dy * dy)
-            let angle = atan2(dy, dx)
-            let midX = (from.x + to.x) / 2
-            let midY = (from.y + to.y) / 2
-
-            let segment = SKShapeNode(rectOf: CGSize(width: length, height: pathThickness), cornerRadius: 4)
-            segment.fillColor = SKColor(red: 0.3, green: 0.25, blue: 0.15, alpha: 0.9)
-            segment.strokeColor = SKColor(red: 0.5, green: 0.4, blue: 0.2, alpha: 0.8)
-            segment.lineWidth = 1.5
-            segment.position = CGPoint(x: midX, y: midY)
-            segment.zRotation = angle
-            pathLayer.addChild(segment)
+            let len = sqrt(dx*dx + dy*dy)
+            let seg = SKShapeNode(rectOf: CGSize(width: len, height: thickness), cornerRadius: 5)
+            seg.fillColor = SKColor(red: 0.28, green: 0.22, blue: 0.12, alpha: 0.95)
+            seg.strokeColor = SKColor(red: 0.5, green: 0.38, blue: 0.18, alpha: 0.7)
+            seg.lineWidth = 1.5
+            seg.position = CGPoint(x: (from.x+to.x)/2, y: (from.y+to.y)/2)
+            seg.zRotation = atan2(dy, dx)
+            pathLayer.addChild(seg)
         }
-
-        for (idx, point) in waypoints.enumerated() {
-            let dot = SKShapeNode(circleOfRadius: pathThickness / 2)
-            dot.fillColor = SKColor(red: 0.3, green: 0.25, blue: 0.15, alpha: 0.9)
+        // Joints at corners
+        for point in waypoints {
+            let dot = SKShapeNode(circleOfRadius: thickness/2)
+            dot.fillColor = SKColor(red: 0.28, green: 0.22, blue: 0.12, alpha: 0.95)
             dot.strokeColor = SKColor.clear
             dot.position = point
             pathLayer.addChild(dot)
-
-            if idx == 0 {
-                let startLabel = SKLabelNode(text: "START")
-                startLabel.fontSize = 9
-                startLabel.fontColor = SKColor.green
-                startLabel.fontName = "AvenirNext-Bold"
-                startLabel.position = CGPoint(x: point.x, y: point.y + 16)
-                pathLayer.addChild(startLabel)
-            } else if idx == waypoints.count - 1 {
-                let endLabel = SKLabelNode(text: "END")
-                endLabel.fontSize = 9
-                endLabel.fontColor = SKColor.red
-                endLabel.fontName = "AvenirNext-Bold"
-                endLabel.position = CGPoint(x: point.x, y: point.y + 16)
-                pathLayer.addChild(endLabel)
-            }
+        }
+        // Start/End labels
+        if let first = waypoints.first {
+            let lbl = SKLabelNode(text: "▶ START")
+            lbl.fontSize = 10
+            lbl.fontName = "AvenirNext-Bold"
+            lbl.fontColor = SKColor(red: 0.0, green: 0.9, blue: 0.4, alpha: 1)
+            lbl.position = CGPoint(x: first.x + 30, y: first.y + 18)
+            pathLayer.addChild(lbl)
+        }
+        if let last = waypoints.last {
+            let lbl = SKLabelNode(text: "END ▶")
+            lbl.fontSize = 10
+            lbl.fontName = "AvenirNext-Bold"
+            lbl.fontColor = SKColor(red: 1.0, green: 0.3, blue: 0.3, alpha: 1)
+            lbl.position = CGPoint(x: last.x - 40, y: last.y + 18)
+            pathLayer.addChild(lbl)
         }
     }
 
@@ -251,7 +288,7 @@ final class GameScene: SKScene {
         banner.fontSize = 28
         banner.fontColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 1)
         banner.fontName = "AvenirNext-Bold"
-        banner.position = CGPoint(x: size.width / 2, y: size.height / 2 + 20)
+        banner.position = CGPoint(x: size.width / 2, y: size.height * 0.55)
         banner.zPosition = 10
         banner.alpha = 0
         addChild(banner)

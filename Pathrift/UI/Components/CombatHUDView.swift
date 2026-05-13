@@ -3,31 +3,40 @@ import SwiftUI
 struct CombatHUDView: View {
     @ObservedObject var viewModel: GameViewModel
     let onStartWave: () -> Void
+    let onPause: () -> Void
     @State private var waveButtonPulse: Bool = false
 
     var body: some View {
-        VStack(spacing: 0) {
-            topBar
-            if let msg = viewModel.waveCompleteMessage {
-                EventBannerView(message: msg, color: .pathriftSuccess)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+        GeometryReader { geo in
+            let safeTop = geo.safeAreaInsets.top
+            let safeBottom = geo.safeAreaInsets.bottom
+
+            VStack(spacing: 0) {
+                topBar(safeTop: safeTop)
+                if let msg = viewModel.waveCompleteMessage {
+                    EventBannerView(message: msg, color: .pathriftSuccess)
+                        .transition(.move(edge: .top).combined(with: .opacity))
+                }
+                Spacer()
+                bottomBar(safeBottom: safeBottom)
             }
-            Spacer()
-            bottomBar
+            .animation(.spring(response: 0.3), value: viewModel.waveCompleteMessage)
         }
-        .animation(.spring(response: 0.3), value: viewModel.waveCompleteMessage)
     }
 
-    private var topBar: some View {
+    private func topBar(safeTop: CGFloat) -> some View {
         HStack(spacing: 0) {
             goldIndicator
             Spacer()
             waveIndicator
             Spacer()
-            livesIndicator
+            HStack(spacing: 12) {
+                livesIndicator
+                pauseButton
+            }
         }
         .padding(.horizontal, 16)
-        .padding(.top, 52)
+        .padding(.top, safeTop + 8)
         .padding(.bottom, 12)
         .background(
             LinearGradient(
@@ -36,6 +45,15 @@ struct CombatHUDView: View {
                 endPoint: .bottom
             )
         )
+    }
+
+    private var pauseButton: some View {
+        Button(action: onPause) {
+            Image(systemName: "pause.circle.fill")
+                .font(.system(size: 24))
+                .foregroundColor(.pathriftTextSecondary)
+        }
+        .buttonStyle(ScaleButtonStyle())
     }
 
     private var goldIndicator: some View {
@@ -65,13 +83,12 @@ struct CombatHUDView: View {
             ForEach(0..<EconomyConstants.startingLives, id: \.self) { idx in
                 Image(systemName: idx < viewModel.lives ? "heart.fill" : "heart")
                     .foregroundColor(idx < viewModel.lives ? .pathriftDanger : .pathriftTextSecondary.opacity(0.4))
-                    .font(.system(size: 18))
-                    .scaleEffect(idx < viewModel.lives ? 1.0 : 0.8)
+                    .font(.system(size: 16))
             }
         }
     }
 
-    private var bottomBar: some View {
+    private func bottomBar(safeBottom: CGFloat) -> some View {
         HStack(spacing: 12) {
             killsCounter
             Spacer()
@@ -82,7 +99,7 @@ struct CombatHUDView: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.bottom, 32)
+        .padding(.bottom, max(safeBottom + 8, 24))
         .padding(.top, 12)
         .background(
             LinearGradient(
@@ -115,9 +132,9 @@ struct CombatHUDView: View {
             }
             .foregroundColor(.pathriftBackground)
             .padding(.horizontal, 20)
-            .padding(.vertical, 12)
+            .padding(.vertical, 14)
             .background(Color.pathriftNeonBlue)
-            .cornerRadius(10)
+            .cornerRadius(12)
             .shadow(color: .pathriftNeonBlue.opacity(waveButtonPulse ? 0.8 : 0.3), radius: waveButtonPulse ? 12 : 4)
         }
         .buttonStyle(ScaleButtonStyle())

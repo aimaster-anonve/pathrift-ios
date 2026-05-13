@@ -95,6 +95,12 @@ final class GridSystem {
         slots[idx].state = .empty
     }
 
+    func updateSlots(_ positions: [CGPoint]) {
+        slots = positions.enumerated().map { idx, pos in
+            TowerSlot(id: idx, position: pos)
+        }
+    }
+
     func availableSlots() -> [TowerSlot] {
         slots.filter { if case .empty = $0.state { return true }; return false }
     }
