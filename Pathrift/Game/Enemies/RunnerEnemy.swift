@@ -20,7 +20,7 @@ final class RunnerEnemy: EnemyNode {
         let hp = 50 * hpMultiplier
         self.maxHP = hp
         self.currentHP = hp
-        self.currentSpeed = 150
+        self.currentSpeed = baseSpeed
         self.node = RunnerEnemy.makeNode()
         self.node.position = PathSystem.waypoints.first ?? .zero
     }
