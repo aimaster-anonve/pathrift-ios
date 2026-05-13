@@ -267,61 +267,102 @@ final class GameScene: SKScene {
                 pathLayer.addChild(dot)
             }
         }
-        // Start indicator — animated arrow at entry
+        // Start indicator — elite glowing entry
         if let first = PathSystem.waypoints.first {
-            // Arrow pointing right
-            let arrowBg = SKShapeNode(circleOfRadius: 14)
-            arrowBg.fillColor = SKColor(red: 0.0, green: 0.6, blue: 0.2, alpha: 0.9)
-            arrowBg.strokeColor = SKColor(red: 0.0, green: 1.0, blue: 0.4, alpha: 0.8)
-            arrowBg.lineWidth = 2
-            arrowBg.position = CGPoint(x: first.x + 20, y: first.y)
-            // Pulse animation
-            let pulse = SKAction.repeatForever(SKAction.sequence([
-                SKAction.scale(to: 1.15, duration: 0.6),
-                SKAction.scale(to: 0.9, duration: 0.6)
-            ]))
-            arrowBg.run(pulse)
-            pathLayer.addChild(arrowBg)
+            // Outer glow ring
+            let glowRing = SKShapeNode(circleOfRadius: 20)
+            glowRing.fillColor = SKColor(red: 0.0, green: 0.9, blue: 0.3, alpha: 0.08)
+            glowRing.strokeColor = SKColor(red: 0.0, green: 0.9, blue: 0.3, alpha: 0.5)
+            glowRing.lineWidth = 2
+            glowRing.position = first
+            glowRing.zPosition = 1.8
+            glowRing.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.scale(to: 1.2, duration: 0.8),
+                SKAction.scale(to: 0.9, duration: 0.8)
+            ])))
+            pathLayer.addChild(glowRing)
 
-            let arrowLabel = SKLabelNode(text: "▶")
-            arrowLabel.fontSize = 12
-            arrowLabel.fontColor = .white
-            arrowLabel.verticalAlignmentMode = .center
-            arrowLabel.horizontalAlignmentMode = .center
-            arrowBg.addChild(arrowLabel)
+            // Inner dot
+            let dot = SKShapeNode(circleOfRadius: 8)
+            dot.fillColor = SKColor(red: 0.0, green: 0.9, blue: 0.3, alpha: 0.9)
+            dot.strokeColor = .clear
+            dot.position = first
+            dot.zPosition = 1.9
+            pathLayer.addChild(dot)
 
-            let startText = SKLabelNode(text: "START")
-            startText.fontSize = 8
-            startText.fontName = "AvenirNext-Bold"
-            startText.fontColor = SKColor(red: 0.0, green: 1.0, blue: 0.4, alpha: 0.9)
-            startText.horizontalAlignmentMode = .center
-            startText.position = CGPoint(x: first.x + 20, y: first.y + 24)
-            pathLayer.addChild(startText)
+            // Arrow symbol
+            let arrow = SKLabelNode(text: "▶")
+            arrow.fontSize = 9
+            arrow.fontColor = .white
+            arrow.verticalAlignmentMode = .center
+            arrow.horizontalAlignmentMode = .center
+            arrow.position = first
+            arrow.zPosition = 2.0
+            pathLayer.addChild(arrow)
+
+            // "IN" badge above
+            let badge = SKShapeNode(rectOf: CGSize(width: 28, height: 14), cornerRadius: 4)
+            badge.fillColor = SKColor(red: 0.0, green: 0.9, blue: 0.3, alpha: 0.85)
+            badge.strokeColor = .clear
+            badge.position = CGPoint(x: first.x, y: first.y + 28)
+            badge.zPosition = 1.9
+            let badgeLabel = SKLabelNode(text: "IN")
+            badgeLabel.fontSize = 8
+            badgeLabel.fontName = "AvenirNext-Bold"
+            badgeLabel.fontColor = .black
+            badgeLabel.verticalAlignmentMode = .center
+            badgeLabel.horizontalAlignmentMode = .center
+            badge.addChild(badgeLabel)
+            pathLayer.addChild(badge)
         }
 
-        // End indicator
+        // End indicator — elite glowing exit
         if let last = PathSystem.waypoints.last {
-            let exitBg = SKShapeNode(circleOfRadius: 14)
-            exitBg.fillColor = SKColor(red: 0.8, green: 0.1, blue: 0.1, alpha: 0.9)
-            exitBg.strokeColor = SKColor(red: 1.0, green: 0.3, blue: 0.3, alpha: 0.8)
-            exitBg.lineWidth = 2
-            exitBg.position = CGPoint(x: last.x - 20, y: last.y)
-            pathLayer.addChild(exitBg)
+            // Outer glow ring — red danger
+            let glowRing = SKShapeNode(circleOfRadius: 20)
+            glowRing.fillColor = SKColor(red: 0.9, green: 0.1, blue: 0.1, alpha: 0.08)
+            glowRing.strokeColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 0.5)
+            glowRing.lineWidth = 2
+            glowRing.position = last
+            glowRing.zPosition = 1.8
+            glowRing.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.scale(to: 1.15, duration: 0.7),
+                SKAction.scale(to: 0.95, duration: 0.7)
+            ])))
+            pathLayer.addChild(glowRing)
 
-            let exitArrow = SKLabelNode(text: "✕")
-            exitArrow.fontSize = 11
-            exitArrow.fontColor = .white
-            exitArrow.verticalAlignmentMode = .center
-            exitArrow.horizontalAlignmentMode = .center
-            exitBg.addChild(exitArrow)
+            // Inner dot
+            let dot = SKShapeNode(circleOfRadius: 8)
+            dot.fillColor = SKColor(red: 0.9, green: 0.1, blue: 0.1, alpha: 0.9)
+            dot.strokeColor = .clear
+            dot.position = last
+            dot.zPosition = 1.9
+            pathLayer.addChild(dot)
 
-            let exitText = SKLabelNode(text: "EXIT")
-            exitText.fontSize = 8
-            exitText.fontName = "AvenirNext-Bold"
-            exitText.fontColor = SKColor(red: 1.0, green: 0.4, blue: 0.4, alpha: 0.9)
-            exitText.horizontalAlignmentMode = .center
-            exitText.position = CGPoint(x: last.x - 20, y: last.y + 24)
-            pathLayer.addChild(exitText)
+            // X symbol
+            let x = SKLabelNode(text: "✕")
+            x.fontSize = 9
+            x.fontColor = .white
+            x.verticalAlignmentMode = .center
+            x.horizontalAlignmentMode = .center
+            x.position = last
+            x.zPosition = 2.0
+            pathLayer.addChild(x)
+
+            // "OUT" badge above
+            let badge = SKShapeNode(rectOf: CGSize(width: 28, height: 14), cornerRadius: 4)
+            badge.fillColor = SKColor(red: 0.9, green: 0.1, blue: 0.1, alpha: 0.85)
+            badge.strokeColor = .clear
+            badge.position = CGPoint(x: last.x, y: last.y + 28)
+            badge.zPosition = 1.9
+            let badgeLabel = SKLabelNode(text: "OUT")
+            badgeLabel.fontSize = 8
+            badgeLabel.fontName = "AvenirNext-Bold"
+            badgeLabel.fontColor = .white
+            badgeLabel.verticalAlignmentMode = .center
+            badgeLabel.horizontalAlignmentMode = .center
+            badge.addChild(badgeLabel)
+            pathLayer.addChild(badge)
         }
     }
 
@@ -1023,6 +1064,17 @@ final class GameScene: SKScene {
         return hypot(p.x - (a.x + t*dx), p.y - (a.y + t*dy))
     }
 
+    /// Returns true if `slot` is at least `clearance` pixels away from every path segment.
+    private func isSlotClearOfPath(_ slot: CGPoint, waypoints: [CGPoint], clearance: CGFloat = 36) -> Bool {
+        guard waypoints.count >= 2 else { return true }
+        for i in 1..<waypoints.count {
+            if pointToSegmentDist(slot, a: waypoints[i-1], b: waypoints[i]) < clearance {
+                return false
+            }
+        }
+        return true
+    }
+
     // 12 Z-layout parameter sets — (y1%, y2%, y3%, xL%, xR%) as fractions of H/W.
     private let layoutParams: [(CGFloat, CGFloat, CGFloat, CGFloat, CGFloat)] = [
         (0.20, 0.50, 0.78, 0.26, 0.74),   // 0: standard forward Z
@@ -1059,7 +1111,8 @@ final class GameScene: SKScene {
             ]
             let layers: [PathLayer] = Array(repeating: .ground, count: waypoints.count)
             let rawSlots = computeSlots(y1: y1, y2: y2, y3: y3, xL: xL, xR: xR)
-            let guaranteedSlots = guaranteePathCoverage(slots: rawSlots, waypoints: waypoints)
+            let pathClearSlots = rawSlots.filter { isSlotClearOfPath($0, waypoints: waypoints, clearance: 36) }
+            let guaranteedSlots = guaranteePathCoverage(slots: pathClearSlots, waypoints: waypoints)
             return (waypoints, layers, guaranteedSlots)
         } else {
             // Crossing layout
@@ -1100,7 +1153,8 @@ final class GameScene: SKScene {
             let tooClose = result.contains { hypot($0.x - c.x, $0.y - c.y) < minSep }
             if !tooClose { result.append(c) }
         }
-        let raw = Array(result.prefix(activeSlotCount()))
+        let pathClear = result.filter { isSlotClearOfPath($0, waypoints: waypoints, clearance: 36) }
+        let raw = Array(pathClear.prefix(activeSlotCount()))
         return guaranteePathCoverage(slots: raw, waypoints: waypoints)
     }
 

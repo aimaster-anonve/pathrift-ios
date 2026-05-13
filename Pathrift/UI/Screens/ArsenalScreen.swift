@@ -148,15 +148,13 @@ struct TowerArsenalCard: View {
             Spacer()
             if let cost = cost {
                 Button(action: onUpgrade) {
-                    HStack(spacing: 2) {
-                        Text("+")
-                        Text("\(cost)♦")
-                    }
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundColor(diamonds >= cost ? color : .pathriftTextSecondary)
-                    .padding(.horizontal, 6).padding(.vertical, 3)
-                    .background((diamonds >= cost ? color : Color.pathriftTextSecondary).opacity(0.12))
-                    .cornerRadius(6)
+                    Text("+\(cost)♦")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(diamonds >= cost ? color : .pathriftTextSecondary)
+                        .padding(.horizontal, 8).padding(.vertical, 4)
+                        .background((diamonds >= cost ? color : Color.pathriftTextSecondary).opacity(0.12))
+                        .cornerRadius(6)
+                        .lineLimit(1)
                 }
                 .disabled(diamonds < cost)
             } else {

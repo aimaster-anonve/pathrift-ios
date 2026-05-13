@@ -41,20 +41,6 @@ struct CombatHUDView: View {
                     .foregroundColor(.pathriftTextPrimary)
             }
 
-            // Wave progress bar
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    Capsule().fill(Color.pathriftSurface).frame(height: 5)
-                    Capsule()
-                        .fill(LinearGradient(colors: [.pathriftNeonBlue, .pathriftPurple],
-                                             startPoint: .leading, endPoint: .trailing))
-                        .frame(width: max(4, geo.size.width * CGFloat(viewModel.waveProgress)), height: 5)
-                        .animation(.spring(response: 0.3), value: viewModel.waveProgress)
-                }
-            }
-            .frame(height: 5)
-            .frame(maxWidth: .infinity)
-
             // Lives
             HStack(spacing: 3) {
                 ForEach(0..<max(0, viewModel.lives), id: \.self) { _ in

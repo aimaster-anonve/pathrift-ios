@@ -16,6 +16,15 @@ struct TowerMenuView: View {
         UIScreen.main.bounds.width > UIScreen.main.bounds.height
     }
 
+    private var sortedTowerTypes: [TowerType] {
+        TowerType.allCases.sorted { a, b in
+            let aUnlocked = DiamondStore.shared.isUnlocked(a)
+            let bUnlocked = DiamondStore.shared.isUnlocked(b)
+            if aUnlocked != bUnlocked { return aUnlocked }
+            return a.cost < b.cost
+        }
+    }
+
     var body: some View {
         ZStack {
             Color.black.opacity(0.4)
@@ -73,7 +82,7 @@ struct TowerMenuView: View {
                 // Left: horizontal tower scroll
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
-                        ForEach(TowerType.allCases) { type in
+                        ForEach(sortedTowerTypes) { type in
                             landscapeTowerCard(type)
                         }
                     }
@@ -229,7 +238,7 @@ struct TowerMenuView: View {
     private var towerGrid: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 10) {
-                ForEach(TowerType.allCases) { type in
+                ForEach(sortedTowerTypes) { type in
                     TowerCardButton(
                         type: type,
                         isSelected: selectedType == type,
