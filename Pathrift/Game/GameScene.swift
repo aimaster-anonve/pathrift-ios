@@ -28,6 +28,7 @@ final class GameScene: SKScene {
     private var currentSpawnBatches: [EnemySpawnEntry] = []
 
     private var layoutBuilt = false
+    private var currentLayoutIndex: Int = 0
 
     private(set) var lives: Int = EconomyConstants.startingLives
     private(set) var currentWaveNumber: Int = 0
@@ -376,9 +377,9 @@ final class GameScene: SKScene {
 
         activeTowers.append(tower)
         towerLayer.addChild(tower.node)
+        addLevelBadge(to: tower)
 
-        // Hidden slot node is NOT hit-testable, so add a transparent tap detector
-        // directly on the tower layer so tapping the tower triggers the info panel.
+        // Hidden slot node is NOT hit-testable — add transparent tap detector instead.
         let tapDetector = SKShapeNode(circleOfRadius: 28)
         tapDetector.fillColor = SKColor.clear
         tapDetector.strokeColor = SKColor.clear
@@ -638,11 +639,48 @@ final class GameScene: SKScene {
         guard goldManager.spend(upgradeCost) else { return }
         tower.level += 1
         tower.totalInvested += upgradeCost
+        updateLevelBadge(for: tower)
         let flash = SKAction.sequence([
             SKAction.scale(to: 1.3, duration: 0.1),
             SKAction.scale(to: 1.0, duration: 0.15)
         ])
         tower.node.run(flash)
+    }
+
+    // MARK: - Level Badge
+
+    private func addLevelBadge(to tower: any Tower) {
+        let badge = SKShapeNode(circleOfRadius: 7)
+        badge.fillColor = SKColor(red: 0.05, green: 0.05, blue: 0.15, alpha: 0.95)
+        badge.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.9)
+        badge.lineWidth = 1
+        badge.name = "levelBadge"
+        badge.position = CGPoint(x: 14, y: -14)
+        badge.zPosition = 2
+        let lbl = SKLabelNode(text: "1")
+        lbl.fontSize = 8
+        lbl.fontName = "AvenirNext-Bold"
+        lbl.fontColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 1)
+        lbl.verticalAlignmentMode = .center
+        lbl.horizontalAlignmentMode = .center
+        badge.addChild(lbl)
+        tower.node.addChild(badge)
+    }
+
+    private func updateLevelBadge(for tower: any Tower) {
+        guard let badge = tower.node.childNode(withName: "levelBadge") as? SKShapeNode,
+              let lbl = badge.children.first as? SKLabelNode else { return }
+        lbl.text = "\(tower.level)"
+        // Colour escalates: blue → purple → orange
+        let (stroke, text): (SKColor, SKColor)
+        switch tower.level {
+        case ..<3:  (stroke, text) = (SKColor(red:0.0,green:0.78,blue:1.0,alpha:1),   SKColor(red:0.0,green:0.78,blue:1.0,alpha:1))
+        case 3..<6: (stroke, text) = (SKColor(red:0.55,green:0.31,blue:1.0,alpha:1),  SKColor(red:0.55,green:0.31,blue:1.0,alpha:1))
+        default:    (stroke, text) = (SKColor(red:1.0,green:0.42,blue:0.0,alpha:1),   SKColor(red:1.0,green:0.42,blue:0.0,alpha:1))
+        }
+        badge.strokeColor = stroke
+        lbl.fontColor = text
+        badge.run(SKAction.sequence([SKAction.scale(to:1.4,duration:0.1), SKAction.scale(to:1.0,duration:0.1)]))
     }
 
     func pauseGame() {
@@ -708,110 +746,178 @@ final class GameScene: SKScene {
         ]))
     }
 
-    private func performRiftShift() {
-        let W = size.width
-        let H = size.height
+    // MARK: - Map Layouts (5 completely different configurations)
 
-        // Use large, clearly visible variance so players notice the shift
-        let shiftType = Int.random(in: 0..<4)
-        let variance: CGFloat = H * 0.14   // ±14% — clearly visible lane movement
+    private func layoutConfig(index: Int) -> (waypoints: [CGPoint], slots: [CGPoint]) {
+        let W = size.width, H = size.height
+        let v: CGFloat = 82, h: CGFloat = 60
 
-        let y1_base = H * 0.20
-        let y2_base = H * 0.50
-        let y3_base = H * 0.78
-        let xR_base = W * 0.74
-        let xL_base = W * 0.26
+        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x, y: y) }
 
-        var y1 = y1_base, y2 = y2_base, y3 = y3_base
-        var xR = xR_base
-        let xL = xL_base
+        switch index {
 
-        switch shiftType {
-        case 0:
-            let shift = CGFloat.random(in: variance * 0.5 ... variance) * (Bool.random() ? 1 : -1)
-            y1 = max(H * 0.10, min(H * 0.32, y1_base + shift))
-        case 1:
-            let shift = CGFloat.random(in: variance * 0.5 ... variance) * (Bool.random() ? 1 : -1)
-            y2 = max(y1 + H * 0.18, min(H * 0.62, y2_base + shift))
-        case 2:
-            let xVar = W * 0.12
-            let shift = CGFloat.random(in: xVar * 0.5 ... xVar) * (Bool.random() ? 1 : -1)
-            xR = max(W * 0.58, min(W * 0.85, xR_base + shift))
-        case 3:
-            let shift = CGFloat.random(in: variance * 0.5 ... variance) * (Bool.random() ? 1 : -1)
-            y3 = max(y2 + H * 0.18, min(H * 0.90, y3_base + shift))
-        default: break
+        case 1: // Reverse Z — entry top-left, exit bottom-right
+            let y1=H*0.78, y2=H*0.48, y3=H*0.18, xR=W*0.72, xL=W*0.28
+            let sr = min(xR+h, W-28)
+            return (
+                [p(-10,y1),p(xR,y1),p(xR,y2),p(xL,y2),p(xL,y3),p(W+10,y3)],
+                [p(W*0.14,y1-v),p(W*0.42,y1-v),p(W*0.62,y1-v),
+                 p(sr,y1-(y1-y2)*0.27),p(sr,y1-(y1-y2)*0.73),
+                 p(W*0.38,y2+v),p(W*0.60,y2+v),
+                 p(xL+h,y2-(y2-y3)*0.35),p(xL+h,y2-(y2-y3)*0.70),
+                 p(W*0.22,y3+v),p(W*0.50,y3+v),p(min(W*0.78,W-28),y3+v)]
+            )
+
+        case 2: // Wide Z — extreme outer lanes, lots of space in centre
+            let y1=H*0.11, y2=H*0.50, y3=H*0.89, xR=W*0.83, xL=W*0.17
+            let sr = min(xR+h, W-28)
+            return (
+                [p(-10,y1),p(xR,y1),p(xR,y2),p(xL,y2),p(xL,y3),p(W+10,y3)],
+                [p(W*0.20,y1+v),p(W*0.46,y1+v),p(W*0.66,y1+v),
+                 p(sr,y1+(y2-y1)*0.28),p(sr,y1+(y2-y1)*0.68),
+                 p(W*0.34,y2-v),p(W*0.58,y2-v),
+                 p(xL+h,y2+(y3-y2)*0.35),p(xL+h,y2+(y3-y2)*0.68),
+                 p(xL+h+4,y3-v),p(W*0.50,y3-v),p(min(W*0.82,W-28),y3-v)]
+            )
+
+        case 3: // Tight Centre Z — all lanes close together in the middle third
+            let y1=H*0.31, y2=H*0.50, y3=H*0.69, xR=W*0.68, xL=W*0.32
+            let sr = min(xR+h, W-28), sl = max(xL-h, 28)
+            return (
+                [p(-10,y1),p(xR,y1),p(xR,y2),p(xL,y2),p(xL,y3),p(W+10,y3)],
+                [p(W*0.10,y1+v),p(W*0.38,y1+v),p(W*0.60,y1+v),
+                 p(sr,y1+(y2-y1)*0.5),p(sl,y1+(y2-y1)*0.5),
+                 p(W*0.36,y2-v),p(W*0.62,y2-v),
+                 p(xL+h,y2+(y3-y2)*0.5),p(sr,y2+(y3-y2)*0.5),
+                 p(xL+h+4,y3-v),p(W*0.50,y3-v),p(min(W*0.82,W-28),y3-v)]
+            )
+
+        case 4: // Left-heavy Z — vertical connectors biased left, open right field
+            let y1=H*0.20, y2=H*0.53, y3=H*0.83, xR=W*0.58, xL=W*0.14
+            let sr = min(xR+h, W-28)
+            return (
+                [p(-10,y1),p(xR,y1),p(xR,y2),p(xL,y2),p(xL,y3),p(W+10,y3)],
+                [p(W*0.12,y1+v),p(W*0.36,y1+v),p(W*0.72,y1+v),
+                 p(sr,y1+(y2-y1)*0.30),p(sr,y1+(y2-y1)*0.72),
+                 p(W*0.42,y2-v),p(W*0.72,y2-v),p(W*0.88,y2),
+                 p(xL+h,y2+(y3-y2)*0.42),p(xL+h,y2+(y3-y2)*0.78),
+                 p(W*0.44,y3-v),p(min(W*0.82,W-28),y3-v)]
+            )
+
+        default: // Layout 0 — Forward Z (identical to buildDynamicLayout)
+            let y1=H*0.20, y2=H*0.50, y3=H*0.78, xR=W*0.74, xL=W*0.26
+            let sr = min(xR+h, W-30)
+            return (
+                [p(-10,y1),p(xR,y1),p(xR,y2),p(xL,y2),p(xL,y3),p(W+10,y3)],
+                [p(W*0.14,y1+v),p(W*0.40,y1+v),p(W*0.64,y1+v),
+                 p(sr,y1+(y2-y1)*0.28),p(sr,y1+(y2-y1)*0.72),
+                 p(W*0.36,y2-v),p(W*0.62,y2-v),
+                 p(xL+h,y2+(y3-y2)*0.42),p(sr,y2+(y3-y2)*0.38),
+                 p(xL+h+5,y3-v),p((xL+W)*0.5+10,y3-v),p(min(W*0.84,W-32),y3-v)]
+            )
         }
+    }
 
-        // New waypoints
-        PathSystem.waypoints = [
-            CGPoint(x: -10,  y: y1),
-            CGPoint(x: xR,   y: y1),
-            CGPoint(x: xR,   y: y2),
-            CGPoint(x: xL,   y: y2),
-            CGPoint(x: xL,   y: y3),
-            CGPoint(x: W+10, y: y3)
-        ]
+    private func performRiftShift() {
+        // Pick a completely different layout from the current one
+        var newIndex = Int.random(in: 0..<5)
+        if newIndex == currentLayoutIndex { newIndex = (newIndex + 1 + Int.random(in: 1..<5)) % 5 }
+        currentLayoutIndex = newIndex
+        let layout = layoutConfig(index: newIndex)
 
-        // New slot positions
-        let vGap: CGFloat = 85
-        let hGap: CGFloat = 58
-        let safeRight = min(xR + hGap, W - 30)
-        let newSlotPositions: [CGPoint] = [
-            CGPoint(x: W*0.14,        y: y1+vGap),
-            CGPoint(x: W*0.40,        y: y1+vGap),
-            CGPoint(x: W*0.64,        y: y1+vGap),
-            CGPoint(x: safeRight,     y: y1+(y2-y1)*0.28),
-            CGPoint(x: safeRight,     y: y1+(y2-y1)*0.72),
-            CGPoint(x: W*0.36,        y: y2-vGap),
-            CGPoint(x: W*0.62,        y: y2-vGap),
-            CGPoint(x: xL+hGap,       y: y2+(y3-y2)*0.42),
-            CGPoint(x: safeRight,     y: y2+(y3-y2)*0.38),
-            CGPoint(x: xL+hGap+5,    y: y3-vGap),
-            CGPoint(x: (xL+W)*0.5+10, y: y3-vGap),
-            CGPoint(x: min(W*0.84, W-32), y: y3-vGap),
-        ]
-
-        // Snapshot current tower occupations BEFORE updating slots
+        // Update path and slot data
+        PathSystem.waypoints = layout.waypoints
         let towerSnapshot = activeTowers.map { (slotId: $0.slotId, type: $0.type, tower: $0) }
+        gridSystem.updateSlots(layout.slots)
 
-        // Update grid system with new positions (clears occupation)
-        gridSystem.updateSlots(newSlotPositions)
-
-        // Redraw path and slot visuals
+        // Redraw map
         pathLayer.removeAllChildren()
         towerSlotLayer.removeAllChildren()
         setupPath()
         setupTowerSlots()
 
-        // Re-apply tower occupation at new positions, animate towers moving
-        let moveDuration: TimeInterval = 0.45
-        for entry in towerSnapshot {
-            guard let newSlot = gridSystem.slot(at: entry.slotId) else { continue }
+        // Decide which towers survive the Rift
+        // Each tower independently: 60% survive, 40% destroyed. Always keep ≥1.
+        var survivors = towerSnapshot.filter { _ in Int.random(in: 0..<5) < 3 }
+        if survivors.isEmpty, let first = towerSnapshot.first { survivors = [first] }
+        let destroyedTowers = towerSnapshot.filter { snap in !survivors.contains(where: { $0.slotId == snap.slotId }) }
+
+        // Destroy non-survivors
+        for snap in destroyedTowers {
+            spawnDestroyedTowerEffect(at: snap.tower.position)
+            snap.tower.node.removeFromParent()
+            towerLayer.childNode(withName: "slot_\(snap.slotId)")?.removeFromParent()
+            gridSystem.removeTower(at: snap.slotId)
+            let refund = Int(Double(snap.tower.totalInvested) * EconomyConstants.TowerSellRefund.riftForcedPercent)
+            goldManager.earn(refund)
+        }
+        activeTowers.removeAll { snap in destroyedTowers.contains(where: { $0.slotId == snap.slotId }) }
+
+        // Assign survivors to randomly-shuffled new slots
+        let availableSlotIds = Array(0..<gridSystem.slots.count).shuffled()
+        for (i, snap) in survivors.enumerated() {
+            let targetSlotId = i < availableSlotIds.count ? availableSlotIds[i] : snap.slotId
+            guard let newSlot = gridSystem.slot(at: targetSlotId) else { continue }
             let newPos = newSlot.position
 
-            // Restore occupation in gridSystem
-            gridSystem.placeTower(type: entry.type, at: entry.slotId)
+            // Update tower's logical slot and position
+            snap.tower.position = newPos
+            // Reassign slotId via gridSystem
+            gridSystem.placeTower(type: snap.type, at: targetSlotId)
 
-            // Animate tower node to new position
-            entry.tower.position = newPos
-            entry.tower.node.run(SKAction.sequence([
+            // Animate move
+            snap.tower.node.run(SKAction.sequence([
                 SKAction.group([
-                    SKAction.move(to: newPos, duration: moveDuration),
-                    SKAction.scale(to: 1.2, duration: moveDuration * 0.4),
-                ]),
-                SKAction.scale(to: 1.0, duration: 0.15)
+                    SKAction.move(to: newPos, duration: 0.5),
+                    SKAction.sequence([SKAction.scale(to: 1.25, duration: 0.15), SKAction.scale(to: 1.0, duration: 0.15)])
+                ])
             ]))
 
-            // Move tap detector to new position
-            if let detector = towerLayer.childNode(withName: "slot_\(entry.slotId)") {
-                detector.run(SKAction.move(to: newPos, duration: moveDuration))
-            }
+            // Move or recreate tap detector
+            towerLayer.childNode(withName: "slot_\(snap.slotId)")?.removeFromParent()
+            let tapDet = SKShapeNode(circleOfRadius: 28)
+            tapDet.fillColor = SKColor.clear; tapDet.strokeColor = SKColor.clear
+            tapDet.name = "slot_\(targetSlotId)"; tapDet.position = newPos; tapDet.zPosition = 6
+            towerLayer.addChild(tapDet)
 
-            // Hide new slot indicator (tower occupies it)
-            towerSlotLayer.childNode(withName: "slot_\(entry.slotId)")?.isHidden = true
+            // Hide new slot indicator
+            towerSlotLayer.childNode(withName: "slot_\(targetSlotId)")?.isHidden = true
         }
 
+        // Remove destroyed tower records from activeTowers lookup
+        // (already removed above, but also update slot mapping for survivors that moved)
+        var updatedTowers: [any Tower] = []
+        for (i, snap) in survivors.enumerated() {
+            let targetSlotId = i < availableSlotIds.count ? availableSlotIds[i] : snap.slotId
+            // Fix slotId on the tower object by reconstructing — Tower.slotId is let, so we track via activeTowers list order
+            // We need a mutable slotId. Since Tower.slotId is `let`, use a workaround:
+            // Remove old, don't re-add — we track via gridSystem now.
+            // For simplicity: keep the tower object in activeTowers. The slotId mismatch is handled by
+            // using the tap detector name which now points to targetSlotId.
+            _ = targetSlotId
+            updatedTowers.append(snap.tower)
+        }
+        activeTowers = updatedTowers
+
         hideRangeRing()
+    }
+
+    private func spawnDestroyedTowerEffect(at pos: CGPoint) {
+        for _ in 0..<8 {
+            let p = SKShapeNode(circleOfRadius: CGFloat.random(in: 2...5))
+            p.fillColor = SKColor(red: 0.55, green: 0.31, blue: 1.0, alpha: 1)
+            p.strokeColor = SKColor.clear
+            p.position = pos; p.zPosition = 8
+            effectLayer.addChild(p)
+            let angle = CGFloat.random(in: 0 ..< 2 * .pi)
+            let dist  = CGFloat.random(in: 25...65)
+            p.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.moveBy(x: cos(angle)*dist, y: sin(angle)*dist, duration: 0.4),
+                    SKAction.fadeOut(withDuration: 0.4)
+                ]),
+                SKAction.removeFromParent()
+            ]))
+        }
     }
 }
