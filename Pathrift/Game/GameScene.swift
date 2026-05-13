@@ -46,6 +46,12 @@ final class GameScene: SKScene {
     private(set) var isWaveActive: Bool = false
     private(set) var isGameOver: Bool = false
 
+    var speedMultiplier: Double = 1.0
+    private var hasUsedRevive: Bool = false
+
+    var onReviveAvailable: (() -> Void)?
+    var onSpeedChanged: ((Double) -> Void)?
+
     private var lastUpdateTime: TimeInterval = 0
 
     // MARK: - Range Ring
@@ -111,6 +117,8 @@ final class GameScene: SKScene {
 
     private func buildAndSetupGame() {
         layoutBuilt = true
+        hasUsedRevive = false
+        speedMultiplier = 1.0
         buildDynamicLayout()
         groundLayer.removeAllChildren()
         pathLayer.removeAllChildren()
@@ -501,17 +509,24 @@ final class GameScene: SKScene {
 
         guard !isGameOver else { return }
 
+        let adjustedDelta = deltaTime * speedMultiplier
+
         if isWaveActive {
-            timeSinceLastSpawn += deltaTime
+            timeSinceLastSpawn += adjustedDelta
             if timeSinceLastSpawn >= spawnInterval {
                 timeSinceLastSpawn = 0
                 spawnNextEnemy()
             }
         }
 
-        updateEnemies(deltaTime: deltaTime, currentTime: currentTime)
+        updateEnemies(deltaTime: adjustedDelta, currentTime: currentTime)
         updateTowers(currentTime: currentTime)
         checkWaveCompletion()
+    }
+
+    func setSpeedMultiplier(_ mult: Double) {
+        speedMultiplier = mult
+        onSpeedChanged?(mult)
     }
 
     private func updateEnemies(deltaTime: TimeInterval, currentTime: TimeInterval) {
@@ -608,8 +623,24 @@ final class GameScene: SKScene {
         run(shake)
 
         if lives <= 0 {
-            triggerGameOver()
+            if PremiumStore.shared.isPremium && !hasUsedRevive {
+                isPaused = true
+                onReviveAvailable?()
+            } else {
+                triggerGameOver()
+            }
         }
+    }
+
+    func acceptRevive() {
+        hasUsedRevive = true
+        lives = 1
+        onLivesChanged?(lives)
+        isPaused = false
+    }
+
+    func declineRevive() {
+        triggerGameOver()
     }
 
     private func triggerGameOver() {

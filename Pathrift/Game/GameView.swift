@@ -79,6 +79,45 @@ struct GameView: View {
                     }
                 )
             }
+
+            // Revive overlay
+            if viewModel.showRevivePrompt {
+                ZStack {
+                    Color.black.opacity(0.75).ignoresSafeArea()
+                    VStack(spacing: 20) {
+                        Text("💀 GAME OVER")
+                            .font(.system(size: 24, weight: .black))
+                            .foregroundColor(.pathriftDanger)
+                        Text("REVIVE? (\(viewModel.reviveCountdown)s)")
+                            .font(.system(size: 18, weight: .bold, design: .monospaced))
+                            .foregroundColor(.white)
+                        Text("You have 1 revive available (Premium)")
+                            .font(.system(size: 12))
+                            .foregroundColor(.pathriftTextSecondary)
+                        HStack(spacing: 16) {
+                            Button("REVIVE") { viewModel.acceptRevive() }
+                                .font(.system(size: 16, weight: .black))
+                                .frame(maxWidth: .infinity, minHeight: 52)
+                                .background(Color.green)
+                                .foregroundColor(.white)
+                                .cornerRadius(12)
+                            Button("Give Up") { viewModel.declineRevive() }
+                                .font(.system(size: 14))
+                                .frame(width: 100, height: 52)
+                                .background(Color.pathriftSurface)
+                                .foregroundColor(.pathriftDanger)
+                                .cornerRadius(12)
+                                .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.pathriftDanger.opacity(0.4), lineWidth: 1))
+                        }
+                    }
+                    .padding(28)
+                    .background(Color.pathriftSurface)
+                    .cornerRadius(24)
+                    .padding(24)
+                }
+                .transition(.opacity)
+                .zIndex(50)
+            }
         }
         // NO .ignoresSafeArea() on ZStack
         .onAppear {
@@ -99,6 +138,35 @@ struct GameView: View {
                     appState.endRun(result: result)
                 }
             }
+        }
+        .sheet(isPresented: $viewModel.showPremiumPrompt) {
+            VStack(spacing: 16) {
+                Text("⚡ PREMIUM FEATURE")
+                    .font(.system(size: 18, weight: .black))
+                    .foregroundColor(.pathriftNeonBlue)
+                Text("×2 Speed requires Premium membership.")
+                    .font(.system(size: 13))
+                    .foregroundColor(.pathriftTextSecondary)
+                    .multilineTextAlignment(.center)
+                Button("Get Premium") {
+                    viewModel.showPremiumPrompt = false
+                    appState.showStore()
+                }
+                .font(.system(size: 14, weight: .bold))
+                .frame(maxWidth: .infinity, minHeight: 44)
+                .background(Color.pathriftNeonBlue)
+                .foregroundColor(.pathriftBackground)
+                .cornerRadius(10)
+                Button("Not Now") { viewModel.showPremiumPrompt = false }
+                    .font(.system(size: 12))
+                    .foregroundColor(.pathriftTextSecondary)
+            }
+            .padding(24)
+            .background(Color.pathriftSurface)
+            .cornerRadius(20)
+            .padding(32)
+            .presentationDetents([.height(280)])
+            .presentationBackground(Color.pathriftBackground)
         }
     }
 }

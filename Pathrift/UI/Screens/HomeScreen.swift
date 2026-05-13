@@ -153,14 +153,14 @@ struct HomeScreen: View {
             }
             .buttonStyle(ScaleButtonStyle())
 
-            // Settings and Store row
+            // Settings, Store, and Arsenal row
             HStack(spacing: 12) {
                 Button(action: { appState.showSettings() }) {
                     HStack(spacing: 6) {
                         Image(systemName: "gearshape.fill")
-                            .font(.system(size: 14))
+                            .font(.system(size: 13))
                         Text(lang.s(L.settings))
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
                     }
                     .foregroundColor(.pathriftTextSecondary)
                     .frame(maxWidth: .infinity)
@@ -173,9 +173,9 @@ struct HomeScreen: View {
                 Button(action: { appState.showStore() }) {
                     HStack(spacing: 6) {
                         Image(systemName: "diamond.fill")
-                            .font(.system(size: 14))
+                            .font(.system(size: 13))
                         Text(lang.s(L.store))
-                            .font(.system(size: 13, weight: .semibold, design: .rounded))
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
                     }
                     .foregroundColor(.pathriftNeonBlue)
                     .frame(maxWidth: .infinity)
@@ -185,6 +185,25 @@ struct HomeScreen: View {
                     .overlay(
                         RoundedRectangle(cornerRadius: 12)
                             .strokeBorder(Color.pathriftNeonBlue.opacity(0.3), lineWidth: 1)
+                    )
+                }
+                .buttonStyle(ScaleButtonStyle())
+
+                Button(action: { appState.showArsenal() }) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "shield.fill")
+                            .font(.system(size: 13))
+                        Text("ARSENAL")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundColor(.pathriftOrange)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(Color.pathriftOrange.opacity(0.12))
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(Color.pathriftOrange.opacity(0.3), lineWidth: 1)
                     )
                 }
                 .buttonStyle(ScaleButtonStyle())

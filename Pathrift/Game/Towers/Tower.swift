@@ -132,14 +132,26 @@ enum TowerType: String, CaseIterable, Identifiable {
 
     var diamondCost: Int {
         switch self {
-        case .inferno: return 50
+        case .bolt:    return 0
+        case .blast:   return 10
+        case .frost:   return 15
+        case .pierce:  return 30
+        case .core:    return 50
+        case .inferno: return 80
         case .tesla:   return 150
         case .nova:    return 300
-        default:       return 0
         }
     }
 
     var isPremium: Bool { diamondCost > 0 }
+
+    var tier: Int {
+        switch self {
+        case .bolt, .blast, .frost:     return 1
+        case .pierce, .core:            return 2
+        case .inferno, .tesla, .nova:   return 3
+        }
+    }
 
     var typeAdvantageHint: String? {
         switch self {
@@ -183,12 +195,22 @@ protocol Tower: AnyObject {
 }
 
 extension Tower {
+    func permDamageBonus() -> CGFloat {
+        ArsenalStore.shared.permDamageBonus(for: type)
+    }
+
+    func permSpeedBonus() -> CGFloat {
+        ArsenalStore.shared.permSpeedBonus(for: type)
+    }
+
     func scaledDamage() -> CGFloat {
-        return type.damage * (1.0 + 0.25 * CGFloat(level - 1))
+        return type.damage * (1.0 + 0.25 * CGFloat(level - 1)) * (1.0 + permDamageBonus())
     }
 
     func effectiveAttackInterval() -> TimeInterval {
-        return type.attackSpeed / (1.0 + 0.08 * Double(level - 1))
+        let inRunSpeedMult = 1.0 + 0.08 * Double(level - 1)
+        let permSpeedMult  = 1.0 + Double(permSpeedBonus())
+        return type.attackSpeed / (inRunSpeedMult * permSpeedMult)
     }
 
     func canFire(at currentTime: TimeInterval) -> Bool {

@@ -31,6 +31,8 @@ struct ContentRootView: View {
                 SettingsScreen()
             case .store:
                 StoreScreen()
+            case .arsenal:
+                ArsenalScreen()
             }
         }
         .animation(.easeInOut(duration: 0.3), value: appState.currentScreen)

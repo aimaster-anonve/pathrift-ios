@@ -5,6 +5,8 @@ struct StoreScreen: View {
     @ObservedObject private var lang = LanguageManager.shared
     @State private var diamonds: Int = 0
     @State private var dailyClaimed: Bool = false
+    @State private var isPremium: Bool = false
+    @State private var selectedTower: TowerType? = nil
 
     var body: some View {
         ZStack {
@@ -13,10 +15,10 @@ struct StoreScreen: View {
                 navBar
                 ScrollView {
                     VStack(spacing: 24) {
-                        diamondBalanceCard
+                        premiumSection
+                        towersSection
+                        diamondsSection
                         dailyBonusCard
-                        towerSkinsSection
-                        comingSoonSection
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, 24)
@@ -25,10 +27,16 @@ struct StoreScreen: View {
             }
         }
         .onAppear {
-            diamonds = UserDefaults.standard.integer(forKey: "diamond_balance")
+            diamonds = DiamondStore.shared.balance
             dailyClaimed = UserDefaults.standard.bool(forKey: "daily_claimed_\(todayKey())")
+            isPremium = PremiumStore.shared.isPremium
+        }
+        .sheet(item: $selectedTower) { type in
+            TowerDetailSheet(type: type, diamonds: $diamonds)
         }
     }
+
+    // MARK: - Nav Bar
 
     private var navBar: some View {
         HStack {
@@ -47,7 +55,6 @@ struct StoreScreen: View {
                 .foregroundColor(.pathriftTextPrimary)
                 .kerning(2)
             Spacer()
-            // Diamond counter in nav
             HStack(spacing: 4) {
                 Image(systemName: "diamond.fill")
                     .font(.system(size: 12))
@@ -62,49 +69,208 @@ struct StoreScreen: View {
         .background(Color.pathriftSurface.opacity(0.9))
     }
 
-    private var diamondBalanceCard: some View {
-        VStack(spacing: 12) {
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(lang.s(L.diamonds))
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
-                        .foregroundColor(.pathriftTextSecondary)
-                        .kerning(2)
-                    HStack(spacing: 8) {
-                        Image(systemName: "diamond.fill")
-                            .font(.system(size: 28))
+    // MARK: - Section 1: Premium
+
+    private var premiumSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("PREMIUM", icon: "bolt.fill")
+
+            if isPremium {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.pathriftNeonBlue.opacity(0.15))
+                            .frame(width: 52, height: 52)
+                        Image(systemName: "checkmark.seal.fill")
+                            .font(.system(size: 26))
                             .foregroundColor(.pathriftNeonBlue)
-                            .shadow(color: .pathriftNeonBlue.opacity(0.6), radius: 8)
-                        Text("\(diamonds)")
-                            .font(.system(size: 36, weight: .black, design: .rounded))
-                            .foregroundColor(.pathriftTextPrimary)
-                            .monospacedDigit()
                     }
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("PREMIUM ACTIVE ✓")
+                            .font(.system(size: 15, weight: .black, design: .rounded))
+                            .foregroundColor(.pathriftNeonBlue)
+                        Text("All premium features unlocked")
+                            .font(.system(size: 12, design: .monospaced))
+                            .foregroundColor(.pathriftTextSecondary)
+                    }
+                    Spacer()
                 }
-                Spacer()
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 32))
-                    .foregroundColor(.pathriftTextSecondary.opacity(0.3))
+                .padding(16)
+                .background(
+                    LinearGradient(
+                        colors: [Color.pathriftSurface, Color.pathriftNeonBlue.opacity(0.08)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .cornerRadius(14)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .strokeBorder(Color.pathriftNeonBlue.opacity(0.3), lineWidth: 1)
+                )
+            } else {
+                VStack(spacing: 14) {
+                    VStack(alignment: .leading, spacing: 8) {
+                        premiumBenefitRow(icon: "forward.fill", text: "×2 Speed in-game")
+                        premiumBenefitRow(icon: "heart.fill", text: "1 Revive per run")
+                        premiumBenefitRow(icon: "sparkles", text: "More coming soon")
+                    }
+                    .padding(16)
+                    .background(Color.pathriftSurface)
+                    .cornerRadius(14)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(Color.pathriftNeonBlue.opacity(0.2), lineWidth: 1)
+                    )
+
+                    Button(action: {
+                        PremiumStore.shared.activate()
+                        isPremium = true
+                    }) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "bolt.fill")
+                                .font(.system(size: 14))
+                            Text("GET PREMIUM (FREE – Test Mode)")
+                                .font(.system(size: 14, weight: .bold, design: .rounded))
+                        }
+                        .foregroundColor(.pathriftBackground)
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .background(
+                            LinearGradient(
+                                colors: [Color.pathriftNeonBlue, Color.pathriftPurple],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                        )
+                        .cornerRadius(14)
+                        .shadow(color: .pathriftNeonBlue.opacity(0.35), radius: 10, y: 4)
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+                }
             }
-            Text("💎 IAP purchases coming in v1.1 — earn diamonds by playing!")
-                .font(.system(size: 11, design: .monospaced))
-                .foregroundColor(.pathriftTextSecondary.opacity(0.6))
-                .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(20)
-        .background(
-            LinearGradient(
-                colors: [Color.pathriftSurface, Color.pathriftNeonBlue.opacity(0.08)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-        )
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(Color.pathriftNeonBlue.opacity(0.2), lineWidth: 1)
-        )
     }
+
+    private func premiumBenefitRow(icon: String, text: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: icon)
+                .font(.system(size: 12))
+                .foregroundColor(.pathriftNeonBlue)
+                .frame(width: 20)
+            Text(text)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundColor(.pathriftTextPrimary)
+        }
+    }
+
+    // MARK: - Section 2: Towers
+
+    private var towersSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("TOWERS", icon: "shield.fill")
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                ForEach(TowerType.allCases) { type in
+                    storeTowerCard(for: type)
+                }
+            }
+        }
+    }
+
+    private func storeTowerCard(for type: TowerType) -> some View {
+        let unlocked = DiamondStore.shared.isUnlocked(type)
+        return Button(action: { selectedTower = type }) {
+            VStack(spacing: 8) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(type.swiftUIColor.opacity(0.1))
+                        .frame(height: 68)
+                    Circle()
+                        .fill(type.swiftUIColor)
+                        .frame(width: 34, height: 34)
+                        .shadow(color: type.swiftUIColor.opacity(0.5), radius: 6)
+                }
+                Text(type.displayName.uppercased())
+                    .font(.system(size: 11, weight: .bold, design: .rounded))
+                    .foregroundColor(.pathriftTextPrimary)
+                if unlocked {
+                    Text("OWNED")
+                        .font(.system(size: 9, weight: .bold, design: .monospaced))
+                        .foregroundColor(.pathriftSuccess)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Color.pathriftSuccess.opacity(0.15))
+                        .cornerRadius(6)
+                } else {
+                    HStack(spacing: 3) {
+                        Text("♦")
+                        Text("\(type.diamondCost)")
+                    }
+                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                    .foregroundColor(Color(red: 0, green: 0.8, blue: 1))
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(Color.pathriftNeonBlue.opacity(0.12))
+                    .cornerRadius(6)
+                }
+            }
+            .padding(12)
+            .background(Color.pathriftSurface)
+            .cornerRadius(12)
+            .overlay(
+                RoundedRectangle(cornerRadius: 12)
+                    .strokeBorder(unlocked ? type.swiftUIColor.opacity(0.25) : Color.pathriftTextSecondary.opacity(0.15), lineWidth: 1)
+            )
+        }
+        .buttonStyle(ScaleButtonStyle())
+    }
+
+    // MARK: - Section 3: Diamonds
+
+    private var diamondsSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("DIAMONDS", icon: "diamond.fill")
+            VStack(spacing: 12) {
+                HStack {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("DIAMONDS")
+                            .font(.system(size: 11, weight: .bold, design: .monospaced))
+                            .foregroundColor(.pathriftTextSecondary)
+                            .kerning(2)
+                        HStack(spacing: 8) {
+                            Image(systemName: "diamond.fill")
+                                .font(.system(size: 26))
+                                .foregroundColor(.pathriftNeonBlue)
+                                .shadow(color: .pathriftNeonBlue.opacity(0.6), radius: 8)
+                            Text("\(diamonds)")
+                                .font(.system(size: 34, weight: .black, design: .rounded))
+                                .foregroundColor(.pathriftTextPrimary)
+                                .monospacedDigit()
+                        }
+                    }
+                    Spacer()
+                    Image(systemName: "lock.fill")
+                        .font(.system(size: 30))
+                        .foregroundColor(.pathriftTextSecondary.opacity(0.3))
+                }
+                Text("Buy Diamonds – Coming Soon (Phase 7)")
+                    .font(.system(size: 11, design: .monospaced))
+                    .foregroundColor(.pathriftTextSecondary.opacity(0.6))
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            .padding(20)
+            .background(
+                LinearGradient(
+                    colors: [Color.pathriftSurface, Color.pathriftNeonBlue.opacity(0.08)],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .strokeBorder(Color.pathriftNeonBlue.opacity(0.2), lineWidth: 1)
+            )
+        }
+    }
+
+    // MARK: - Daily Bonus
 
     private var dailyBonusCard: some View {
         Button(action: claimDailyBonus) {
@@ -153,104 +319,7 @@ struct StoreScreen: View {
         .disabled(dailyClaimed)
     }
 
-    private var towerSkinsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            sectionHeader(lang.s(L.towerSkins).uppercased(), icon: "paintbrush.fill")
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                ForEach(TowerType.allCases) { type in
-                    skinCard(for: type)
-                }
-                // Locked extra skins
-                ForEach(["Cyber", "Void"], id: \.self) { skinName in
-                    lockedSkinCard(name: skinName)
-                }
-            }
-        }
-    }
-
-    private func skinCard(for type: TowerType) -> some View {
-        VStack(spacing: 8) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(type.swiftUIColor.opacity(0.15))
-                    .frame(height: 70)
-                Circle()
-                    .fill(type.swiftUIColor)
-                    .frame(width: 32, height: 32)
-                    .shadow(color: type.swiftUIColor.opacity(0.6), radius: 6)
-            }
-            Text(type.displayName)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .foregroundColor(.pathriftTextPrimary)
-            Text(lang.s(L.free))
-                .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .foregroundColor(.pathriftSuccess)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color.pathriftSuccess.opacity(0.15))
-                .cornerRadius(6)
-        }
-        .padding(12)
-        .background(Color.pathriftSurface)
-        .cornerRadius(12)
-    }
-
-    private func lockedSkinCard(name: String) -> some View {
-        VStack(spacing: 8) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 10)
-                    .fill(Color.pathriftSurface)
-                    .frame(height: 70)
-                Image(systemName: "lock.fill")
-                    .font(.system(size: 24))
-                    .foregroundColor(.pathriftTextSecondary.opacity(0.3))
-            }
-            Text(name)
-                .font(.system(size: 11, weight: .bold, design: .rounded))
-                .foregroundColor(.pathriftTextSecondary)
-            Text(lang.s(L.comingSoon))
-                .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .foregroundColor(.pathriftTextSecondary.opacity(0.5))
-                .padding(.horizontal, 8)
-                .padding(.vertical, 3)
-                .background(Color.pathriftSurface)
-                .cornerRadius(6)
-        }
-        .padding(12)
-        .background(Color.pathriftSurface.opacity(0.5))
-        .cornerRadius(12)
-        .overlay(
-            RoundedRectangle(cornerRadius: 12)
-                .strokeBorder(Color.pathriftTextSecondary.opacity(0.15), lineWidth: 1)
-        )
-    }
-
-    private var comingSoonSection: some View {
-        VStack(spacing: 12) {
-            sectionHeader("COMING SOON", icon: "sparkles")
-            HStack(spacing: 12) {
-                comingSoonPill(icon: "map.fill", label: "Map Themes")
-                comingSoonPill(icon: "star.fill", label: "Rift Pass")
-                comingSoonPill(icon: "trophy.fill", label: "Leaderboard")
-            }
-        }
-    }
-
-    private func comingSoonPill(icon: String, label: String) -> some View {
-        VStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 20))
-                .foregroundColor(.pathriftTextSecondary.opacity(0.4))
-            Text(label)
-                .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                .foregroundColor(.pathriftTextSecondary.opacity(0.5))
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 16)
-        .background(Color.pathriftSurface.opacity(0.5))
-        .cornerRadius(12)
-    }
+    // MARK: - Helpers
 
     private func sectionHeader(_ title: String, icon: String) -> some View {
         HStack(spacing: 6) {
@@ -266,8 +335,8 @@ struct StoreScreen: View {
 
     private func claimDailyBonus() {
         guard !dailyClaimed else { return }
-        diamonds += 10
-        UserDefaults.standard.set(diamonds, forKey: "diamond_balance")
+        DiamondStore.shared.earn(10)
+        diamonds = DiamondStore.shared.balance
         UserDefaults.standard.set(true, forKey: "daily_claimed_\(todayKey())")
         dailyClaimed = true
     }
@@ -278,3 +347,132 @@ struct StoreScreen: View {
         return fmt.string(from: Date())
     }
 }
+
+// MARK: - Tower Detail Sheet
+
+struct TowerDetailSheet: View {
+    let type: TowerType
+    @Binding var diamonds: Int
+    @Environment(\.dismiss) private var dismiss
+
+    var isUnlocked: Bool { DiamondStore.shared.isUnlocked(type) }
+    var canAfford: Bool { diamonds >= type.diamondCost }
+
+    var body: some View {
+        ZStack {
+            Color.pathriftBackground.ignoresSafeArea()
+            VStack(spacing: 20) {
+                // Tower visual
+                Circle()
+                    .fill(type.swiftUIColor)
+                    .frame(width: 64, height: 64)
+                    .shadow(color: type.swiftUIColor.opacity(0.6), radius: 12)
+                    .padding(.top, 24)
+
+                Text(type.displayName.uppercased())
+                    .font(.system(size: 22, weight: .black, design: .rounded))
+                    .foregroundColor(.pathriftTextPrimary)
+
+                HStack(spacing: 8) {
+                    Text("TIER \(type.tier)")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(type.swiftUIColor)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(type.swiftUIColor.opacity(0.15))
+                        .cornerRadius(6)
+                    if let hint = type.typeAdvantageHint {
+                        Text(hint)
+                            .font(.system(size: 10, weight: .medium))
+                            .foregroundColor(.pathriftTextSecondary)
+                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .background(Color.pathriftSurface)
+                            .cornerRadius(6)
+                    }
+                }
+
+                // Stats grid
+                HStack(spacing: 16) {
+                    statPill(label: "DMG", value: "\(Int(type.damage))", color: .pathriftOrange)
+                    statPill(label: "RNG", value: "\(Int(type.range))", color: .pathriftNeonBlue)
+                    statPill(label: "SPD", value: String(format: "%.1f/s", 1.0 / type.attackSpeed), color: .pathriftPurple)
+                }
+
+                Text(type.description)
+                    .font(.system(size: 12))
+                    .foregroundColor(.pathriftTextSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, 24)
+
+                Spacer()
+
+                // Unlock / Owned button
+                if isUnlocked {
+                    HStack(spacing: 6) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .foregroundColor(.pathriftSuccess)
+                        Text("OWNED")
+                            .font(.system(size: 15, weight: .bold))
+                            .foregroundColor(.pathriftSuccess)
+                    }
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .background(Color.pathriftSuccess.opacity(0.12))
+                    .cornerRadius(14)
+                    .padding(.horizontal, 24)
+                } else {
+                    Button(action: {
+                        if DiamondStore.shared.unlock(type) {
+                            diamonds = DiamondStore.shared.balance
+                            dismiss()
+                        }
+                    }) {
+                        HStack(spacing: 6) {
+                            Text("♦")
+                            Text("UNLOCK FOR \(type.diamondCost) DIAMONDS")
+                                .font(.system(size: 14, weight: .bold))
+                        }
+                        .foregroundColor(canAfford ? .pathriftBackground : .pathriftTextSecondary)
+                        .frame(maxWidth: .infinity, minHeight: 50)
+                        .background(canAfford ? Color.pathriftNeonBlue : Color.pathriftSurface)
+                        .cornerRadius(14)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14)
+                                .strokeBorder(canAfford ? Color.clear : Color.pathriftTextSecondary.opacity(0.3), lineWidth: 1)
+                        )
+                    }
+                    .disabled(!canAfford)
+                    .padding(.horizontal, 24)
+                    if !canAfford {
+                        Text("Not enough diamonds (need \(type.diamondCost - diamonds) more)")
+                            .font(.system(size: 11))
+                            .foregroundColor(.pathriftDanger)
+                    }
+                }
+
+                Button("Close") { dismiss() }
+                    .font(.system(size: 13))
+                    .foregroundColor(.pathriftTextSecondary)
+                    .padding(.bottom, 24)
+            }
+        }
+        .presentationDetents([.medium])
+        .presentationBackground(Color.pathriftBackground)
+    }
+
+    private func statPill(label: String, value: String, color: Color) -> some View {
+        VStack(spacing: 2) {
+            Text(label)
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundColor(.pathriftTextSecondary)
+                .kerning(1)
+            Text(value)
+                .font(.system(size: 15, weight: .black, design: .monospaced))
+                .foregroundColor(color)
+        }
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .background(color.opacity(0.1))
+        .cornerRadius(8)
+    }
+}
+
+// Make TowerType conform to Identifiable for .sheet(item:)
+// (Already conforms via id: String { rawValue })

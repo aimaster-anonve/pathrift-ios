@@ -17,6 +17,12 @@ final class GameViewModel: ObservableObject {
     @Published var waveEnemyTotal: Int = 1
     @Published var waveEnemiesCleared: Int = 0
     @Published var diamonds: Int = DiamondStore.shared.balance
+    @Published var speedMultiplier: Double = 1.0
+    @Published var showPremiumPrompt: Bool = false
+    @Published var showRevivePrompt: Bool = false
+    @Published var reviveCountdown: Int = 5
+
+    private var reviveTimer: Timer?
 
     var waveProgress: Double {
         guard waveEnemyTotal > 0 else { return 0 }
@@ -116,6 +122,47 @@ final class GameViewModel: ObservableObject {
         scene.onDiamondsChanged = { [weak self] balance in
             DispatchQueue.main.async { self?.diamonds = balance }
         }
+        scene.onReviveAvailable = { [weak self] in
+            DispatchQueue.main.async {
+                self?.showRevivePrompt = true
+                self?.startReviveCountdown()
+            }
+        }
+    }
+
+    private func startReviveCountdown() {
+        reviveCountdown = 5
+        reviveTimer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { [weak self] timer in
+            guard let self else { timer.invalidate(); return }
+            self.reviveCountdown -= 1
+            if self.reviveCountdown <= 0 {
+                timer.invalidate()
+                self.showRevivePrompt = false
+                self.scene.declineRevive()
+            }
+        }
+    }
+
+    func acceptRevive() {
+        reviveTimer?.invalidate()
+        showRevivePrompt = false
+        scene.acceptRevive()
+    }
+
+    func declineRevive() {
+        reviveTimer?.invalidate()
+        showRevivePrompt = false
+        scene.declineRevive()
+    }
+
+    func toggleSpeed() {
+        guard PremiumStore.shared.isPremium else {
+            showPremiumPrompt = true
+            return
+        }
+        let newSpeed = speedMultiplier == 1.0 ? 2.0 : 1.0
+        speedMultiplier = newSpeed
+        scene.setSpeedMultiplier(newSpeed)
     }
 
     func configure(appState: AppState) {

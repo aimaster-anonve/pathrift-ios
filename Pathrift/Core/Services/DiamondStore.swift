@@ -5,7 +5,14 @@ final class DiamondStore {
     private let balanceKey = "pathrift_diamonds"
     private let unlockedKey = "pathrift_unlocked_towers"
 
-    private init() {}
+    private init() {
+        // Always ensure bolt is unlocked
+        if !unlockedTowers.contains(TowerType.bolt.rawValue) {
+            var set = unlockedTowers
+            set.insert(TowerType.bolt.rawValue)
+            unlockedTowers = set
+        }
+    }
 
     var balance: Int {
         get { UserDefaults.standard.integer(forKey: balanceKey) }

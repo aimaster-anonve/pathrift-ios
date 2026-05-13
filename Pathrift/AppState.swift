@@ -8,6 +8,7 @@ enum Screen: Equatable {
     case howToPlay
     case settings
     case store
+    case arsenal
 }
 
 final class AppState: ObservableObject {
@@ -42,5 +43,9 @@ final class AppState: ObservableObject {
 
     func showStore() {
         currentScreen = .store
+    }
+
+    func showArsenal() {
+        currentScreen = .arsenal
     }
 }

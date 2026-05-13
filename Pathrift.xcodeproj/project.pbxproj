@@ -17,8 +17,10 @@
 		25204E202FDEE848CA66D42A /* GhostEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D0ABBBA7F42F1D945C72C6 /* GhostEnemy.swift */; };
 		2A438639282B960837248356 /* LocalRunStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32FF60CD7966D4225C7AC0F5 /* LocalRunStorage.swift */; };
 		2D899661AA87B13F24FB2161 /* InfernoTower.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181E90A5FE6891995B85710 /* InfernoTower.swift */; };
+		303EDB2035E47DCBD0E3F9D7 /* PremiumStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD414EB7D6622CE9A95BDE0D /* PremiumStore.swift */; };
 		30F843ABAC527DB9A36F7663 /* Enemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A906724EBB50552DAD7738 /* Enemy.swift */; };
 		40B7C8B48528DA6C5450BEF1 /* GameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F0830F4E75B28F25C53130 /* GameViewModel.swift */; };
+		5203BD0915DF1AF901015FA4 /* ArsenalStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77E94B40320C1F0732DF963C /* ArsenalStore.swift */; };
 		5245237069878ED3F0A2BC18 /* RunResult.swift in Sources */ = {isa = PBXBuildFile; fileRef = E775B8E86B1B90DA57039E61 /* RunResult.swift */; };
 		54176E9ABC8701358400B90C /* HowToPlayScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2FF8E3ACD8A5D9D4B665D20 /* HowToPlayScreen.swift */; };
 		54EFF30E359E2D7A2B3C8863 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02FF28657F3A49119BD4905B /* AppState.swift */; };
@@ -44,6 +46,7 @@
 		A4B75A2203FE418D18002D4A /* Tower.swift in Sources */ = {isa = PBXBuildFile; fileRef = B83A22CB3EBD2471C389E9B3 /* Tower.swift */; };
 		A583823FDBDCD824F12B870C /* PathriftApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6896DA7A0C6F736579373A6B /* PathriftApp.swift */; };
 		A7159071F3F8089A72FEAA34 /* WaveSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1AA98E792F35CB28E593BA4 /* WaveSystem.swift */; };
+		B70E635AD950DA3265149040 /* ArsenalScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13F4B9FD1B884FA18DC01A4B /* ArsenalScreen.swift */; };
 		BAB6676D83CFF4275232A5CA /* SettingsScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D0BE562F8DF38CEB7708B7E /* SettingsScreen.swift */; };
 		BD57727477650C35AC447C77 /* GridSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = 31BC5D731D26BA576209F1BB /* GridSystem.swift */; };
 		C83920CA33F996D294BB49D7 /* CoreTower.swift in Sources */ = {isa = PBXBuildFile; fileRef = DCC7378CF359B1F945AF5B0E /* CoreTower.swift */; };
@@ -63,6 +66,7 @@
 		096D4700A95CFDB5CEC19D67 /* StoreScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreScreen.swift; sourceTree = "<group>"; };
 		0E9AEE3B9A5BB8895BF0DF3F /* PierceTower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PierceTower.swift; sourceTree = "<group>"; };
 		12204FCA50953C50CF44C3C9 /* BossEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BossEnemy.swift; sourceTree = "<group>"; };
+		13F4B9FD1B884FA18DC01A4B /* ArsenalScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArsenalScreen.swift; sourceTree = "<group>"; };
 		1402EB4B45C385713EC0CC46 /* GameView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameView.swift; sourceTree = "<group>"; };
 		1703DB5A2CAA277A87B5E630 /* SpriteKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SpriteKit.framework; path = System/Library/Frameworks/SpriteKit.framework; sourceTree = SDKROOT; };
 		2431CC73A3A0C194A4397B59 /* EconomyConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EconomyConstants.swift; sourceTree = "<group>"; };
@@ -83,6 +87,7 @@
 		69EFB333DB3CD21E65FB742F /* NovaTower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NovaTower.swift; sourceTree = "<group>"; };
 		75F0830F4E75B28F25C53130 /* GameViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameViewModel.swift; sourceTree = "<group>"; };
 		77B180B11BA7DE5AD28C33D6 /* EventBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventBannerView.swift; sourceTree = "<group>"; };
+		77E94B40320C1F0732DF963C /* ArsenalStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArsenalStore.swift; sourceTree = "<group>"; };
 		7BECE04EB0C73D20390C1BDA /* FrostTower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FrostTower.swift; sourceTree = "<group>"; };
 		85522E925323C39619BD7467 /* HomeScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeScreen.swift; sourceTree = "<group>"; };
 		88C16993F9DA3A0D9719B5AB /* SplitterEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SplitterEnemy.swift; sourceTree = "<group>"; };
@@ -97,6 +102,7 @@
 		B2FF8E3ACD8A5D9D4B665D20 /* HowToPlayScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToPlayScreen.swift; sourceTree = "<group>"; };
 		B62A9B106E74F43D420A919C /* JumperEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JumperEnemy.swift; sourceTree = "<group>"; };
 		B83A22CB3EBD2471C389E9B3 /* Tower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tower.swift; sourceTree = "<group>"; };
+		BD414EB7D6622CE9A95BDE0D /* PremiumStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumStore.swift; sourceTree = "<group>"; };
 		C9C26431543546D5D15D9CB4 /* LanguageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageManager.swift; sourceTree = "<group>"; };
 		CA6E3FEEA11E5EEB42C07EC3 /* SwarmEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwarmEnemy.swift; sourceTree = "<group>"; };
 		CBD17ECF91AB687E5054B48C /* ShieldEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldEnemy.swift; sourceTree = "<group>"; };
@@ -182,8 +188,10 @@
 		4D7D2D7BC19D03FE7BB730B2 /* Services */ = {
 			isa = PBXGroup;
 			children = (
+				77E94B40320C1F0732DF963C /* ArsenalStore.swift */,
 				5BD1ECA9E5C38AAB65960269 /* DiamondStore.swift */,
 				C9C26431543546D5D15D9CB4 /* LanguageManager.swift */,
+				BD414EB7D6622CE9A95BDE0D /* PremiumStore.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -293,6 +301,7 @@
 		C888B75E057FE089105AED67 /* Screens */ = {
 			isa = PBXGroup;
 			children = (
+				13F4B9FD1B884FA18DC01A4B /* ArsenalScreen.swift */,
 				85522E925323C39619BD7467 /* HomeScreen.swift */,
 				B2FF8E3ACD8A5D9D4B665D20 /* HowToPlayScreen.swift */,
 				684BFDA9A9571B9AD40ECD48 /* RunEndScreen.swift */,
@@ -372,6 +381,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				54EFF30E359E2D7A2B3C8863 /* AppState.swift in Sources */,
+				B70E635AD950DA3265149040 /* ArsenalScreen.swift in Sources */,
+				5203BD0915DF1AF901015FA4 /* ArsenalStore.swift in Sources */,
 				0D9D079497C02A023C11D7BB /* BlastTower.swift in Sources */,
 				96833CE9460D4861CA597F22 /* BoltTower.swift in Sources */,
 				6B0F2B00F5805C953E94E981 /* BossEnemy.swift in Sources */,
@@ -400,6 +411,7 @@
 				6333CB55385FFFE8DE0A1CD6 /* PathSystem.swift in Sources */,
 				A583823FDBDCD824F12B870C /* PathriftApp.swift in Sources */,
 				E4326EAE91C738213D00F277 /* PierceTower.swift in Sources */,
+				303EDB2035E47DCBD0E3F9D7 /* PremiumStore.swift in Sources */,
 				0EE6B5BC977D179C979132D3 /* RunEndScreen.swift in Sources */,
 				5245237069878ED3F0A2BC18 /* RunResult.swift in Sources */,
 				8D3CCA7EBD986B2A35D77274 /* RunnerEnemy.swift in Sources */,

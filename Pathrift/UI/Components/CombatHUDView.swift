@@ -28,6 +28,7 @@ struct CombatHUDView: View {
             HStack(spacing: 10) {
                 diamondStat
                 livesStat
+                speedBtn
                 pauseBtn
             }
         }
@@ -89,6 +90,22 @@ struct CombatHUDView: View {
                     .scaleEffect(idx < viewModel.lives ? 1.0 : 0.8)
             }
         }
+    }
+
+    private var speedBtn: some View {
+        Button(action: { viewModel.toggleSpeed() }) {
+            Text(viewModel.speedMultiplier == 1.0 ? "×1" : "×2")
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .foregroundColor(viewModel.speedMultiplier == 2.0 ? .pathriftNeonBlue : .pathriftTextSecondary)
+                .frame(width: 36, height: 28)
+                .background(Color.black.opacity(0.4))
+                .cornerRadius(6)
+                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(
+                    viewModel.speedMultiplier == 2.0 ? Color.pathriftNeonBlue : Color.pathriftTextSecondary.opacity(0.3),
+                    lineWidth: 1
+                ))
+        }
+        .buttonStyle(ScaleButtonStyle())
     }
 
     private var pauseBtn: some View {
