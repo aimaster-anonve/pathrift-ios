@@ -13,6 +13,7 @@ final class BossEnemy: EnemyNode {
     var pathProgress: CGFloat = 0
     var hasReachedEnd: Bool = false
     var slowTimer: TimeInterval = 0
+    var pathLayer: PathLayer = .ground
     let node: SKNode
     let bossVariant: Int  // 0-4, cycles through 5 distinct bosses
 

@@ -8,21 +8,19 @@ struct StoreScreen: View {
     @State private var isPremium: Bool = false
     @State private var selectedTower: TowerType? = nil
 
+    private var isLandscape: Bool {
+        UIScreen.main.bounds.width > UIScreen.main.bounds.height
+    }
+
     var body: some View {
         ZStack {
             Color.pathriftBackground.ignoresSafeArea()
             VStack(spacing: 0) {
                 navBar
-                ScrollView {
-                    VStack(spacing: 24) {
-                        premiumSection
-                        towersSection
-                        diamondsSection
-                        dailyBonusCard
-                    }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 24)
-                    .padding(.bottom, 40)
+                if isLandscape {
+                    landscapeContent
+                } else {
+                    portraitContent
                 }
             }
         }
@@ -65,8 +63,58 @@ struct StoreScreen: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 14)
+        .padding(.vertical, 10)
         .background(Color.pathriftSurface.opacity(0.9))
+    }
+
+    // MARK: - Portrait Content
+
+    private var portraitContent: some View {
+        ScrollView {
+            VStack(spacing: 24) {
+                premiumSection
+                towersSection
+                diamondsSection
+                dailyBonusCard
+            }
+            .padding(.horizontal, 20)
+            .padding(.top, 24)
+            .padding(.bottom, 40)
+        }
+    }
+
+    // MARK: - Landscape Content (two-column)
+
+    private var landscapeContent: some View {
+        HStack(alignment: .top, spacing: 0) {
+            // LEFT column: premium + diamonds + daily bonus
+            ScrollView {
+                VStack(spacing: 16) {
+                    premiumSection
+                    diamondsSection
+                    dailyBonusCard
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 12)
+                .padding(.bottom, 20)
+            }
+            .frame(maxWidth: .infinity)
+
+            Rectangle()
+                .fill(Color.pathriftSurface)
+                .frame(width: 1)
+
+            // RIGHT column: towers
+            ScrollView {
+                VStack(spacing: 16) {
+                    towersSection
+                }
+                .padding(.horizontal, 12)
+                .padding(.top, 12)
+                .padding(.bottom, 20)
+            }
+            .frame(maxWidth: .infinity)
+        }
     }
 
     // MARK: - Section 1: Premium
@@ -139,8 +187,7 @@ struct StoreScreen: View {
                         isPremium = PremiumStore.shared.isPremium
                     }) {
                         HStack(spacing: 8) {
-                            Image(systemName: "bolt.fill")
-                                .font(.system(size: 14))
+                            Image(systemName: "bolt.fill").font(.system(size: 14))
                             Text("GET PREMIUM (FREE – Test Mode)")
                                 .font(.system(size: 14, weight: .bold, design: .rounded))
                         }
@@ -306,14 +353,11 @@ struct StoreScreen: View {
                 Spacer()
                 if !dailyClaimed {
                     HStack(spacing: 4) {
-                        Image(systemName: "diamond.fill")
-                            .font(.system(size: 11))
-                        Text("+10")
-                            .font(.system(size: 14, weight: .bold, design: .monospaced))
+                        Image(systemName: "diamond.fill").font(.system(size: 11))
+                        Text("+10").font(.system(size: 14, weight: .bold, design: .monospaced))
                     }
                     .foregroundColor(.pathriftGold)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 6)
+                    .padding(.horizontal, 12).padding(.vertical, 6)
                     .background(Color.pathriftGold.opacity(0.15))
                     .cornerRadius(8)
                 }
@@ -334,9 +378,7 @@ struct StoreScreen: View {
 
     private func sectionHeader(_ title: String, icon: String) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 12))
-                .foregroundColor(.pathriftNeonBlue)
+            Image(systemName: icon).font(.system(size: 12)).foregroundColor(.pathriftNeonBlue)
             Text(title)
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .foregroundColor(.pathriftTextSecondary)
@@ -372,101 +414,173 @@ struct TowerDetailSheet: View {
     var body: some View {
         ZStack {
             Color.pathriftBackground.ignoresSafeArea()
-            VStack(spacing: 20) {
-                // Tower visual
+            GeometryReader { geo in
+                let landscape = geo.size.width > geo.size.height
+                if landscape {
+                    landscapeSheetBody
+                } else {
+                    portraitSheetBody
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .presentationBackground(Color.pathriftBackground)
+    }
+
+    private var portraitSheetBody: some View {
+        VStack(spacing: 20) {
+            Circle()
+                .fill(type.swiftUIColor)
+                .frame(width: 64, height: 64)
+                .shadow(color: type.swiftUIColor.opacity(0.6), radius: 12)
+                .padding(.top, 24)
+
+            Text(type.displayName.uppercased())
+                .font(.system(size: 22, weight: .black, design: .rounded))
+                .foregroundColor(.pathriftTextPrimary)
+
+            HStack(spacing: 8) {
+                Text("TIER \(type.tier)")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundColor(type.swiftUIColor)
+                    .padding(.horizontal, 8).padding(.vertical, 3)
+                    .background(type.swiftUIColor.opacity(0.15))
+                    .cornerRadius(6)
+                if let hint = type.typeAdvantageHint {
+                    Text(hint)
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundColor(.pathriftTextSecondary)
+                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .background(Color.pathriftSurface)
+                        .cornerRadius(6)
+                }
+            }
+
+            HStack(spacing: 16) {
+                statPill(label: "DMG", value: "\(Int(type.damage))", color: .pathriftOrange)
+                statPill(label: "RNG", value: "\(Int(type.range))", color: .pathriftNeonBlue)
+                statPill(label: "SPD", value: String(format: "%.1f/s", 1.0 / type.attackSpeed), color: .pathriftPurple)
+            }
+
+            Text(type.description)
+                .font(.system(size: 12))
+                .foregroundColor(.pathriftTextSecondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal, 24)
+
+            Spacer()
+            unlockOrOwnedButton
+            Button("Close") { dismiss() }
+                .font(.system(size: 13))
+                .foregroundColor(.pathriftTextSecondary)
+                .padding(.bottom, 24)
+        }
+    }
+
+    private var landscapeSheetBody: some View {
+        HStack(spacing: 0) {
+            // Left: tower identity
+            VStack(spacing: 12) {
                 Circle()
                     .fill(type.swiftUIColor)
-                    .frame(width: 64, height: 64)
-                    .shadow(color: type.swiftUIColor.opacity(0.6), radius: 12)
-                    .padding(.top, 24)
+                    .frame(width: 56, height: 56)
+                    .shadow(color: type.swiftUIColor.opacity(0.6), radius: 10)
+                    .padding(.top, 20)
 
                 Text(type.displayName.uppercased())
-                    .font(.system(size: 22, weight: .black, design: .rounded))
+                    .font(.system(size: 18, weight: .black, design: .rounded))
                     .foregroundColor(.pathriftTextPrimary)
 
-                HStack(spacing: 8) {
+                HStack(spacing: 6) {
                     Text("TIER \(type.tier)")
-                        .font(.system(size: 10, weight: .bold))
+                        .font(.system(size: 9, weight: .bold))
                         .foregroundColor(type.swiftUIColor)
-                        .padding(.horizontal, 8).padding(.vertical, 3)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
                         .background(type.swiftUIColor.opacity(0.15))
-                        .cornerRadius(6)
+                        .cornerRadius(5)
                     if let hint = type.typeAdvantageHint {
                         Text(hint)
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.system(size: 9, weight: .medium))
                             .foregroundColor(.pathriftTextSecondary)
-                            .padding(.horizontal, 8).padding(.vertical, 3)
+                            .padding(.horizontal, 6).padding(.vertical, 2)
                             .background(Color.pathriftSurface)
-                            .cornerRadius(6)
+                            .cornerRadius(5)
                     }
                 }
 
-                // Stats grid
-                HStack(spacing: 16) {
+                HStack(spacing: 12) {
                     statPill(label: "DMG", value: "\(Int(type.damage))", color: .pathriftOrange)
                     statPill(label: "RNG", value: "\(Int(type.range))", color: .pathriftNeonBlue)
                     statPill(label: "SPD", value: String(format: "%.1f/s", 1.0 / type.attackSpeed), color: .pathriftPurple)
                 }
 
                 Text(type.description)
-                    .font(.system(size: 12))
+                    .font(.system(size: 11))
                     .foregroundColor(.pathriftTextSecondary)
                     .multilineTextAlignment(.center)
-                    .padding(.horizontal, 24)
+                    .padding(.horizontal, 16)
 
                 Spacer()
+            }
+            .frame(maxWidth: .infinity)
 
-                // Unlock / Owned button
-                if isUnlocked {
-                    HStack(spacing: 6) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.pathriftSuccess)
-                        Text("OWNED")
-                            .font(.system(size: 15, weight: .bold))
-                            .foregroundColor(.pathriftSuccess)
-                    }
-                    .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(Color.pathriftSuccess.opacity(0.12))
-                    .cornerRadius(14)
-                    .padding(.horizontal, 24)
-                } else {
-                    Button(action: {
-                        if DiamondStore.shared.unlock(type) {
-                            diamonds = DiamondStore.shared.balance
-                            dismiss()
-                        }
-                    }) {
-                        HStack(spacing: 6) {
-                            Text("♦")
-                            Text("UNLOCK FOR \(type.diamondCost) DIAMONDS")
-                                .font(.system(size: 14, weight: .bold))
-                        }
-                        .foregroundColor(canAfford ? .pathriftBackground : .pathriftTextSecondary)
-                        .frame(maxWidth: .infinity, minHeight: 50)
-                        .background(canAfford ? Color.pathriftNeonBlue : Color.pathriftSurface)
-                        .cornerRadius(14)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .strokeBorder(canAfford ? Color.clear : Color.pathriftTextSecondary.opacity(0.3), lineWidth: 1)
-                        )
-                    }
-                    .disabled(!canAfford)
-                    .padding(.horizontal, 24)
-                    if !canAfford {
-                        Text("Not enough diamonds (need \(type.diamondCost - diamonds) more)")
-                            .font(.system(size: 11))
-                            .foregroundColor(.pathriftDanger)
-                    }
-                }
+            Divider()
 
+            // Right: action button
+            VStack(spacing: 12) {
+                Spacer()
+                unlockOrOwnedButton.padding(.horizontal, 16)
                 Button("Close") { dismiss() }
                     .font(.system(size: 13))
                     .foregroundColor(.pathriftTextSecondary)
-                    .padding(.bottom, 24)
+                Spacer()
+            }
+            .frame(maxWidth: .infinity)
+        }
+    }
+
+    @ViewBuilder
+    private var unlockOrOwnedButton: some View {
+        if isUnlocked {
+            HStack(spacing: 6) {
+                Image(systemName: "checkmark.circle.fill").foregroundColor(.pathriftSuccess)
+                Text("OWNED").font(.system(size: 15, weight: .bold)).foregroundColor(.pathriftSuccess)
+            }
+            .frame(maxWidth: .infinity, minHeight: 50)
+            .background(Color.pathriftSuccess.opacity(0.12))
+            .cornerRadius(14)
+            .padding(.horizontal, 24)
+        } else {
+            VStack(spacing: 4) {
+                Button(action: {
+                    if DiamondStore.shared.unlock(type) {
+                        diamonds = DiamondStore.shared.balance
+                        dismiss()
+                    }
+                }) {
+                    HStack(spacing: 6) {
+                        Text("♦")
+                        Text("UNLOCK FOR \(type.diamondCost) DIAMONDS")
+                            .font(.system(size: 14, weight: .bold))
+                    }
+                    .foregroundColor(canAfford ? .pathriftBackground : .pathriftTextSecondary)
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .background(canAfford ? Color.pathriftNeonBlue : Color.pathriftSurface)
+                    .cornerRadius(14)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14)
+                            .strokeBorder(canAfford ? Color.clear : Color.pathriftTextSecondary.opacity(0.3), lineWidth: 1)
+                    )
+                }
+                .disabled(!canAfford)
+                .padding(.horizontal, 24)
+                if !canAfford {
+                    Text("Not enough diamonds (need \(type.diamondCost - diamonds) more)")
+                        .font(.system(size: 11))
+                        .foregroundColor(.pathriftDanger)
+                }
             }
         }
-        .presentationDetents([.medium])
-        .presentationBackground(Color.pathriftBackground)
     }
 
     private func statPill(label: String, value: String, color: Color) -> some View {

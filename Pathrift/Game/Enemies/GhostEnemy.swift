@@ -13,6 +13,7 @@ final class GhostEnemy: EnemyNode {
     var pathProgress: CGFloat = 0
     var hasReachedEnd: Bool = false
     var slowTimer: TimeInterval = 0
+    var pathLayer: PathLayer = .ground
     let node: SKNode
 
     init(hpMultiplier: CGFloat = 1.0) {

@@ -16,6 +16,8 @@ protocol EnemyNode: AnyObject {
     var hasReachedEnd: Bool { get set }
     var node: SKNode { get }
     var slowTimer: TimeInterval { get set }
+    // Z-layer tracking
+    var pathLayer: PathLayer { get set }
 
     func applyDamage(_ amount: CGFloat)
     func applySlow(factor: CGFloat, duration: TimeInterval)
@@ -96,6 +98,15 @@ extension EnemyNode {
 
         let newPos = PathSystem.position(at: pathProgress)
         node.position = newPos
+
+        // Update path layer based on progress
+        let newLayer = PathSystem.layerAt(progress: pathProgress)
+        if newLayer != pathLayer {
+            pathLayer = newLayer
+            // Scale bridge enemies slightly larger
+            let targetScale: CGFloat = pathLayer == .bridge ? 1.15 : 1.0
+            node.run(SKAction.scale(to: targetScale, duration: 0.1))
+        }
     }
 
     func refreshHealthBar() {

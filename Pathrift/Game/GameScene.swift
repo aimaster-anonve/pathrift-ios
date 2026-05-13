@@ -133,8 +133,13 @@ final class GameScene: SKScene {
     private func buildDynamicLayout() {
         // Pick a random starting layout — every run feels different from the first wave
         currentLayoutIndex = Int.random(in: 0..<totalLayoutCount)
-        let layout = layoutConfig(index: currentLayoutIndex)
+        applyLayout(index: currentLayoutIndex)
+    }
+
+    private func applyLayout(index: Int) {
+        let layout = layoutConfig(index: index)
         PathSystem.waypoints = layout.waypoints
+        PathSystem.waypointLayers = layout.layers
         gridSystem.updateSlots(layout.slots)
     }
 
@@ -176,9 +181,14 @@ final class GameScene: SKScene {
         let waypoints = PathSystem.waypoints
         guard waypoints.count >= 2 else { return }
         let thickness: CGFloat = 24
+
+        // First pass: draw ground segments
         for i in 1..<waypoints.count {
             let from = waypoints[i-1]
             let to = waypoints[i]
+            let isBridge = PathSystem.isBridgeSegment(from: i - 1)
+            guard !isBridge else { continue }
+
             let dx = to.x - from.x
             let dy = to.y - from.y
             let len = sqrt(dx*dx + dy*dy)
@@ -188,15 +198,74 @@ final class GameScene: SKScene {
             seg.lineWidth = 1.5
             seg.position = CGPoint(x: (from.x+to.x)/2, y: (from.y+to.y)/2)
             seg.zRotation = atan2(dy, dx)
+            seg.zPosition = 1.0
             pathLayer.addChild(seg)
         }
-        // Joints at corners
-        for point in waypoints {
+
+        // Joints at corners (ground only)
+        for (i, point) in waypoints.enumerated() {
+            guard PathSystem.layer(at: i) == .ground else { continue }
             let dot = SKShapeNode(circleOfRadius: thickness/2)
             dot.fillColor = SKColor(red: 0.28, green: 0.22, blue: 0.12, alpha: 0.95)
             dot.strokeColor = SKColor.clear
             dot.position = point
+            dot.zPosition = 1.0
             pathLayer.addChild(dot)
+        }
+
+        // Second pass: draw bridge segments ON TOP (higher zPosition)
+        for i in 1..<waypoints.count {
+            let from = waypoints[i-1]
+            let to = waypoints[i]
+            let isBridge = PathSystem.isBridgeSegment(from: i - 1)
+            guard isBridge else { continue }
+
+            let dx = to.x - from.x
+            let dy = to.y - from.y
+            let len = sqrt(dx*dx + dy*dy)
+            let angle = atan2(dy, dx)
+
+            // Shadow under bridge
+            let shadow = SKShapeNode(rectOf: CGSize(width: len, height: thickness + 6), cornerRadius: 5)
+            shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.3)
+            shadow.strokeColor = .clear
+            shadow.position = CGPoint(x: (from.x+to.x)/2, y: (from.y+to.y)/2 - 3)
+            shadow.zRotation = angle
+            shadow.zPosition = 1.2
+            pathLayer.addChild(shadow)
+
+            // Bridge surface
+            let seg = SKShapeNode(rectOf: CGSize(width: len, height: thickness), cornerRadius: 5)
+            seg.fillColor = SKColor(red: 0.35, green: 0.30, blue: 0.20, alpha: 0.98)
+            seg.strokeColor = SKColor.clear
+            seg.position = CGPoint(x: (from.x+to.x)/2, y: (from.y+to.y)/2)
+            seg.zRotation = angle
+            seg.zPosition = 1.5  // ABOVE ground path
+            pathLayer.addChild(seg)
+
+            // Bridge rails (thin lines on each side)
+            for railSide: CGFloat in [-1, 1] {
+                let rail = SKShapeNode(rectOf: CGSize(width: len, height: 2.5), cornerRadius: 1)
+                rail.fillColor = SKColor(red: 0.6, green: 0.5, blue: 0.3, alpha: 0.7)
+                rail.strokeColor = .clear
+                let perpX = -sin(angle) * (thickness/2 - 2) * railSide
+                let perpY = cos(angle) * (thickness/2 - 2) * railSide
+                rail.position = CGPoint(x: (from.x+to.x)/2 + perpX, y: (from.y+to.y)/2 + perpY)
+                rail.zRotation = angle
+                rail.zPosition = 1.6
+                pathLayer.addChild(rail)
+            }
+
+            // Bridge joints
+            for pt in [from, to] {
+                guard PathSystem.layer(at: waypoints.firstIndex(where: { $0 == pt }) ?? -1) == .bridge else { continue }
+                let dot = SKShapeNode(circleOfRadius: thickness/2)
+                dot.fillColor = SKColor(red: 0.35, green: 0.30, blue: 0.20, alpha: 0.98)
+                dot.strokeColor = SKColor.clear
+                dot.position = pt
+                dot.zPosition = 1.5
+                pathLayer.addChild(dot)
+            }
         }
         // Start indicator — animated arrow at entry
         if let first = PathSystem.waypoints.first {
@@ -377,6 +446,22 @@ final class GameScene: SKScene {
                 }
             }
             tower = novaTower
+        case .sniper:
+            tower = SniperTower(position: slot.position, slotId: slotId)
+        case .artillery:
+            let artTower = ArtilleryTower(position: slot.position, slotId: slotId)
+            artTower.artilleryDamageCallback = { [weak self] center, radius, damage in
+                guard let self = self else { return }
+                for enemy in self.activeEnemies {
+                    guard enemy.isAlive else { continue }
+                    let dx = enemy.node.position.x - center.x
+                    let dy = enemy.node.position.y - center.y
+                    if sqrt(dx * dx + dy * dy) <= radius {
+                        enemy.applyDamage(damage)
+                    }
+                }
+            }
+            tower = artTower
         }
 
         activeTowers.append(tower)
@@ -581,7 +666,14 @@ final class GameScene: SKScene {
     private func isEnemy(_ enemy: any EnemyNode, inRangeOf tower: any Tower) -> Bool {
         let dx = enemy.node.position.x - tower.position.x
         let dy = enemy.node.position.y - tower.position.y
-        return sqrt(dx * dx + dy * dy) <= tower.type.range
+        let inRange = sqrt(dx * dx + dy * dy) <= tower.type.range
+        guard inRange else { return false }
+
+        switch tower.type.targetingMode {
+        case .allLayers:  return true
+        case .groundOnly: return enemy.pathLayer == .ground
+        case .bridgeOnly: return enemy.pathLayer == .bridge
+        }
     }
 
     private func checkWaveCompletion() {
@@ -950,10 +1042,10 @@ final class GameScene: SKScene {
     /// Total layout count: 12 Z-layouts + 6 crossing layouts = 18.
     private var totalLayoutCount: Int { layoutParams.count + 6 }
 
-    private func layoutConfig(index: Int) -> (waypoints: [CGPoint], slots: [CGPoint]) {
+    private func layoutConfig(index: Int) -> (waypoints: [CGPoint], layers: [PathLayer], slots: [CGPoint]) {
         let safeIndex = index % totalLayoutCount
         if safeIndex < layoutParams.count {
-            // Z-layout
+            // Z-layout — all ground
             let W = size.width, H = size.height
             let p = layoutParams[safeIndex]
             let y1 = H*p.0, y2 = H*p.1, y3 = H*p.2, xL = W*p.3, xR = W*p.4
@@ -965,9 +1057,10 @@ final class GameScene: SKScene {
                 CGPoint(x: xL,    y: y3),
                 CGPoint(x: W+10,  y: y3),
             ]
+            let layers: [PathLayer] = Array(repeating: .ground, count: waypoints.count)
             let rawSlots = computeSlots(y1: y1, y2: y2, y3: y3, xL: xL, xR: xR)
             let guaranteedSlots = guaranteePathCoverage(slots: rawSlots, waypoints: waypoints)
-            return (waypoints, guaranteedSlots)
+            return (waypoints, layers, guaranteedSlots)
         } else {
             // Crossing layout
             return crossLayoutConfig(index: safeIndex - layoutParams.count)
@@ -1011,7 +1104,23 @@ final class GameScene: SKScene {
         return guaranteePathCoverage(slots: raw, waypoints: waypoints)
     }
 
-    private func crossLayoutConfig(index: Int) -> (waypoints: [CGPoint], slots: [CGPoint]) {
+    // Bridge waypoint layers for each crossing layout (same index as cross-0..5)
+    private let crossLayoutBridgeLayers: [[PathLayer]] = [
+        // cross-0 S-curve: waypoints [2,3] are bridge
+        [.ground, .ground, .bridge, .bridge, .ground, .ground, .ground],
+        // cross-1 X-Cross: waypoints [2,3,4] are bridge
+        [.ground, .ground, .bridge, .bridge, .bridge, .ground, .ground, .ground],
+        // cross-2 Double-Z: waypoints [2,3] elevated
+        [.ground, .ground, .bridge, .bridge, .ground, .ground, .ground, .ground],
+        // cross-3 Spiral: waypoints [2,3] are bridge
+        [.ground, .ground, .bridge, .bridge, .ground, .ground, .ground],
+        // cross-4 W-shape: waypoints [2,4] are bridges (peaks)
+        [.ground, .ground, .bridge, .ground, .bridge, .ground, .ground, .ground],
+        // cross-5 Diagonal: waypoints [2,3] are bridge
+        [.ground, .ground, .bridge, .bridge, .ground, .ground],
+    ]
+
+    private func crossLayoutConfig(index: Int) -> (waypoints: [CGPoint], layers: [PathLayer], slots: [CGPoint]) {
         let W = size.width, H = size.height
 
         let waypoints: [CGPoint]
@@ -1087,7 +1196,18 @@ final class GameScene: SKScene {
         }
 
         let slots = computeSlotsForPath(waypoints: waypoints)
-        return (waypoints, slots)
+        let crossIdx = index % 6
+        var layers: [PathLayer]
+        if crossIdx < crossLayoutBridgeLayers.count {
+            let template = crossLayoutBridgeLayers[crossIdx]
+            // Clamp to actual waypoint count to be safe
+            layers = (0..<waypoints.count).map { i in
+                i < template.count ? template[i] : .ground
+            }
+        } else {
+            layers = Array(repeating: .ground, count: waypoints.count)
+        }
+        return (waypoints, layers, slots)
     }
 
     private func performRiftShift() {
@@ -1101,6 +1221,7 @@ final class GameScene: SKScene {
 
         // Update path and slot data
         PathSystem.waypoints = layout.waypoints
+        PathSystem.waypointLayers = layout.layers
         let towerSnapshot = activeTowers.map { (slotId: $0.slotId, type: $0.type, tower: $0) }
         gridSystem.updateSlots(layout.slots)
 

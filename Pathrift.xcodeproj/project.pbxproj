@@ -28,6 +28,7 @@
 		57A93C99342E771C6DD19861 /* EventBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77B180B11BA7DE5AD28C33D6 /* EventBannerView.swift */; };
 		5A3FB78A39D791AA24C90EF2 /* SwarmEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6E3FEEA11E5EEB42C07EC3 /* SwarmEnemy.swift */; };
 		6333CB55385FFFE8DE0A1CD6 /* PathSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E493FFA3EFB068BA379A4382 /* PathSystem.swift */; };
+		66708FC0CEF5C807F4514F91 /* SniperTower.swift in Sources */ = {isa = PBXBuildFile; fileRef = B2DDF45C6D7C27B4ED1E06E6 /* SniperTower.swift */; };
 		6B0F2B00F5805C953E94E981 /* BossEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12204FCA50953C50CF44C3C9 /* BossEnemy.swift */; };
 		6D97E1D7ED28B9E7699E6BE9 /* JumperEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = B62A9B106E74F43D420A919C /* JumperEnemy.swift */; };
 		6EAA670285A4474295A0D9CD /* ViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95376E451D1C715286855AB2 /* ViewExtensions.swift */; };
@@ -39,6 +40,7 @@
 		859C2576630E44C0CAAB4CD4 /* TankEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBDF95002FFE22A49199414E /* TankEnemy.swift */; };
 		8D3CCA7EBD986B2A35D77274 /* RunnerEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 390A24DBF0718B98D471CA1A /* RunnerEnemy.swift */; };
 		8F5E9542F45F530577E37CB1 /* SpriteKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 1703DB5A2CAA277A87B5E630 /* SpriteKit.framework */; };
+		9084573EF97F0C1ADB5EDE33 /* ArtilleryTower.swift in Sources */ = {isa = PBXBuildFile; fileRef = BAC096555299E436A1B1BCD3 /* ArtilleryTower.swift */; };
 		925D8B54DCC86D24ED81303E /* HomeScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85522E925323C39619BD7467 /* HomeScreen.swift */; };
 		9583714A0B82157C35E9E374 /* LanguageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C9C26431543546D5D15D9CB4 /* LanguageManager.swift */; };
 		96833CE9460D4861CA597F22 /* BoltTower.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6556E26699A7EA9E9A452C13 /* BoltTower.swift */; };
@@ -59,6 +61,7 @@
 		E6C17D2509C6CFF4E3EE2D00 /* FrostTower.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7BECE04EB0C73D20390C1BDA /* FrostTower.swift */; };
 		EE126E2D6D414D3383E3A57E /* DiamondStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5BD1ECA9E5C38AAB65960269 /* DiamondStore.swift */; };
 		F6E2E050D4349B5EF81984B8 /* CombatHUDView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8C96FE3ED23408AF336BABA6 /* CombatHUDView.swift */; };
+		F92849EDD31229FA97459725 /* PathLayer.swift in Sources */ = {isa = PBXBuildFile; fileRef = AB02ACECE70E2626EBF11CAF /* PathLayer.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -98,10 +101,13 @@
 		9D0BE562F8DF38CEB7708B7E /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		A489DA2D996FBB0D340B7198 /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
 		A6D0ABBBA7F42F1D945C72C6 /* GhostEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhostEnemy.swift; sourceTree = "<group>"; };
+		AB02ACECE70E2626EBF11CAF /* PathLayer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathLayer.swift; sourceTree = "<group>"; };
 		AC415A9CA4B47AD1A5CADAB0 /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
+		B2DDF45C6D7C27B4ED1E06E6 /* SniperTower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SniperTower.swift; sourceTree = "<group>"; };
 		B2FF8E3ACD8A5D9D4B665D20 /* HowToPlayScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToPlayScreen.swift; sourceTree = "<group>"; };
 		B62A9B106E74F43D420A919C /* JumperEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JumperEnemy.swift; sourceTree = "<group>"; };
 		B83A22CB3EBD2471C389E9B3 /* Tower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tower.swift; sourceTree = "<group>"; };
+		BAC096555299E436A1B1BCD3 /* ArtilleryTower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArtilleryTower.swift; sourceTree = "<group>"; };
 		BD414EB7D6622CE9A95BDE0D /* PremiumStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumStore.swift; sourceTree = "<group>"; };
 		C9C26431543546D5D15D9CB4 /* LanguageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageManager.swift; sourceTree = "<group>"; };
 		CA6E3FEEA11E5EEB42C07EC3 /* SwarmEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwarmEnemy.swift; sourceTree = "<group>"; };
@@ -148,6 +154,7 @@
 				75F0830F4E75B28F25C53130 /* GameViewModel.swift */,
 				66B9E3A197BF73F3FD984E35 /* GoldManager.swift */,
 				31BC5D731D26BA576209F1BB /* GridSystem.swift */,
+				AB02ACECE70E2626EBF11CAF /* PathLayer.swift */,
 				E493FFA3EFB068BA379A4382 /* PathSystem.swift */,
 				25795B44C8A7319D7061E5C7 /* ScoreCalculator.swift */,
 				E1AA98E792F35CB28E593BA4 /* WaveSystem.swift */,
@@ -277,6 +284,7 @@
 		BFA2E2DB5E750BD4392B2805 /* Towers */ = {
 			isa = PBXGroup;
 			children = (
+				BAC096555299E436A1B1BCD3 /* ArtilleryTower.swift */,
 				5DF333D93A342C51A8F9F459 /* BlastTower.swift */,
 				6556E26699A7EA9E9A452C13 /* BoltTower.swift */,
 				DCC7378CF359B1F945AF5B0E /* CoreTower.swift */,
@@ -284,6 +292,7 @@
 				F181E90A5FE6891995B85710 /* InfernoTower.swift */,
 				69EFB333DB3CD21E65FB742F /* NovaTower.swift */,
 				0E9AEE3B9A5BB8895BF0DF3F /* PierceTower.swift */,
+				B2DDF45C6D7C27B4ED1E06E6 /* SniperTower.swift */,
 				338113AEA2F29744A75C6DE8 /* TeslaTower.swift */,
 				B83A22CB3EBD2471C389E9B3 /* Tower.swift */,
 			);
@@ -383,6 +392,7 @@
 				54EFF30E359E2D7A2B3C8863 /* AppState.swift in Sources */,
 				B70E635AD950DA3265149040 /* ArsenalScreen.swift in Sources */,
 				5203BD0915DF1AF901015FA4 /* ArsenalStore.swift in Sources */,
+				9084573EF97F0C1ADB5EDE33 /* ArtilleryTower.swift in Sources */,
 				0D9D079497C02A023C11D7BB /* BlastTower.swift in Sources */,
 				96833CE9460D4861CA597F22 /* BoltTower.swift in Sources */,
 				6B0F2B00F5805C953E94E981 /* BossEnemy.swift in Sources */,
@@ -408,6 +418,7 @@
 				9583714A0B82157C35E9E374 /* LanguageManager.swift in Sources */,
 				2A438639282B960837248356 /* LocalRunStorage.swift in Sources */,
 				75D3EBF6B218AB49FF0B6702 /* NovaTower.swift in Sources */,
+				F92849EDD31229FA97459725 /* PathLayer.swift in Sources */,
 				6333CB55385FFFE8DE0A1CD6 /* PathSystem.swift in Sources */,
 				A583823FDBDCD824F12B870C /* PathriftApp.swift in Sources */,
 				E4326EAE91C738213D00F277 /* PierceTower.swift in Sources */,
@@ -418,6 +429,7 @@
 				712B1BEAA01E682F934241D1 /* ScoreCalculator.swift in Sources */,
 				BAB6676D83CFF4275232A5CA /* SettingsScreen.swift in Sources */,
 				1642059FD0BD18BBD541BEDE /* ShieldEnemy.swift in Sources */,
+				66708FC0CEF5C807F4514F91 /* SniperTower.swift in Sources */,
 				CE5ECBB91410350ADF6198C4 /* SplitterEnemy.swift in Sources */,
 				CD3F5BBB0AFA694FF0798DB9 /* StoreScreen.swift in Sources */,
 				5A3FB78A39D791AA24C90EF2 /* SwarmEnemy.swift in Sources */,

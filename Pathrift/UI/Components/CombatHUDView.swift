@@ -6,9 +6,17 @@ struct CombatHUDView: View {
     let onPause: () -> Void
     @State private var waveButtonPulse = false
 
+    private var isLandscape: Bool {
+        UIScreen.main.bounds.width > UIScreen.main.bounds.height
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            topBar
+            if isLandscape {
+                landscapeTopBar
+            } else {
+                portraitTopBar
+            }
             if let msg = viewModel.waveCompleteMessage {
                 EventBannerView(message: msg, color: .pathriftSuccess)
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -19,7 +27,84 @@ struct CombatHUDView: View {
         .animation(.spring(response: 0.3), value: viewModel.waveCompleteMessage)
     }
 
-    private var topBar: some View {
+    // MARK: - Landscape Top Bar (48pt compact single-row)
+
+    private var landscapeTopBar: some View {
+        HStack(spacing: 10) {
+            // Wave stat
+            VStack(spacing: 0) {
+                Text(viewModel.currentWave == 0 ? "READY" : "WAVE")
+                    .font(.system(size: 7, weight: .semibold, design: .monospaced))
+                    .foregroundColor(.pathriftTextSecondary)
+                Text(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")
+                    .font(.system(size: 16, weight: .black, design: .rounded))
+                    .foregroundColor(.pathriftTextPrimary)
+            }
+
+            // Wave progress bar
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    Capsule().fill(Color.pathriftSurface).frame(height: 5)
+                    Capsule()
+                        .fill(LinearGradient(colors: [.pathriftNeonBlue, .pathriftPurple],
+                                             startPoint: .leading, endPoint: .trailing))
+                        .frame(width: max(4, geo.size.width * CGFloat(viewModel.waveProgress)), height: 5)
+                        .animation(.spring(response: 0.3), value: viewModel.waveProgress)
+                }
+            }
+            .frame(height: 5)
+            .frame(maxWidth: .infinity)
+
+            // Lives
+            HStack(spacing: 3) {
+                ForEach(0..<max(0, viewModel.lives), id: \.self) { _ in
+                    Text("❤️").font(.system(size: 11))
+                }
+            }
+
+            // Gold
+            landscapeStatPill(icon: "dollarsign.circle.fill", value: "\(viewModel.gold)", color: .pathriftGold)
+
+            // Diamonds
+            HStack(spacing: 3) {
+                Text("♦")
+                    .font(.system(size: 11, weight: .bold))
+                    .foregroundColor(Color(red: 0, green: 0.8, blue: 1))
+                Text("\(viewModel.diamonds)")
+                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+                    .foregroundColor(Color(red: 0, green: 0.8, blue: 1))
+            }
+
+            // Speed button
+            speedBtn
+
+            // Pause button
+            pauseBtn
+        }
+        .padding(.horizontal, 12)
+        .padding(.bottom, 6)
+        .padding(.top, 6)
+        .background(
+            LinearGradient(
+                colors: [Color.pathriftBackground.opacity(0.88), .clear],
+                startPoint: .top, endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .top)
+        )
+    }
+
+    private func landscapeStatPill(icon: String, value: String, color: Color) -> some View {
+        HStack(spacing: 3) {
+            Image(systemName: icon).font(.system(size: 11)).foregroundColor(color)
+            Text(value)
+                .font(.system(size: 12, weight: .bold, design: .monospaced))
+                .foregroundColor(color)
+        }
+    }
+
+    // MARK: - Portrait Top Bar (original)
+
+    private var portraitTopBar: some View {
         HStack(spacing: 0) {
             goldStat
             Spacer()
@@ -117,9 +202,13 @@ struct CombatHUDView: View {
         .buttonStyle(ScaleButtonStyle())
     }
 
+    // MARK: - Bottom Bar
+
     private var bottomBar: some View {
         HStack(spacing: 12) {
-            killsStat
+            if !isLandscape {
+                killsStat
+            }
             Spacer()
             if !viewModel.isWaveActive && !viewModel.isGameOver {
                 sendWaveButton
@@ -128,7 +217,7 @@ struct CombatHUDView: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 14)
+        .padding(.vertical, isLandscape ? 10 : 14)
         .background(
             LinearGradient(
                 colors: [.clear, Color.pathriftBackground.opacity(0.9)],
@@ -155,11 +244,12 @@ struct CombatHUDView: View {
     private var sendWaveButton: some View {
         Button(action: onStartWave) {
             HStack(spacing: 8) {
-                Image(systemName: "play.fill").font(.system(size: 11, weight: .bold))
-                Text("SEND WAVE").font(.system(size: 13, weight: .bold, design: .rounded)).kerning(0.5)
+                Image(systemName: "play.fill").font(.system(size: isLandscape ? 10 : 11, weight: .bold))
+                Text("SEND WAVE").font(.system(size: isLandscape ? 12 : 13, weight: .bold, design: .rounded)).kerning(0.5)
             }
             .foregroundColor(.pathriftBackground)
-            .padding(.horizontal, 22).padding(.vertical, 14)
+            .padding(.horizontal, 22)
+            .frame(height: isLandscape ? 40 : 48)
             .background(Color.pathriftNeonBlue)
             .cornerRadius(12)
             .shadow(color: .pathriftNeonBlue.opacity(waveButtonPulse ? 0.7 : 0.25), radius: waveButtonPulse ? 10 : 4)
@@ -210,7 +300,7 @@ struct CombatHUDView: View {
                                    value: viewModel.waveProgress)
                 }
             }
-            .frame(width: 140, height: 7)
+            .frame(width: isLandscape ? 120 : 140, height: 7)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)

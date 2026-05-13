@@ -8,6 +8,21 @@ struct PathSystem {
         CGPoint(x: 100, y: 0)
     ]
 
+    // Parallel array to waypoints — defines elevation of each waypoint.
+    // Segment from waypoint[i] to waypoint[i+1] is "bridge" if either endpoint is .bridge.
+    static var waypointLayers: [PathLayer] = []
+
+    // Returns the layer for a given waypoint index (defaults to .ground if out of range)
+    static func layer(at index: Int) -> PathLayer {
+        guard index < waypointLayers.count else { return .ground }
+        return waypointLayers[index]
+    }
+
+    // Returns true if the segment between waypoints[i] and waypoints[i+1] is a bridge
+    static func isBridgeSegment(from i: Int) -> Bool {
+        return layer(at: i) == .bridge || layer(at: i + 1) == .bridge
+    }
+
     static func totalPathLength() -> CGFloat {
         var length: CGFloat = 0
         for i in 1..<waypoints.count {
@@ -56,5 +71,14 @@ struct PathSystem {
             accumulated += segLen
         }
         return CGVector(dx: 1, dy: 0)
+    }
+
+    // Returns the PathLayer for a given path progress (0.0–1.0)
+    static func layerAt(progress: CGFloat) -> PathLayer {
+        let count = waypoints.count
+        guard count >= 2, !waypointLayers.isEmpty else { return .ground }
+        let estimatedIndex = Int(progress * CGFloat(count - 1))
+        let clamped = min(max(0, estimatedIndex), waypointLayers.count - 1)
+        return waypointLayers[clamped]
     }
 }

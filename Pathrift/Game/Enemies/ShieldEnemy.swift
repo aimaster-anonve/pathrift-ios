@@ -13,6 +13,7 @@ final class ShieldEnemy: EnemyNode {
     var pathProgress: CGFloat = 0
     var hasReachedEnd: Bool = false
     var slowTimer: TimeInterval = 0
+    var pathLayer: PathLayer = .ground
     let node: SKNode
 
     private var shieldHP: CGFloat = 80

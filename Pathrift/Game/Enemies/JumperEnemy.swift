@@ -13,6 +13,7 @@ final class JumperEnemy: EnemyNode {
     var pathProgress: CGFloat = 0
     var hasReachedEnd: Bool = false
     var slowTimer: TimeInterval = 0
+    var pathLayer: PathLayer = .ground
     let node: SKNode
     var lastJumpTime: TimeInterval
 
@@ -114,5 +115,13 @@ final class JumperEnemy: EnemyNode {
 
         let newPos = PathSystem.position(at: pathProgress)
         node.position = newPos
+
+        // Update path layer
+        let newLayer = PathSystem.layerAt(progress: pathProgress)
+        if newLayer != pathLayer {
+            pathLayer = newLayer
+            let targetScale: CGFloat = pathLayer == .bridge ? 1.15 : 1.0
+            node.run(SKAction.scale(to: targetScale, duration: 0.1))
+        }
     }
 }

@@ -11,12 +11,13 @@ struct ArsenalScreen: View {
             VStack(spacing: 0) {
                 navBar
                 ScrollView {
-                    VStack(spacing: 12) {
+                    VStack(spacing: 10) {
                         ForEach(TowerType.allCases) { type in
                             TowerArsenalCard(type: type, diamonds: $diamonds)
                         }
                     }
-                    .padding(.horizontal, 16)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 10)
                     .padding(.bottom, 32)
                 }
             }
@@ -36,7 +37,7 @@ struct ArsenalScreen: View {
             }
             Spacer()
             Text("ARSENAL")
-                .font(.system(size: 20, weight: .black, design: .rounded))
+                .font(.system(size: 16, weight: .black, design: .rounded))
                 .foregroundColor(.pathriftTextPrimary)
                 .kerning(2)
             Spacer()
@@ -49,7 +50,7 @@ struct ArsenalScreen: View {
             }
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 16)
+        .padding(.vertical, 10)
         .background(Color.pathriftSurface.opacity(0.9))
     }
 }
@@ -67,80 +68,70 @@ struct TowerArsenalCard: View {
     var towerColor: Color { type.swiftUIColor }
 
     var body: some View {
-        VStack(spacing: 12) {
-            // Tower header
-            HStack(spacing: 12) {
+        HStack(spacing: 12) {
+            // Left: identity (max 45% width)
+            HStack(spacing: 8) {
                 Circle()
                     .fill(towerColor)
-                    .frame(width: 40, height: 40)
-                    .overlay(
-                        Circle().strokeBorder(towerColor, lineWidth: 2).opacity(0.4)
-                    )
-                    .shadow(color: towerColor.opacity(0.5), radius: 6)
-
-                VStack(alignment: .leading, spacing: 4) {
-                    HStack(spacing: 6) {
+                    .frame(width: 32, height: 32)
+                    .shadow(color: towerColor.opacity(0.4), radius: 4)
+                VStack(alignment: .leading, spacing: 2) {
+                    HStack(spacing: 4) {
                         Text(type.displayName.uppercased())
-                            .font(.system(size: 14, weight: .black, design: .rounded))
+                            .font(.system(size: 13, weight: .black, design: .rounded))
                             .foregroundColor(.pathriftTextPrimary)
-                        Text("TIER \(type.tier)")
-                            .font(.system(size: 9, weight: .bold))
+                        Text("T\(type.tier)")
+                            .font(.system(size: 8, weight: .bold))
                             .foregroundColor(towerColor)
-                            .padding(.horizontal, 5).padding(.vertical, 2)
+                            .padding(.horizontal, 4).padding(.vertical, 2)
                             .background(towerColor.opacity(0.15))
-                            .cornerRadius(4)
+                            .cornerRadius(3)
                     }
                     Text(type.typeAdvantageHint ?? type.description)
-                        .font(.system(size: 11))
+                        .font(.system(size: 10))
                         .foregroundColor(.pathriftTextSecondary)
                         .lineLimit(1)
                 }
-                Spacer()
-
-                if !isUnlocked {
-                    VStack(spacing: 2) {
-                        Text("🔒")
-                            .font(.system(size: 14))
-                        Text("\(type.diamondCost)♦")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundColor(Color(red: 0, green: 0.8, blue: 1))
-                    }
-                }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
 
             if isUnlocked {
-                Divider().background(Color.pathriftTextSecondary.opacity(0.15))
-
-                // Permanent upgrades
-                HStack(spacing: 12) {
-                    upgradeRow(label: "DMG", level: dmgLevel, cost: dmgCost, color: .pathriftOrange) {
-                        if let cost = dmgCost, DiamondStore.shared.spend(cost) {
-                            ArsenalStore.shared.setPermDamageLevel(dmgLevel + 1, for: type)
-                            diamonds = DiamondStore.shared.balance
-                        }
+                Divider().frame(height: 40)
+                upgradeRow(label: "DMG", level: dmgLevel, cost: dmgCost, color: .pathriftOrange) {
+                    if let cost = dmgCost, DiamondStore.shared.spend(cost) {
+                        ArsenalStore.shared.setPermDamageLevel(dmgLevel + 1, for: type)
+                        diamonds = DiamondStore.shared.balance
                     }
-                    Divider().frame(height: 40).background(Color.pathriftTextSecondary.opacity(0.2))
-                    upgradeRow(label: "SPD", level: spdLevel, cost: spdCost, color: .pathriftPurple) {
-                        if let cost = spdCost, DiamondStore.shared.spend(cost) {
-                            ArsenalStore.shared.setPermSpeedLevel(spdLevel + 1, for: type)
-                            diamonds = DiamondStore.shared.balance
-                        }
+                }
+                .frame(width: 100)
+                Divider().frame(height: 40)
+                upgradeRow(label: "SPD", level: spdLevel, cost: spdCost, color: .pathriftPurple) {
+                    if let cost = spdCost, DiamondStore.shared.spend(cost) {
+                        ArsenalStore.shared.setPermSpeedLevel(spdLevel + 1, for: type)
+                        diamonds = DiamondStore.shared.balance
                     }
+                }
+                .frame(width: 100)
+            } else {
+                Spacer()
+                VStack(spacing: 2) {
+                    Text("🔒").font(.system(size: 14))
+                    Text("\(type.diamondCost)♦")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundColor(Color(red: 0, green: 0.8, blue: 1))
                 }
             }
         }
-        .padding(16)
+        .padding(12)
         .background(Color.pathriftSurface)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .strokeBorder(isUnlocked ? towerColor.opacity(0.2) : Color.pathriftTextSecondary.opacity(0.15), lineWidth: 1)
-        )
+        .cornerRadius(14)
+        .overlay(RoundedRectangle(cornerRadius: 14)
+            .strokeBorder(isUnlocked ? towerColor.opacity(0.2) : Color.pathriftTextSecondary.opacity(0.12), lineWidth: 1))
         .opacity(isUnlocked ? 1.0 : 0.6)
     }
 
     private func upgradeRow(label: String, level: Int, cost: Int?, color: Color, onUpgrade: @escaping () -> Void) -> some View {
-        HStack(spacing: 8) {
+        HStack(spacing: 6) {
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
                     .font(.system(size: 9, weight: .bold, design: .monospaced))
@@ -150,20 +141,20 @@ struct TowerArsenalCard: View {
                     ForEach(0..<3, id: \.self) { i in
                         RoundedRectangle(cornerRadius: 2)
                             .fill(i < level ? color : Color.pathriftTextSecondary.opacity(0.2))
-                            .frame(width: 18, height: 6)
+                            .frame(width: 14, height: 5)
                     }
                 }
             }
             Spacer()
             if let cost = cost {
                 Button(action: onUpgrade) {
-                    HStack(spacing: 3) {
+                    HStack(spacing: 2) {
                         Text("+")
                         Text("\(cost)♦")
                     }
-                    .font(.system(size: 11, weight: .bold))
+                    .font(.system(size: 10, weight: .bold))
                     .foregroundColor(diamonds >= cost ? color : .pathriftTextSecondary)
-                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .padding(.horizontal, 6).padding(.vertical, 3)
                     .background((diamonds >= cost ? color : Color.pathriftTextSecondary).opacity(0.12))
                     .cornerRadius(6)
                 }
@@ -174,6 +165,5 @@ struct TowerArsenalCard: View {
                     .foregroundColor(color)
             }
         }
-        .frame(maxWidth: .infinity)
     }
 }

@@ -13,14 +13,14 @@ struct SettingsScreen: View {
             VStack(spacing: 0) {
                 navBar
                 ScrollView {
-                    VStack(spacing: 24) {
+                    VStack(spacing: 16) {
                         languageSection
                         gameInfoSection
                         aboutSection
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, 24)
-                    .padding(.bottom, 40)
+                    .padding(.top, 16)
+                    .padding(.bottom, 32)
                 }
             }
         }
@@ -43,11 +43,10 @@ struct SettingsScreen: View {
                 .foregroundColor(.pathriftTextPrimary)
                 .kerning(2)
             Spacer()
-            // Balance spacer
             Color.clear.frame(width: 80, height: 20)
         }
         .padding(.horizontal, 20)
-        .padding(.vertical, 14)
+        .padding(.vertical, 10)
         .background(Color.pathriftSurface.opacity(0.9))
     }
 
@@ -59,13 +58,13 @@ struct SettingsScreen: View {
                     Button(action: { lang.current = language }) {
                         HStack(spacing: 8) {
                             Text(language == .english ? "🇬🇧" : "🇹🇷")
-                                .font(.system(size: 20))
+                                .font(.system(size: 18))
                             Text(language.displayName)
-                                .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                .font(.system(size: 13, weight: .semibold, design: .rounded))
                         }
                         .foregroundColor(lang.current == language ? .pathriftBackground : .pathriftTextPrimary)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 48)
+                        .frame(height: 44)
                         .background(lang.current == language ? Color.pathriftNeonBlue : Color.pathriftSurface)
                         .cornerRadius(12)
                         .overlay(
@@ -104,9 +103,7 @@ struct SettingsScreen: View {
 
     private func sectionHeader(_ title: String, icon: String) -> some View {
         HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(.system(size: 12))
-                .foregroundColor(.pathriftNeonBlue)
+            Image(systemName: icon).font(.system(size: 12)).foregroundColor(.pathriftNeonBlue)
             Text(title)
                 .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .foregroundColor(.pathriftTextSecondary)
