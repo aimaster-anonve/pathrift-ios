@@ -16,8 +16,6 @@ struct GameView: View {
             // Game scene — respects safe area (no .ignoresSafeArea)
             SpriteView(scene: viewModel.scene, options: [.allowsTransparency])
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-                // small horizontal padding to keep map from touching side edges
-                .padding(.horizontal, 4)
 
             // HUD — safe area içinde otomatik kalır
             CombatHUDView(

@@ -57,7 +57,7 @@ final class GameScene: SKScene {
     private var contentMinY: CGFloat { hudBottomInset }
     private var contentMaxY: CGFloat { size.height - hudTopInset }
     private var contentHeight: CGFloat { max(1, contentMaxY - contentMinY) }
-    private var contentWidth: CGFloat { max(1, size.width - 8) }  // 4pt each side
+    private var contentWidth: CGFloat { max(1, size.width) }  // full width, safe area handles sides
 
     var onReviveAvailable: (() -> Void)?
     var onSpeedChanged: ((Double) -> Void)?
@@ -1079,6 +1079,37 @@ final class GameScene: SKScene {
         return Array(result.prefix(activeSlotCount()))
     }
 
+    /// Ensures the slots array has at least `activeSlotCount()` entries.
+    /// If fewer exist, generates emergency fallback positions offset from path midpoints.
+    private func ensureMinimumSlots(_ slots: [CGPoint], waypoints: [CGPoint]) -> [CGPoint] {
+        let needed = activeSlotCount()
+        guard slots.count < needed else { return Array(slots.prefix(needed)) }
+        var result = slots
+        let shortfall = needed - result.count
+        let offsets: [CGFloat] = [80, -80, 110, -110, 60, -60, 130, -130]
+        var added = 0
+        for step in stride(from: 0, to: waypoints.count - 1, by: 1) {
+            guard added < shortfall else { break }
+            let a = waypoints[step], b = waypoints[step + 1]
+            let mid = CGPoint(x: (a.x + b.x) / 2, y: (a.y + b.y) / 2)
+            let dx = b.x - a.x, dy = b.y - a.y
+            let len = max(1, sqrt(dx*dx + dy*dy))
+            let perpX = -dy / len, perpY = dx / len  // unit perpendicular
+            for off in offsets {
+                guard added < shortfall else { break }
+                let candidate = CGPoint(x: mid.x + perpX * off, y: mid.y + perpY * off)
+                guard candidate.x > 20, candidate.x < size.width - 20 else { continue }
+                guard candidate.y > contentMinY + 20, candidate.y < contentMaxY - 20 else { continue }
+                let tooClose = result.contains { hypot($0.x - candidate.x, $0.y - candidate.y) < 48 }
+                guard !tooClose else { continue }
+                guard isSlotClearOfPath(candidate, waypoints: waypoints, clearance: 20) else { continue }
+                result.append(candidate)
+                added += 1
+            }
+        }
+        return result
+    }
+
     /// Perpendicular distance from point `p` to segment `a→b`.
     private func pointToSegmentDist(_ p: CGPoint, a: CGPoint, b: CGPoint) -> CGFloat {
         let dx = b.x - a.x, dy = b.y - a.y
@@ -1146,7 +1177,8 @@ final class GameScene: SKScene {
             let rawSlots = computeSlots(y1: y1, y2: y2, y3: y3, xL: xL, xR: xR)
             let pathClearSlots = rawSlots.filter { isSlotClearOfPath($0, waypoints: waypoints, clearance: 36) }
             let guaranteedSlots = guaranteePathCoverage(slots: pathClearSlots, waypoints: waypoints)
-            return (waypoints, layers, guaranteedSlots)
+            let finalSlots = ensureMinimumSlots(guaranteedSlots, waypoints: waypoints)
+            return (waypoints, layers, finalSlots)
         } else {
             // Crossing layout
             return crossLayoutConfig(index: safeIndex - layoutParams.count)
@@ -1289,7 +1321,8 @@ final class GameScene: SKScene {
                 CGPoint(x: xOff+CW+10, y: cy(0.80)),
             ]
         }
-        let slots = computeSlotsForPath(waypoints: waypoints)
+        let rawCrossSlots = computeSlotsForPath(waypoints: waypoints)
+        let slots = ensureMinimumSlots(rawCrossSlots, waypoints: waypoints)
         let crossIdx = index % 6
         var layers: [PathLayer]
         if crossIdx < crossLayoutBridgeLayers.count {
