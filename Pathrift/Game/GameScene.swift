@@ -27,6 +27,8 @@ final class GameScene: SKScene {
     private var currentBatchIndex: Int = 0
     private var currentSpawnBatches: [EnemySpawnEntry] = []
 
+    private var layoutBuilt = false
+
     private(set) var lives: Int = EconomyConstants.startingLives
     private(set) var currentWaveNumber: Int = 0
     private(set) var enemyKills: Int = 0
@@ -46,19 +48,35 @@ final class GameScene: SKScene {
     // MARK: - Setup
 
     override func didMove(to view: SKView) {
-        anchorPoint = .zero   // CRITICAL: (0,0) = bottom-left corner
+        anchorPoint = .zero
         backgroundColor = SKColor(red: 0.04, green: 0.04, blue: 0.06, alpha: 1)
-        buildDynamicLayout()
         setupLayers()
-        setupGround()
-        setupPath()
-        setupTowerSlots()
-        goldManager.setChangeHandler { [weak self] gold in
-            self?.onGoldChanged?(gold)
+        goldManager.setChangeHandler { [weak self] gold in self?.onGoldChanged?(gold) }
+        if size.width > 1 && size.height > 1 {
+            buildAndSetupGame()
         }
         onGoldChanged?(goldManager.gold)
         onLivesChanged?(lives)
         onWaveChanged?(currentWaveNumber)
+    }
+
+    override func didChangeSize(_ oldSize: CGSize) {
+        guard size.width > 1, size.height > 1 else { return }
+        guard !layoutBuilt else { return }
+        buildAndSetupGame()
+    }
+
+    private func buildAndSetupGame() {
+        layoutBuilt = true
+        buildDynamicLayout()
+        groundLayer.removeAllChildren()
+        pathLayer.removeAllChildren()
+        towerSlotLayer.removeAllChildren()
+        setupGround()
+        setupPath()
+        setupTowerSlots()
+        onGoldChanged?(goldManager.gold)
+        onLivesChanged?(lives)
     }
 
     private func buildDynamicLayout() {
@@ -165,43 +183,97 @@ final class GameScene: SKScene {
             dot.position = point
             pathLayer.addChild(dot)
         }
-        // Start/End labels
-        if let first = waypoints.first {
-            let lbl = SKLabelNode(text: "▶ START")
-            lbl.fontSize = 10
-            lbl.fontName = "AvenirNext-Bold"
-            lbl.fontColor = SKColor(red: 0.0, green: 0.9, blue: 0.4, alpha: 1)
-            lbl.position = CGPoint(x: first.x + 30, y: first.y + 18)
-            pathLayer.addChild(lbl)
+        // Start indicator — animated arrow at entry
+        if let first = PathSystem.waypoints.first {
+            // Arrow pointing right
+            let arrowBg = SKShapeNode(circleOfRadius: 14)
+            arrowBg.fillColor = SKColor(red: 0.0, green: 0.6, blue: 0.2, alpha: 0.9)
+            arrowBg.strokeColor = SKColor(red: 0.0, green: 1.0, blue: 0.4, alpha: 0.8)
+            arrowBg.lineWidth = 2
+            arrowBg.position = CGPoint(x: first.x + 20, y: first.y)
+            // Pulse animation
+            let pulse = SKAction.repeatForever(SKAction.sequence([
+                SKAction.scale(to: 1.15, duration: 0.6),
+                SKAction.scale(to: 0.9, duration: 0.6)
+            ]))
+            arrowBg.run(pulse)
+            pathLayer.addChild(arrowBg)
+
+            let arrowLabel = SKLabelNode(text: "▶")
+            arrowLabel.fontSize = 12
+            arrowLabel.fontColor = .white
+            arrowLabel.verticalAlignmentMode = .center
+            arrowLabel.horizontalAlignmentMode = .center
+            arrowBg.addChild(arrowLabel)
+
+            let startText = SKLabelNode(text: "START")
+            startText.fontSize = 8
+            startText.fontName = "AvenirNext-Bold"
+            startText.fontColor = SKColor(red: 0.0, green: 1.0, blue: 0.4, alpha: 0.9)
+            startText.horizontalAlignmentMode = .center
+            startText.position = CGPoint(x: first.x + 20, y: first.y + 24)
+            pathLayer.addChild(startText)
         }
-        if let last = waypoints.last {
-            let lbl = SKLabelNode(text: "END ▶")
-            lbl.fontSize = 10
-            lbl.fontName = "AvenirNext-Bold"
-            lbl.fontColor = SKColor(red: 1.0, green: 0.3, blue: 0.3, alpha: 1)
-            lbl.position = CGPoint(x: last.x - 40, y: last.y + 18)
-            pathLayer.addChild(lbl)
+
+        // End indicator
+        if let last = PathSystem.waypoints.last {
+            let exitBg = SKShapeNode(circleOfRadius: 14)
+            exitBg.fillColor = SKColor(red: 0.8, green: 0.1, blue: 0.1, alpha: 0.9)
+            exitBg.strokeColor = SKColor(red: 1.0, green: 0.3, blue: 0.3, alpha: 0.8)
+            exitBg.lineWidth = 2
+            exitBg.position = CGPoint(x: last.x - 20, y: last.y)
+            pathLayer.addChild(exitBg)
+
+            let exitArrow = SKLabelNode(text: "✕")
+            exitArrow.fontSize = 11
+            exitArrow.fontColor = .white
+            exitArrow.verticalAlignmentMode = .center
+            exitArrow.horizontalAlignmentMode = .center
+            exitBg.addChild(exitArrow)
+
+            let exitText = SKLabelNode(text: "EXIT")
+            exitText.fontSize = 8
+            exitText.fontName = "AvenirNext-Bold"
+            exitText.fontColor = SKColor(red: 1.0, green: 0.4, blue: 0.4, alpha: 0.9)
+            exitText.horizontalAlignmentMode = .center
+            exitText.position = CGPoint(x: last.x - 20, y: last.y + 24)
+            pathLayer.addChild(exitText)
         }
     }
 
     private func setupTowerSlots() {
         for slot in gridSystem.slots {
-            let slotNode = SKShapeNode(rectOf: CGSize(width: 44, height: 44), cornerRadius: 6)
-            slotNode.fillColor = SKColor(red: 0.1, green: 0.2, blue: 0.3, alpha: 0.6)
-            slotNode.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.7)
-            slotNode.lineWidth = 1.5
-            slotNode.position = slot.position
-            slotNode.name = "slot_\(slot.id)"
+            let container = SKNode()
+            container.position = slot.position
+            container.name = "slot_\(slot.id)"
 
-            let plusLabel = SKLabelNode(text: "+")
-            plusLabel.fontSize = 18
-            plusLabel.fontColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.8)
-            plusLabel.fontName = "AvenirNext-Bold"
-            plusLabel.verticalAlignmentMode = .center
-            plusLabel.horizontalAlignmentMode = .center
-            slotNode.addChild(plusLabel)
+            // Background with glow
+            let bg = SKShapeNode(rectOf: CGSize(width: 46, height: 46), cornerRadius: 8)
+            bg.fillColor = SKColor(red: 0.05, green: 0.15, blue: 0.25, alpha: 0.85)
+            bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.6)
+            bg.lineWidth = 1.5
+            bg.name = "slot_\(slot.id)"
+            container.addChild(bg)
 
-            towerSlotLayer.addChild(slotNode)
+            // Inner cross
+            let vLine = SKShapeNode(rectOf: CGSize(width: 2, height: 18), cornerRadius: 1)
+            vLine.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.7)
+            vLine.strokeColor = .clear
+            container.addChild(vLine)
+
+            let hLine = SKShapeNode(rectOf: CGSize(width: 18, height: 2), cornerRadius: 1)
+            hLine.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.7)
+            hLine.strokeColor = .clear
+            container.addChild(hLine)
+
+            // Subtle breathing animation
+            let breathe = SKAction.repeatForever(SKAction.sequence([
+                SKAction.fadeAlpha(to: 0.6, duration: 1.5),
+                SKAction.fadeAlpha(to: 1.0, duration: 1.5)
+            ]))
+            bg.run(breathe)
+
+            towerSlotLayer.addChild(container)
         }
     }
 

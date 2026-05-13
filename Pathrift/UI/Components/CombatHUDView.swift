@@ -4,158 +4,152 @@ struct CombatHUDView: View {
     @ObservedObject var viewModel: GameViewModel
     let onStartWave: () -> Void
     let onPause: () -> Void
-    @State private var waveButtonPulse: Bool = false
+    @State private var waveButtonPulse = false
 
     var body: some View {
-        GeometryReader { geo in
-            let safeTop = geo.safeAreaInsets.top
-            let safeBottom = geo.safeAreaInsets.bottom
-
-            VStack(spacing: 0) {
-                topBar(safeTop: safeTop)
-                if let msg = viewModel.waveCompleteMessage {
-                    EventBannerView(message: msg, color: .pathriftSuccess)
-                        .transition(.move(edge: .top).combined(with: .opacity))
-                }
-                Spacer()
-                bottomBar(safeBottom: safeBottom)
+        VStack(spacing: 0) {
+            topBar
+            if let msg = viewModel.waveCompleteMessage {
+                EventBannerView(message: msg, color: .pathriftSuccess)
+                    .transition(.move(edge: .top).combined(with: .opacity))
             }
-            .animation(.spring(response: 0.3), value: viewModel.waveCompleteMessage)
+            Spacer()
+            bottomBar
         }
+        .animation(.spring(response: 0.3), value: viewModel.waveCompleteMessage)
     }
 
-    private func topBar(safeTop: CGFloat) -> some View {
+    private var topBar: some View {
         HStack(spacing: 0) {
-            goldIndicator
+            goldStat
             Spacer()
-            waveIndicator
+            waveStat
             Spacer()
-            HStack(spacing: 12) {
-                livesIndicator
-                pauseButton
+            HStack(spacing: 14) {
+                livesStat
+                pauseBtn
             }
         }
         .padding(.horizontal, 16)
-        .padding(.top, safeTop + 8)
-        .padding(.bottom, 12)
+        .padding(.vertical, 10)
         .background(
             LinearGradient(
-                colors: [Color.pathriftBackground.opacity(0.95), Color.pathriftBackground.opacity(0)],
-                startPoint: .top,
-                endPoint: .bottom
+                colors: [Color.pathriftBackground.opacity(0.9), .clear],
+                startPoint: .top, endPoint: .bottom
             )
         )
     }
 
-    private var pauseButton: some View {
-        Button(action: onPause) {
-            Image(systemName: "pause.circle.fill")
-                .font(.system(size: 24))
-                .foregroundColor(.pathriftTextSecondary)
+    private var goldStat: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "dollarsign.circle.fill")
+                .foregroundColor(.pathriftGold)
+                .font(.system(size: 18))
+            VStack(alignment: .leading, spacing: 1) {
+                Text("\(viewModel.gold)")
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundColor(.pathriftTextPrimary)
+                    .monospacedDigit()
+                Text("GOLD").font(.system(size: 8, weight: .semibold, design: .monospaced))
+                    .foregroundColor(.pathriftTextSecondary).kerning(1.5)
+            }
         }
-        .buttonStyle(ScaleButtonStyle())
     }
 
-    private var goldIndicator: some View {
-        HUDStatView(
-            icon: "dollarsign.circle.fill",
-            value: "\(viewModel.gold)",
-            label: "GOLD",
-            color: .pathriftGold
-        )
-    }
-
-    private var waveIndicator: some View {
+    private var waveStat: some View {
         VStack(spacing: 2) {
             Text(viewModel.currentWave == 0 ? "READY" : "WAVE")
                 .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundColor(.pathriftTextSecondary)
-                .kerning(2)
+                .foregroundColor(.pathriftTextSecondary).kerning(2)
             Text(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")
-                .font(.system(size: 22, weight: .black, design: .rounded))
-                .foregroundColor(.pathriftNeonBlue)
-                .monospacedDigit()
+                .font(.system(size: 24, weight: .black, design: .rounded))
+                .foregroundColor(.pathriftNeonBlue).monospacedDigit()
         }
     }
 
-    private var livesIndicator: some View {
-        HStack(spacing: 4) {
+    private var livesStat: some View {
+        HStack(spacing: 3) {
             ForEach(0..<EconomyConstants.startingLives, id: \.self) { idx in
                 Image(systemName: idx < viewModel.lives ? "heart.fill" : "heart")
-                    .foregroundColor(idx < viewModel.lives ? .pathriftDanger : .pathriftTextSecondary.opacity(0.4))
+                    .foregroundColor(idx < viewModel.lives ? .pathriftDanger : .pathriftTextSecondary.opacity(0.3))
                     .font(.system(size: 16))
+                    .scaleEffect(idx < viewModel.lives ? 1.0 : 0.8)
             }
         }
     }
 
-    private func bottomBar(safeBottom: CGFloat) -> some View {
+    private var pauseBtn: some View {
+        Button(action: onPause) {
+            Image(systemName: "pause.circle.fill")
+                .font(.system(size: 22))
+                .foregroundColor(.pathriftTextSecondary.opacity(0.8))
+        }
+        .buttonStyle(ScaleButtonStyle())
+    }
+
+    private var bottomBar: some View {
         HStack(spacing: 12) {
-            killsCounter
+            killsStat
             Spacer()
             if !viewModel.isWaveActive && !viewModel.isGameOver {
-                waveStartButton
+                sendWaveButton
             } else if viewModel.isWaveActive {
-                waveActiveIndicator
+                waveProgressIndicator
             }
         }
         .padding(.horizontal, 20)
-        .padding(.bottom, max(safeBottom + 8, 24))
-        .padding(.top, 12)
+        .padding(.vertical, 14)
         .background(
             LinearGradient(
-                colors: [Color.pathriftBackground.opacity(0), Color.pathriftBackground.opacity(0.95)],
-                startPoint: .top,
-                endPoint: .bottom
+                colors: [.clear, Color.pathriftBackground.opacity(0.9)],
+                startPoint: .top, endPoint: .bottom
             )
         )
     }
 
-    private var killsCounter: some View {
-        HUDStatView(
-            icon: "xmark.circle.fill",
-            value: "\(viewModel.enemyKills)",
-            label: "KILLS",
-            color: .pathriftDanger
-        )
+    private var killsStat: some View {
+        HStack(spacing: 5) {
+            Image(systemName: "bolt.fill")
+                .foregroundColor(.pathriftOrange)
+                .font(.system(size: 16))
+            VStack(alignment: .leading, spacing: 1) {
+                Text("\(viewModel.enemyKills)")
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundColor(.pathriftTextPrimary).monospacedDigit()
+                Text("KILLS").font(.system(size: 8, weight: .semibold, design: .monospaced))
+                    .foregroundColor(.pathriftTextSecondary).kerning(1.5)
+            }
+        }
     }
 
-    private var waveStartButton: some View {
-        Button(action: {
-            onStartWave()
-        }) {
+    private var sendWaveButton: some View {
+        Button(action: onStartWave) {
             HStack(spacing: 8) {
-                Image(systemName: "play.fill")
-                    .font(.system(size: 12, weight: .bold))
-                Text("SEND WAVE")
-                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .kerning(0.5)
+                Image(systemName: "play.fill").font(.system(size: 11, weight: .bold))
+                Text("SEND WAVE").font(.system(size: 13, weight: .bold, design: .rounded)).kerning(0.5)
             }
             .foregroundColor(.pathriftBackground)
-            .padding(.horizontal, 20)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 22).padding(.vertical, 14)
             .background(Color.pathriftNeonBlue)
             .cornerRadius(12)
-            .shadow(color: .pathriftNeonBlue.opacity(waveButtonPulse ? 0.8 : 0.3), radius: waveButtonPulse ? 12 : 4)
+            .shadow(color: .pathriftNeonBlue.opacity(waveButtonPulse ? 0.7 : 0.25), radius: waveButtonPulse ? 10 : 4)
         }
         .buttonStyle(ScaleButtonStyle())
         .onAppear {
-            withAnimation(.easeInOut(duration: 0.9).repeatForever(autoreverses: true)) {
-                waveButtonPulse = true
-            }
+            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) { waveButtonPulse = true }
         }
     }
 
-    private var waveActiveIndicator: some View {
-        HStack(spacing: 6) {
-            ProgressView()
-                .progressViewStyle(.circular)
-                .scaleEffect(0.7)
-                .tint(.pathriftNeonBlue)
+    private var waveProgressIndicator: some View {
+        HStack(spacing: 8) {
+            ProgressView().progressViewStyle(.circular).scaleEffect(0.65).tint(.pathriftNeonBlue)
             Text("WAVE IN PROGRESS")
                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                .foregroundColor(.pathriftTextSecondary)
-                .kerning(1)
+                .foregroundColor(.pathriftNeonBlue.opacity(0.8)).kerning(1)
         }
+        .padding(.horizontal, 16).padding(.vertical, 10)
+        .background(Color.pathriftSurface.opacity(0.9))
+        .cornerRadius(10)
     }
 }
 
@@ -164,21 +158,12 @@ struct HUDStatView: View {
     let value: String
     let label: String
     let color: Color
-
     var body: some View {
         HStack(spacing: 6) {
-            Image(systemName: icon)
-                .foregroundColor(color)
-                .font(.system(size: 16))
+            Image(systemName: icon).foregroundColor(color).font(.system(size: 16))
             VStack(alignment: .leading, spacing: 1) {
-                Text(value)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundColor(.pathriftTextPrimary)
-                    .monospacedDigit()
-                Text(label)
-                    .font(.system(size: 8, weight: .semibold, design: .monospaced))
-                    .foregroundColor(.pathriftTextSecondary)
-                    .kerning(1.5)
+                Text(value).font(.system(size: 16, weight: .bold, design: .rounded)).foregroundColor(.pathriftTextPrimary).monospacedDigit()
+                Text(label).font(.system(size: 8, weight: .semibold, design: .monospaced)).foregroundColor(.pathriftTextSecondary).kerning(1.5)
             }
         }
     }

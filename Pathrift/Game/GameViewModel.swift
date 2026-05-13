@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 import Combine
 
 final class GameViewModel: ObservableObject {
@@ -14,7 +15,8 @@ final class GameViewModel: ObservableObject {
     let scene: GameScene
 
     init() {
-        let scene = GameScene()
+        let screenSize = UIScreen.main.bounds.size
+        let scene = GameScene(size: screenSize)
         scene.scaleMode = .resizeFill
         self.scene = scene
         bindScene()

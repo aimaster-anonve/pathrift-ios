@@ -10,14 +10,12 @@ struct GameView: View {
 
     var body: some View {
         ZStack {
-            // SpriteKit game - fills full screen
-            GeometryReader { geo in
-                SpriteView(scene: viewModel.scene, options: [.allowsTransparency])
-                    .frame(width: geo.size.width, height: geo.size.height)
-                    .ignoresSafeArea()
-            }
+            // Game scene — tüm ekranı kaplar (safe area dahil)
+            SpriteView(scene: viewModel.scene, options: [.allowsTransparency])
+                .ignoresSafeArea()
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
 
-            // HUD overlay - respects safe area
+            // HUD — safe area içinde otomatik kalır
             CombatHUDView(
                 viewModel: viewModel,
                 onStartWave: { viewModel.startNextWave() },
@@ -27,7 +25,7 @@ struct GameView: View {
                 }
             )
 
-            // Tower placement sheet
+            // Tower menüsü
             if showTowerMenu, let slotId = selectedSlotId {
                 TowerMenuView(
                     slotId: slotId,
@@ -53,24 +51,25 @@ struct GameView: View {
                     },
                     onQuit: {
                         viewModel.scene.isPaused = false
+                        isPaused = false
                         appState.goHome()
                     }
                 )
             }
         }
-        .ignoresSafeArea()
+        // NO .ignoresSafeArea() on ZStack
         .onAppear {
             viewModel.configure(appState: appState)
-            viewModel.scene.onSlotTapped = { slotId in
-                guard !isPaused else { return }
-                if let slot = viewModel.scene.gridSystem.slot(at: slotId),
+            viewModel.scene.onSlotTapped = { [weak viewModel] slotId in
+                guard let vm = viewModel, !isPaused else { return }
+                if let slot = vm.scene.gridSystem.slot(at: slotId),
                    !slot.state.isOccupied {
                     selectedSlotId = slotId
                     showTowerMenu = true
                 }
             }
         }
-        .onChange(of: viewModel.isGameOver) { isOver in
+        .onChange(of: viewModel.isGameOver) { _, isOver in
             if isOver, let result = viewModel.runResult {
                 LocalRunStorage.shared.saveRun(result: result)
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
@@ -88,47 +87,40 @@ struct PauseOverlay: View {
     var body: some View {
         ZStack {
             Color.black.opacity(0.75).ignoresSafeArea()
-            VStack(spacing: 24) {
-                Text("PAUSED")
-                    .font(.system(size: 32, weight: .black, design: .rounded))
-                    .foregroundColor(.pathriftNeonBlue)
-                    .shadow(color: .pathriftNeonBlue.opacity(0.6), radius: 12)
+            VStack(spacing: 28) {
+                VStack(spacing: 6) {
+                    Text("⏸")
+                        .font(.system(size: 40))
+                    Text("PAUSED")
+                        .font(.system(size: 30, weight: .black, design: .rounded))
+                        .foregroundColor(.pathriftNeonBlue)
+                        .shadow(color: .pathriftNeonBlue.opacity(0.5), radius: 10)
+                }
 
                 VStack(spacing: 14) {
                     Button(action: onResume) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "play.fill")
-                            Text("RESUME")
-                                .kerning(1)
-                        }
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
-                        .foregroundColor(.pathriftBackground)
-                        .frame(width: 220, height: 52)
-                        .background(Color.pathriftNeonBlue)
-                        .cornerRadius(14)
+                        Label("RESUME", systemImage: "play.fill")
+                            .font(.system(size: 16, weight: .bold, design: .rounded))
+                            .foregroundColor(.pathriftBackground)
+                            .frame(width: 220, height: 52)
+                            .background(Color.pathriftNeonBlue)
+                            .cornerRadius(14)
                     }
                     .buttonStyle(ScaleButtonStyle())
 
                     Button(action: onQuit) {
-                        HStack(spacing: 10) {
-                            Image(systemName: "xmark.circle")
-                            Text("QUIT RUN")
-                                .kerning(1)
-                        }
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
-                        .foregroundColor(.pathriftDanger)
-                        .frame(width: 220, height: 52)
-                        .background(Color.pathriftSurface)
-                        .cornerRadius(14)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14)
-                                .strokeBorder(Color.pathriftDanger.opacity(0.4), lineWidth: 1)
-                        )
+                        Label("QUIT RUN", systemImage: "xmark")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundColor(.pathriftDanger)
+                            .frame(width: 220, height: 52)
+                            .background(Color.pathriftSurface)
+                            .cornerRadius(14)
+                            .overlay(RoundedRectangle(cornerRadius: 14)
+                                .strokeBorder(Color.pathriftDanger.opacity(0.5), lineWidth: 1))
                     }
                     .buttonStyle(ScaleButtonStyle())
                 }
             }
-            .padding(32)
         }
     }
 }
