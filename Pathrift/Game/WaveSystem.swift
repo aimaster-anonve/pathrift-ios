@@ -3,7 +3,7 @@ import CoreGraphics
 
 enum EnemyType: String, CaseIterable {
     case runner = "Runner"
-    case tank = "Tank"
+    case tank   = "Tank"
 }
 
 struct EnemySpawnEntry {
@@ -22,12 +22,36 @@ struct WaveDefinition {
 }
 
 final class WaveSystem {
+    // Wave 1-5 base patterns — tuned for fair first-play experience.
+    // Players have 250 gold = ~3 towers by wave 1.
     private let basePatterns: [WaveDefinition] = [
-        WaveDefinition(waveNumber: 1, spawns: [EnemySpawnEntry(type: .runner, count: 5)], spawnInterval: 1.2),
-        WaveDefinition(waveNumber: 2, spawns: [EnemySpawnEntry(type: .runner, count: 3), EnemySpawnEntry(type: .tank, count: 1)], spawnInterval: 1.5),
-        WaveDefinition(waveNumber: 3, spawns: [EnemySpawnEntry(type: .runner, count: 8)], spawnInterval: 1.0),
-        WaveDefinition(waveNumber: 4, spawns: [EnemySpawnEntry(type: .tank, count: 2)], spawnInterval: 2.0),
-        WaveDefinition(waveNumber: 5, spawns: [EnemySpawnEntry(type: .runner, count: 6), EnemySpawnEntry(type: .tank, count: 2)], spawnInterval: 1.3)
+        // Wave 1: easy intro — 3 slow runners, generous interval
+        WaveDefinition(waveNumber: 1,
+                       spawns: [EnemySpawnEntry(type: .runner, count: 3)],
+                       spawnInterval: 2.5),
+
+        // Wave 2: slightly more, introduce spacing challenge
+        WaveDefinition(waveNumber: 2,
+                       spawns: [EnemySpawnEntry(type: .runner, count: 4)],
+                       spawnInterval: 2.2),
+
+        // Wave 3: first tank — teaches armor counter
+        WaveDefinition(waveNumber: 3,
+                       spawns: [EnemySpawnEntry(type: .runner, count: 4),
+                                EnemySpawnEntry(type: .tank,   count: 1)],
+                       spawnInterval: 2.0),
+
+        // Wave 4: pressure ramps up
+        WaveDefinition(waveNumber: 4,
+                       spawns: [EnemySpawnEntry(type: .runner, count: 6),
+                                EnemySpawnEntry(type: .tank,   count: 1)],
+                       spawnInterval: 1.8),
+
+        // Wave 5: dual tanks test
+        WaveDefinition(waveNumber: 5,
+                       spawns: [EnemySpawnEntry(type: .runner, count: 5),
+                                EnemySpawnEntry(type: .tank,   count: 2)],
+                       spawnInterval: 1.6),
     ]
 
     private(set) var currentWave: Int = 0
@@ -40,17 +64,15 @@ final class WaveSystem {
 
     func waveDefinition(for waveNumber: Int) -> WaveDefinition {
         let patternIndex = (waveNumber - 1) % cycleSize
-        let cycleNumber = (waveNumber - 1) / cycleSize
+        let cycleNumber  = (waveNumber - 1) / cycleSize
         let base = basePatterns[patternIndex]
 
-        if cycleNumber == 0 {
-            return base
-        }
+        if cycleNumber == 0 { return base }
 
         let scaledSpawns = base.spawns.map { entry in
             EnemySpawnEntry(type: entry.type, count: entry.count + cycleNumber)
         }
-        let adjustedInterval = max(0.5, base.spawnInterval - Double(cycleNumber) * 0.05)
+        let adjustedInterval = max(0.8, base.spawnInterval - Double(cycleNumber) * 0.08)
         return WaveDefinition(waveNumber: waveNumber, spawns: scaledSpawns, spawnInterval: adjustedInterval)
     }
 
@@ -59,7 +81,5 @@ final class WaveSystem {
         return 1.0 + cycleNumber * 0.20
     }
 
-    func reset() {
-        currentWave = 0
-    }
+    func reset() { currentWave = 0 }
 }

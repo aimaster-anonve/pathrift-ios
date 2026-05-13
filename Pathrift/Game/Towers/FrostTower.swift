@@ -8,10 +8,13 @@ final class FrostTower: Tower {
     let slotId: Int
     var lastFiredTime: TimeInterval = 0
     let node: SKNode
+    var level: Int = 1
+    var totalInvested: Int
 
     init(position: CGPoint, slotId: Int) {
         self.position = position
         self.slotId = slotId
+        self.totalInvested = EconomyConstants.TowerCost.frost
         self.node = FrostTower.makeNode(at: position)
     }
 
@@ -19,48 +22,50 @@ final class FrostTower: Tower {
         let container = SKNode()
         container.position = position
 
-        let base = SKShapeNode(circleOfRadius: 18)
-        base.fillColor = TowerType.frost.nodeColor
-        base.strokeColor = SKColor.white
-        base.lineWidth = 2
+        // Base
+        let base = SKShapeNode(rectOf: CGSize(width: 36, height: 8), cornerRadius: 3)
+        base.fillColor = SKColor(red: 0.06, green: 0.10, blue: 0.20, alpha: 1)
+        base.strokeColor = SKColor(red: 0.55, green: 0.78, blue: 1.0, alpha: 0.6)
+        base.lineWidth = 1.5
+        base.position = CGPoint(x: 0, y: -12)
         container.addChild(base)
 
-        let crystal = FrostTower.makeCrystalShape()
-        crystal.fillColor = SKColor.cyan.withAlphaComponent(0.8)
+        // Circular body
+        let body = SKShapeNode(circleOfRadius: 13)
+        body.fillColor = SKColor(red: 0.06, green: 0.12, blue: 0.28, alpha: 1)
+        body.strokeColor = SKColor(red: 0.55, green: 0.85, blue: 1.0, alpha: 1)
+        body.lineWidth = 2
+        container.addChild(body)
+
+        // Ice crystal center
+        let crystal = SKShapeNode(circleOfRadius: 5)
+        crystal.fillColor = SKColor(red: 0.7, green: 0.9, blue: 1.0, alpha: 1)
         crystal.strokeColor = SKColor.white
         crystal.lineWidth = 1
         container.addChild(crystal)
 
-        let rotateForever = SKAction.repeatForever(SKAction.rotate(byAngle: .pi * 2, duration: 3.0))
-        crystal.run(rotateForever)
+        // Crystal spikes (4 directions)
+        for angle in [CGFloat(0.0), CGFloat.pi / 2, CGFloat.pi, 3 * CGFloat.pi / 2] {
+            let spike = SKShapeNode(rectOf: CGSize(width: 3, height: 12), cornerRadius: 1)
+            spike.fillColor = SKColor(red: 0.7, green: 0.9, blue: 1.0, alpha: 0.9)
+            spike.strokeColor = SKColor.clear
+            spike.position = CGPoint(x: cos(angle) * 9, y: sin(angle) * 9)
+            spike.zRotation = angle
+            container.addChild(spike)
+        }
 
-        let glow = SKShapeNode(circleOfRadius: 22)
-        glow.strokeColor = SKColor.cyan
-        glow.lineWidth = 1
-        glow.alpha = 0.4
-        let glowFade = SKAction.repeatForever(SKAction.sequence([
-            SKAction.fadeAlpha(to: 0.8, duration: 1.0),
-            SKAction.fadeAlpha(to: 0.2, duration: 1.0)
-        ]))
-        glow.run(glowFade)
-        container.addChild(glow)
+        // Outer freeze ring
+        let ring = SKShapeNode(circleOfRadius: 15)
+        ring.fillColor = SKColor.clear
+        ring.strokeColor = SKColor(red: 0.6, green: 0.88, blue: 1.0, alpha: 0.3)
+        ring.lineWidth = 1.5
+        container.addChild(ring)
+
+        // Slow rotation
+        let rotate = SKAction.repeatForever(SKAction.rotate(byAngle: .pi * 2, duration: 4.0))
+        crystal.run(rotate)
 
         return container
-    }
-
-    private static func makeCrystalShape() -> SKShapeNode {
-        let path = CGMutablePath()
-        let points: [(CGFloat, CGFloat)] = [
-            (0, 16), (6, 6), (16, 0),
-            (6, -6), (0, -16), (-6, -6),
-            (-16, 0), (-6, 6)
-        ]
-        path.move(to: CGPoint(x: points[0].0, y: points[0].1))
-        for p in points.dropFirst() {
-            path.addLine(to: CGPoint(x: p.0, y: p.1))
-        }
-        path.closeSubpath()
-        return SKShapeNode(path: path)
     }
 
     func buildNode() -> SKNode {

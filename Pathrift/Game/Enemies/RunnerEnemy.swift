@@ -6,7 +6,7 @@ final class RunnerEnemy: EnemyNode {
     let type: EnemyType = .runner
     let maxHP: CGFloat
     var currentHP: CGFloat
-    let baseSpeed: CGFloat = 150
+    let baseSpeed: CGFloat = 72   // ~half speed — gives towers time to fire
     var currentSpeed: CGFloat
     let armor: CGFloat = 0.0
     let goldReward: Int = EconomyConstants.EnemyGoldReward.runner
@@ -28,38 +28,39 @@ final class RunnerEnemy: EnemyNode {
         let container = SKNode()
         container.zPosition = 4
 
-        let body = SKShapeNode(rectOf: CGSize(width: 18, height: 18), cornerRadius: 3)
-        body.fillColor = SKColor(red: 0.2, green: 0.9, blue: 0.3, alpha: 1)
-        body.strokeColor = SKColor.white
+        // Body — diamond/angular shape for speed feel
+        let body = SKShapeNode(rectOf: CGSize(width: 16, height: 20), cornerRadius: 4)
+        body.fillColor = SKColor(red: 0.1, green: 0.8, blue: 0.25, alpha: 1)
+        body.strokeColor = SKColor(red: 0.0, green: 1.0, blue: 0.3, alpha: 0.8)
         body.lineWidth = 1.5
         container.addChild(body)
 
+        // Speed stripes
+        for yOff: CGFloat in [3, -3] {
+            let stripe = SKShapeNode(rectOf: CGSize(width: 10, height: 2), cornerRadius: 1)
+            stripe.fillColor = SKColor(red: 0.0, green: 1.0, blue: 0.4, alpha: 0.5)
+            stripe.strokeColor = SKColor.clear
+            stripe.position = CGPoint(x: 0, y: yOff)
+            container.addChild(stripe)
+        }
+
+        // Eyes
         let eye = SKShapeNode(circleOfRadius: 3)
-        eye.fillColor = SKColor.white
-        eye.position = CGPoint(x: 3, y: 3)
+        eye.fillColor = SKColor.red
+        eye.strokeColor = SKColor.white
+        eye.lineWidth = 1
+        eye.position = CGPoint(x: 0, y: 5)
         container.addChild(eye)
 
-        let pupil = SKShapeNode(circleOfRadius: 1.5)
-        pupil.fillColor = SKColor.black
-        pupil.position = CGPoint(x: 3, y: 3)
-        container.addChild(pupil)
-
+        // Health bar
         let (bg, bar) = RunnerEnemy.makeHealthBarNodes()
         container.addChild(bg)
         container.addChild(bar)
 
-        let label = SKLabelNode(text: "R")
-        label.fontColor = SKColor.white
-        label.fontSize = 8
-        label.fontName = "AvenirNext-Bold"
-        label.verticalAlignmentMode = .center
-        label.horizontalAlignmentMode = .center
-        label.position = CGPoint(x: -4, y: 0)
-        container.addChild(label)
-
+        // Run animation (subtle bounce)
         let bounce = SKAction.repeatForever(SKAction.sequence([
-            SKAction.moveBy(x: 0, y: 2, duration: 0.2),
-            SKAction.moveBy(x: 0, y: -2, duration: 0.2)
+            SKAction.moveBy(x: 0, y: 2, duration: 0.15),
+            SKAction.moveBy(x: 0, y: -2, duration: 0.15)
         ]))
         body.run(bounce)
 

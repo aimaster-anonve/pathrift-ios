@@ -91,6 +91,8 @@ protocol Tower: AnyObject {
     var slotId: Int { get }
     var lastFiredTime: TimeInterval { get set }
     var node: SKNode { get }
+    var level: Int { get set }
+    var totalInvested: Int { get set }
 
     func canFire(at currentTime: TimeInterval) -> Bool
     func fire(at enemy: EnemyNode, scene: SKScene, currentTime: TimeInterval)

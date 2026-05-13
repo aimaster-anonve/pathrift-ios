@@ -42,6 +42,25 @@ struct GameView: View {
                 )
             }
 
+            // Tower info panel (upgrade/sell)
+            if let info = viewModel.selectedTowerInfo {
+                TowerInfoPanel(
+                    info: info,
+                    gold: viewModel.gold,
+                    onUpgrade: {
+                        viewModel.upgradeSelectedTower()
+                    },
+                    onSell: {
+                        viewModel.sellSelectedTower()
+                    },
+                    onDismiss: {
+                        viewModel.selectedTowerSlotId = nil
+                        viewModel.selectedTowerInfo = nil
+                        viewModel.scene.hideRangeRing()
+                    }
+                )
+            }
+
             // Pause overlay
             if isPaused {
                 PauseOverlay(

@@ -37,6 +37,26 @@ final class GameScene: SKScene {
 
     private var lastUpdateTime: TimeInterval = 0
 
+    // MARK: - Range Ring
+    private var rangeRingNode: SKShapeNode?
+
+    func showRangeRing(for tower: any Tower) {
+        hideRangeRing()
+        let ring = SKShapeNode(circleOfRadius: tower.type.range)
+        ring.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.4)
+        ring.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.06)
+        ring.lineWidth = 1.5
+        ring.position = tower.position
+        ring.zPosition = 2.5
+        effectLayer.addChild(ring)
+        rangeRingNode = ring
+    }
+
+    func hideRangeRing() {
+        rangeRingNode?.removeFromParent()
+        rangeRingNode = nil
+    }
+
     // MARK: - Callbacks (bridge to SwiftUI)
     var onGoldChanged: ((Int) -> Void)?
     var onLivesChanged: ((Int) -> Void)?
@@ -44,6 +64,12 @@ final class GameScene: SKScene {
     var onKillsChanged: ((Int) -> Void)?
     var onGameOver: ((RunResult) -> Void)?
     var onWaveComplete: ((Int) -> Void)?
+    var onTowerTapped: ((Int) -> Void)?
+    var onSelectedTowerSlotId: Int? {
+        didSet {
+            if onSelectedTowerSlotId == nil { hideRangeRing() }
+        }
+    }
 
     // MARK: - Setup
 
@@ -121,10 +147,10 @@ final class GameScene: SKScene {
             CGPoint(x: xL+hGap, y: y2+(y3-y2)*0.42),
             // Open zone right side (x>xR, y>y2 — no path)
             CGPoint(x: safeRight, y: y2+(y3-y2)*0.38),
-            // Below top lane — 3 slots well-separated
-            CGPoint(x: W*0.20, y: y3-vGap),
-            CGPoint(x: W*0.50, y: y3-vGap),
-            CGPoint(x: W*0.78, y: y3-vGap),
+            // Below top lane — 3 slots, leftmost anchored past xL so never on left vertical
+            CGPoint(x: xL + hGap + 5,        y: y3-vGap),  // just right of left vertical
+            CGPoint(x: (xL + W) * 0.5 + 10,  y: y3-vGap),  // center-right
+            CGPoint(x: min(W*0.84, W-32),     y: y3-vGap),  // right side, clamped from edge
         ])
     }
 
@@ -296,10 +322,22 @@ final class GameScene: SKScene {
             if let name = node.name, name.hasPrefix("slot_"),
                let idStr = name.components(separatedBy: "_").last,
                let slotId = Int(idStr) {
-                onSlotTapped?(slotId)
+                if let slot = gridSystem.slot(at: slotId) {
+                    if slot.state.isOccupied {
+                        if let tower = activeTowers.first(where: { $0.slotId == slotId }) {
+                            showRangeRing(for: tower)
+                        }
+                        onTowerTapped?(slotId)
+                    } else {
+                        hideRangeRing()
+                        onSlotTapped?(slotId)
+                    }
+                }
                 return
             }
         }
+        hideRangeRing()
+        onSelectedTowerSlotId = nil
     }
 
     var onSlotTapped: ((Int) -> Void)?
@@ -542,6 +580,36 @@ final class GameScene: SKScene {
         run(SKAction.wait(forDuration: 2.0)) { [weak self] in
             self?.onGameOver?(result)
         }
+    }
+
+    // MARK: - Tower Management
+
+    func sellTower(at slotId: Int) {
+        guard let towerIdx = activeTowers.firstIndex(where: { $0.slotId == slotId }) else { return }
+        let tower = activeTowers[towerIdx]
+        let refund = Int(Double(tower.totalInvested) * EconomyConstants.TowerSellRefund.manualPercent)
+        goldManager.earn(refund)
+        tower.node.removeFromParent()
+        activeTowers.remove(at: towerIdx)
+        gridSystem.removeTower(at: slotId)
+        hideRangeRing()
+        if let slotNode = towerSlotLayer.childNode(withName: "slot_\(slotId)") {
+            slotNode.isHidden = false
+        }
+    }
+
+    func upgradeTower(at slotId: Int) {
+        guard let tower = activeTowers.first(where: { $0.slotId == slotId }) else { return }
+        let upgradeCost = Int(Double(EconomyConstants.TowerUpgrade.baseCost) *
+                             pow(EconomyConstants.TowerUpgrade.growthRate, Double(tower.level - 1)))
+        guard goldManager.spend(upgradeCost) else { return }
+        tower.level += 1
+        tower.totalInvested += upgradeCost
+        let flash = SKAction.sequence([
+            SKAction.scale(to: 1.3, duration: 0.1),
+            SKAction.scale(to: 1.0, duration: 0.15)
+        ])
+        tower.node.run(flash)
     }
 
     func pauseGame() {

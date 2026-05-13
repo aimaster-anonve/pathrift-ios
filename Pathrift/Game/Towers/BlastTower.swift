@@ -8,6 +8,8 @@ final class BlastTower: Tower {
     let slotId: Int
     var lastFiredTime: TimeInterval = 0
     let node: SKNode
+    var level: Int = 1
+    var totalInvested: Int
 
     /// Called by GameScene to apply AoE damage to nearby enemies when shell impacts.
     var blastDamageCallback: ((CGPoint, CGFloat, CGFloat) -> Void)?
@@ -15,6 +17,7 @@ final class BlastTower: Tower {
     init(position: CGPoint, slotId: Int) {
         self.position = position
         self.slotId = slotId
+        self.totalInvested = EconomyConstants.TowerCost.blast
         self.node = BlastTower.makeNode(at: position)
     }
 
@@ -22,26 +25,51 @@ final class BlastTower: Tower {
         let container = SKNode()
         container.position = position
 
-        let base = SKShapeNode(rectOf: CGSize(width: 34, height: 34), cornerRadius: 4)
-        base.fillColor = TowerType.blast.nodeColor
-        base.strokeColor = SKColor.white
-        base.lineWidth = 2
+        // Base
+        let base = SKShapeNode(rectOf: CGSize(width: 36, height: 8), cornerRadius: 3)
+        base.fillColor = SKColor(red: 0.20, green: 0.10, blue: 0.05, alpha: 1)
+        base.strokeColor = SKColor(red: 1.0, green: 0.42, blue: 0.0, alpha: 0.7)
+        base.lineWidth = 1.5
+        base.position = CGPoint(x: 0, y: -12)
         container.addChild(base)
 
-        let top = SKShapeNode(circleOfRadius: 10)
-        top.fillColor = SKColor(red: 1.0, green: 0.6, blue: 0.1, alpha: 1)
-        top.position = CGPoint(x: 0, y: 6)
-        container.addChild(top)
+        // Heavy square body
+        let body = SKShapeNode(rectOf: CGSize(width: 28, height: 28), cornerRadius: 5)
+        body.fillColor = SKColor(red: 0.22, green: 0.10, blue: 0.04, alpha: 1)
+        body.strokeColor = SKColor(red: 1.0, green: 0.42, blue: 0.0, alpha: 1)
+        body.lineWidth = 2
+        container.addChild(body)
 
-        let ventL = SKShapeNode(rectOf: CGSize(width: 4, height: 14))
-        ventL.fillColor = SKColor(red: 0.8, green: 0.3, blue: 0.0, alpha: 1)
-        ventL.position = CGPoint(x: -10, y: 0)
-        container.addChild(ventL)
+        // Orange core ember
+        let ember = SKShapeNode(circleOfRadius: 6)
+        ember.fillColor = SKColor(red: 1.0, green: 0.55, blue: 0.0, alpha: 1)
+        ember.strokeColor = SKColor.clear
+        container.addChild(ember)
 
-        let ventR = SKShapeNode(rectOf: CGSize(width: 4, height: 14))
-        ventR.fillColor = SKColor(red: 0.8, green: 0.3, blue: 0.0, alpha: 1)
-        ventR.position = CGPoint(x: 10, y: 0)
-        container.addChild(ventR)
+        // Vents left/right
+        for xOff: CGFloat in [-10, 10] {
+            let vent = SKShapeNode(rectOf: CGSize(width: 5, height: 12), cornerRadius: 2)
+            vent.fillColor = SKColor(red: 0.8, green: 0.3, blue: 0.0, alpha: 0.9)
+            vent.strokeColor = SKColor.clear
+            vent.position = CGPoint(x: xOff, y: 2)
+            container.addChild(vent)
+        }
+
+        // Mortar tube at top
+        let tube = SKShapeNode(rectOf: CGSize(width: 8, height: 14), cornerRadius: 3)
+        tube.fillColor = SKColor(red: 0.5, green: 0.25, blue: 0.0, alpha: 1)
+        tube.strokeColor = SKColor(red: 1.0, green: 0.42, blue: 0.0, alpha: 0.6)
+        tube.lineWidth = 1
+        tube.position = CGPoint(x: 0, y: 18)
+        container.addChild(tube)
+
+        // Flicker effect on ember
+        let flicker = SKAction.repeatForever(SKAction.sequence([
+            SKAction.scale(to: 1.2, duration: 0.15),
+            SKAction.scale(to: 0.85, duration: 0.15),
+            SKAction.scale(to: 1.0, duration: 0.1)
+        ]))
+        ember.run(flicker)
 
         return container
     }
