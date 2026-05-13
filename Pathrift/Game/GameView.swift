@@ -13,8 +13,9 @@ struct GameView: View {
             // Background fills full screen including behind Dynamic Island
             Color.pathriftBackground.ignoresSafeArea()
 
-            // Game scene — respects safe area (no .ignoresSafeArea)
+            // Game scene — fills full screen including Dynamic Island area
             SpriteView(scene: viewModel.scene, options: [.allowsTransparency])
+                .ignoresSafeArea()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
 
             // HUD — safe area içinde otomatik kalır
@@ -121,10 +122,13 @@ struct GameView: View {
                 .zIndex(50)
             }
         }
-        // NO .ignoresSafeArea() on ZStack
+        // Status bar + Dynamic Island hidden → full immersive game screen
+        .statusBarHidden(true)
+        .persistentSystemOverlays(.hidden)
         .onAppear {
-            viewModel.scene.hudTopInset = 48
-            viewModel.scene.hudBottomInset = 46
+            // Scene fills full screen; layout keeps content clear of HUD overlay
+            viewModel.scene.hudTopInset = 56   // HUD bar + safe area clearance
+            viewModel.scene.hudBottomInset = 48  // bottom bar clearance
             viewModel.configure(appState: appState)
             viewModel.scene.onSlotTapped = { [weak viewModel] slotId in
                 guard let vm = viewModel, !isPaused else { return }
