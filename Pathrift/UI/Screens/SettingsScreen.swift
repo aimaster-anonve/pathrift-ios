@@ -82,14 +82,9 @@ struct SettingsScreen: View {
     private var gameInfoSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             sectionHeader(lang.s(L.gameInfo), icon: "info.circle")
-            VStack(spacing: 1) {
-                infoRow(label: lang.s(L.version), value: "\(appVersion) (\(lang.s(L.version)) \(buildNumber))")
-                infoRow(label: "Platform", value: "iOS Native")
-                infoRow(label: "Engine", value: "SpriteKit")
-                infoRow(label: "Build", value: buildNumber)
-            }
-            .background(Color.pathriftSurface)
-            .cornerRadius(12)
+            infoRow(label: lang.s(L.version), value: "\(appVersion) (\(buildNumber))")
+                .background(Color.pathriftSurface)
+                .cornerRadius(12)
         }
     }
 

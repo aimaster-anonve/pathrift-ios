@@ -712,7 +712,9 @@ final class GameScene: SKScene {
         let W = size.width
         let H = size.height
 
+        // Use large, clearly visible variance so players notice the shift
         let shiftType = Int.random(in: 0..<4)
+        let variance: CGFloat = H * 0.14   // ±14% — clearly visible lane movement
 
         let y1_base = H * 0.20
         let y2_base = H * 0.50
@@ -720,32 +722,28 @@ final class GameScene: SKScene {
         let xR_base = W * 0.74
         let xL_base = W * 0.26
 
-        let variance: CGFloat = H * 0.06   // ±6% of height
-
-        var y1 = y1_base
-        var y2 = y2_base
-        var y3 = y3_base
+        var y1 = y1_base, y2 = y2_base, y3 = y3_base
         var xR = xR_base
         let xL = xL_base
 
         switch shiftType {
-        case 0:  // Bottom lane shifts up or down
-            y1 = y1_base + CGFloat.random(in: -variance...variance)
-            y1 = max(H * 0.12, min(H * 0.30, y1))
-        case 1:  // Middle lane shifts
-            y2 = y2_base + CGFloat.random(in: -variance...variance)
-            y2 = max(y1 + H * 0.15, min(H * 0.60, y2))
-        case 2:  // Right vertical shifts left/right
-            let xVariance = W * 0.05
-            xR = xR_base + CGFloat.random(in: -xVariance...xVariance)
-            xR = max(W * 0.60, min(W * 0.82, xR))
-        case 3:  // Top lane shifts
-            y3 = y3_base + CGFloat.random(in: -variance...variance)
-            y3 = max(y2 + H * 0.15, min(H * 0.88, y3))
+        case 0:
+            let shift = CGFloat.random(in: variance * 0.5 ... variance) * (Bool.random() ? 1 : -1)
+            y1 = max(H * 0.10, min(H * 0.32, y1_base + shift))
+        case 1:
+            let shift = CGFloat.random(in: variance * 0.5 ... variance) * (Bool.random() ? 1 : -1)
+            y2 = max(y1 + H * 0.18, min(H * 0.62, y2_base + shift))
+        case 2:
+            let xVar = W * 0.12
+            let shift = CGFloat.random(in: xVar * 0.5 ... xVar) * (Bool.random() ? 1 : -1)
+            xR = max(W * 0.58, min(W * 0.85, xR_base + shift))
+        case 3:
+            let shift = CGFloat.random(in: variance * 0.5 ... variance) * (Bool.random() ? 1 : -1)
+            y3 = max(y2 + H * 0.18, min(H * 0.90, y3_base + shift))
         default: break
         }
 
-        // Update PathSystem with new waypoints
+        // New waypoints
         PathSystem.waypoints = [
             CGPoint(x: -10,  y: y1),
             CGPoint(x: xR,   y: y1),
@@ -755,37 +753,65 @@ final class GameScene: SKScene {
             CGPoint(x: W+10, y: y3)
         ]
 
-        // Update tower slot positions
+        // New slot positions
         let vGap: CGFloat = 85
         let hGap: CGFloat = 58
         let safeRight = min(xR + hGap, W - 30)
-
-        gridSystem.updateSlots([
-            CGPoint(x: W*0.14, y: y1+vGap),
-            CGPoint(x: W*0.40, y: y1+vGap),
-            CGPoint(x: W*0.64, y: y1+vGap),
-            CGPoint(x: safeRight, y: y1+(y2-y1)*0.28),
-            CGPoint(x: safeRight, y: y1+(y2-y1)*0.72),
-            CGPoint(x: W*0.36, y: y2-vGap),
-            CGPoint(x: W*0.62, y: y2-vGap),
-            CGPoint(x: xL+hGap, y: y2+(y3-y2)*0.42),
-            CGPoint(x: safeRight, y: y2+(y3-y2)*0.38),
-            CGPoint(x: xL+hGap+5, y: y3-vGap),
+        let newSlotPositions: [CGPoint] = [
+            CGPoint(x: W*0.14,        y: y1+vGap),
+            CGPoint(x: W*0.40,        y: y1+vGap),
+            CGPoint(x: W*0.64,        y: y1+vGap),
+            CGPoint(x: safeRight,     y: y1+(y2-y1)*0.28),
+            CGPoint(x: safeRight,     y: y1+(y2-y1)*0.72),
+            CGPoint(x: W*0.36,        y: y2-vGap),
+            CGPoint(x: W*0.62,        y: y2-vGap),
+            CGPoint(x: xL+hGap,       y: y2+(y3-y2)*0.42),
+            CGPoint(x: safeRight,     y: y2+(y3-y2)*0.38),
+            CGPoint(x: xL+hGap+5,    y: y3-vGap),
             CGPoint(x: (xL+W)*0.5+10, y: y3-vGap),
             CGPoint(x: min(W*0.84, W-32), y: y3-vGap),
-        ])
+        ]
 
-        // Redraw path and slots
+        // Snapshot current tower occupations BEFORE updating slots
+        let towerSnapshot = activeTowers.map { (slotId: $0.slotId, type: $0.type, tower: $0) }
+
+        // Update grid system with new positions (clears occupation)
+        gridSystem.updateSlots(newSlotPositions)
+
+        // Redraw path and slot visuals
         pathLayer.removeAllChildren()
         towerSlotLayer.removeAllChildren()
         setupPath()
         setupTowerSlots()
 
-        // Re-hide slots that still have towers placed
-        for tower in activeTowers {
-            if let slotNode = towerSlotLayer.childNode(withName: "slot_\(tower.slotId)") {
-                slotNode.isHidden = true
+        // Re-apply tower occupation at new positions, animate towers moving
+        let moveDuration: TimeInterval = 0.45
+        for entry in towerSnapshot {
+            guard let newSlot = gridSystem.slot(at: entry.slotId) else { continue }
+            let newPos = newSlot.position
+
+            // Restore occupation in gridSystem
+            gridSystem.placeTower(type: entry.type, at: entry.slotId)
+
+            // Animate tower node to new position
+            entry.tower.position = newPos
+            entry.tower.node.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.move(to: newPos, duration: moveDuration),
+                    SKAction.scale(to: 1.2, duration: moveDuration * 0.4),
+                ]),
+                SKAction.scale(to: 1.0, duration: 0.15)
+            ]))
+
+            // Move tap detector to new position
+            if let detector = towerLayer.childNode(withName: "slot_\(entry.slotId)") {
+                detector.run(SKAction.move(to: newPos, duration: moveDuration))
             }
+
+            // Hide new slot indicator (tower occupies it)
+            towerSlotLayer.childNode(withName: "slot_\(entry.slotId)")?.isHidden = true
         }
+
+        hideRangeRing()
     }
 }
