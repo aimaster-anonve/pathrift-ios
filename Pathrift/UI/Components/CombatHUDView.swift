@@ -141,15 +141,51 @@ struct CombatHUDView: View {
     }
 
     private var waveProgressIndicator: some View {
-        HStack(spacing: 8) {
-            ProgressView().progressViewStyle(.circular).scaleEffect(0.65).tint(.pathriftNeonBlue)
-            Text("WAVE IN PROGRESS")
-                .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                .foregroundColor(.pathriftNeonBlue.opacity(0.8)).kerning(1)
+        VStack(alignment: .trailing, spacing: 5) {
+            HStack(spacing: 6) {
+                Text("\(viewModel.waveEnemiesCleared)")
+                    .font(.system(size: 13, weight: .black, design: .rounded))
+                    .foregroundColor(.pathriftNeonBlue)
+                    .monospacedDigit()
+                Text("/")
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundColor(.pathriftTextSecondary)
+                Text("\(viewModel.waveEnemyTotal)")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundColor(.pathriftTextSecondary)
+                    .monospacedDigit()
+                Text("CLEARED")
+                    .font(.system(size: 8, weight: .bold, design: .monospaced))
+                    .foregroundColor(.pathriftTextSecondary)
+                    .kerning(1.5)
+            }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(Color.pathriftSurface)
+                        .frame(height: 7)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(
+                            LinearGradient(
+                                colors: [Color.pathriftNeonBlue, Color.pathriftPurple],
+                                startPoint: .leading, endPoint: .trailing
+                            )
+                        )
+                        .frame(
+                            width: max(8, geo.size.width * CGFloat(viewModel.waveProgress)),
+                            height: 7
+                        )
+                        .animation(.spring(response: 0.3, dampingFraction: 0.8),
+                                   value: viewModel.waveProgress)
+                }
+            }
+            .frame(width: 140, height: 7)
         }
-        .padding(.horizontal, 16).padding(.vertical, 10)
-        .background(Color.pathriftSurface.opacity(0.9))
-        .cornerRadius(10)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
+        .background(Color.pathriftSurface.opacity(0.85))
+        .cornerRadius(12)
     }
 }
 

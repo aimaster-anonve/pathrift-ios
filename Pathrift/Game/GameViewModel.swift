@@ -14,6 +14,13 @@ final class GameViewModel: ObservableObject {
     @Published var selectedTowerSlotId: Int? = nil
     @Published var selectedTowerInfo: TowerInfo? = nil
     @Published var riftShiftTriggered: Bool = false
+    @Published var waveEnemyTotal: Int = 1
+    @Published var waveEnemiesCleared: Int = 0
+
+    var waveProgress: Double {
+        guard waveEnemyTotal > 0 else { return 0 }
+        return min(1.0, Double(waveEnemiesCleared) / Double(waveEnemyTotal))
+    }
 
     struct TowerInfo {
         let slotId: Int
@@ -89,6 +96,12 @@ final class GameViewModel: ObservableObject {
                     self.selectedTowerSlotId = nil
                     self.selectedTowerInfo = nil
                 }
+            }
+        }
+        scene.onWaveProgress = { [weak self] cleared, total in
+            DispatchQueue.main.async {
+                self?.waveEnemiesCleared = cleared
+                self?.waveEnemyTotal = max(1, total)
             }
         }
         scene.onRiftShift = { [weak self] in

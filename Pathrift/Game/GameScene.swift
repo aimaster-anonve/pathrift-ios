@@ -63,6 +63,10 @@ final class GameScene: SKScene {
     var onLivesChanged: ((Int) -> Void)?
     var onWaveChanged: ((Int) -> Void)?
     var onKillsChanged: ((Int) -> Void)?
+    var onWaveProgress: ((Int, Int) -> Void)?  // (cleared, total)
+
+    private var waveEnemyTotal: Int = 0
+    private var waveEnemiesCleared: Int = 0
     var onGameOver: ((RunResult) -> Void)?
     var onWaveComplete: ((Int) -> Void)?
     var onTowerTapped: ((Int) -> Void)?
@@ -405,7 +409,10 @@ final class GameScene: SKScene {
         remainingInCurrentBatch = currentSpawnBatches.first?.count ?? 0
         timeSinceLastSpawn = spawnInterval
         isWaveActive = true
+        waveEnemyTotal = waveDef.totalEnemyCount
+        waveEnemiesCleared = 0
         onWaveChanged?(currentWaveNumber)
+        onWaveProgress?(0, waveEnemyTotal)
 
         showWaveBanner(wave: currentWaveNumber)
     }
@@ -517,9 +524,13 @@ final class GameScene: SKScene {
                 deadIndices.append(idx)
                 goldManager.earn(enemy.goldReward)
                 enemyKills += 1
+                waveEnemiesCleared += 1
                 onKillsChanged?(enemyKills)
+                onWaveProgress?(waveEnemiesCleared, waveEnemyTotal)
             } else if enemy.hasReachedEnd {
                 endReachedIndices.append(idx)
+                waveEnemiesCleared += 1
+                onWaveProgress?(waveEnemiesCleared, waveEnemyTotal)
                 loseLife()
             }
         }
@@ -748,80 +759,94 @@ final class GameScene: SKScene {
 
     // MARK: - Map Layouts (5 completely different configurations)
 
+    // MARK: - Layout System (12 layouts — guaranteed slot/path separation)
+
+    // Derives slot positions algorithmically so they NEVER land on the path.
+    // Works for both forward (y1<y2<y3) and reverse (y1>y2>y3) Z-shapes.
+    private func computeSlots(y1: CGFloat, y2: CGFloat, y3: CGFloat,
+                               xL: CGFloat, xR: CGFloat) -> [CGPoint] {
+        let W = size.width, H = size.height
+        let vGap: CGFloat = 92   // vertical clearance from horizontal segment
+        let hGap: CGFloat = 68   // horizontal clearance from vertical segment
+        let edge: CGFloat = 30   // minimum distance from screen edge
+        let minSep: CGFloat = 56 // minimum slot-to-slot distance
+
+        let fwd = y1 < y2
+        // Interior-facing offsets — always place slots on the "inside" of the Z
+        let seg1Side = y1 + (fwd ?  vGap : -vGap)
+        let seg3Side = y2 + (fwd ? -vGap :  vGap)
+        let seg5Side = y3 + (fwd ? -vGap :  vGap)
+        let srx = min(xR + hGap, W - edge)   // right of xR, clamped to screen
+
+        let cands: [CGPoint] = [
+            // Adjacent to first horizontal (seg1)
+            CGPoint(x: W*0.14,                         y: seg1Side),
+            CGPoint(x: W*0.40,                         y: seg1Side),
+            CGPoint(x: min(W*0.64, xR-hGap-8),        y: seg1Side),
+            // Right of right vertical (seg2)
+            CGPoint(x: srx, y: y1 + (y2-y1)*0.27),
+            CGPoint(x: srx, y: y1 + (y2-y1)*0.73),
+            // Adjacent to middle horizontal (seg3) — between the two verticals
+            CGPoint(x: max(W*0.36, xL+hGap+12),       y: seg3Side),
+            CGPoint(x: min(W*0.62, xR-hGap-12),       y: seg3Side),
+            // Right of left vertical (seg4)
+            CGPoint(x: xL + hGap,  y: y2 + (y3-y2)*0.33),
+            CGPoint(x: xL + hGap,  y: y2 + (y3-y2)*0.68),
+            // Open right zone (x > xR between y2 and y3 — no path segment here)
+            CGPoint(x: srx,         y: y2 + (y3-y2)*0.46),
+            // Adjacent to last horizontal (seg5)
+            CGPoint(x: max(xL+hGap+6, W*0.20),        y: seg5Side),
+            CGPoint(x: (xL+W)*0.5 + 8,                y: seg5Side),
+            CGPoint(x: min(W*0.80, W-edge),            y: seg5Side),
+        ]
+
+        var result: [CGPoint] = []
+        for c in cands {
+            guard c.x >= edge, c.x <= W-edge, c.y >= edge, c.y <= H-edge else { continue }
+            let tooClose = result.contains { e in hypot(c.x-e.x, c.y-e.y) < minSep }
+            if !tooClose { result.append(c) }
+        }
+        return Array(result.prefix(12))
+    }
+
+    // 12 layout parameter sets — (y1%, y2%, y3%, xL%, xR%) all as fractions of H/W.
+    // Minimum vertical lane gap: 0.22H (~187pt). Minimum horizontal width: 0.36W (~141pt).
+    private let layoutParams: [(CGFloat, CGFloat, CGFloat, CGFloat, CGFloat)] = [
+        (0.20, 0.50, 0.78, 0.26, 0.74),   // 0: standard forward Z
+        (0.78, 0.50, 0.22, 0.28, 0.72),   // 1: reverse Z
+        (0.12, 0.50, 0.88, 0.18, 0.82),   // 2: wide Z
+        (0.28, 0.50, 0.72, 0.30, 0.70),   // 3: tight centre
+        (0.20, 0.53, 0.84, 0.15, 0.60),   // 4: left-heavy
+        (0.16, 0.50, 0.84, 0.40, 0.85),   // 5: right-heavy
+        (0.15, 0.40, 0.78, 0.25, 0.75),   // 6: upper double
+        (0.22, 0.60, 0.85, 0.26, 0.74),   // 7: lower double
+        (0.82, 0.48, 0.16, 0.22, 0.78),   // 8: wide reverse
+        (0.20, 0.44, 0.80, 0.35, 0.65),   // 9: compressed mid
+        (0.18, 0.58, 0.82, 0.24, 0.76),   // 10: lower compressed
+        (0.75, 0.44, 0.17, 0.32, 0.68),   // 11: narrow reverse
+    ]
+
     private func layoutConfig(index: Int) -> (waypoints: [CGPoint], slots: [CGPoint]) {
         let W = size.width, H = size.height
-        let v: CGFloat = 82, h: CGFloat = 60
-
-        func p(_ x: CGFloat, _ y: CGFloat) -> CGPoint { CGPoint(x: x, y: y) }
-
-        switch index {
-
-        case 1: // Reverse Z — entry top-left, exit bottom-right
-            let y1=H*0.78, y2=H*0.48, y3=H*0.18, xR=W*0.72, xL=W*0.28
-            let sr = min(xR+h, W-28)
-            return (
-                [p(-10,y1),p(xR,y1),p(xR,y2),p(xL,y2),p(xL,y3),p(W+10,y3)],
-                [p(W*0.14,y1-v),p(W*0.42,y1-v),p(W*0.62,y1-v),
-                 p(sr,y1-(y1-y2)*0.27),p(sr,y1-(y1-y2)*0.73),
-                 p(W*0.38,y2+v),p(W*0.60,y2+v),
-                 p(xL+h,y2-(y2-y3)*0.35),p(xL+h,y2-(y2-y3)*0.70),
-                 p(W*0.22,y3+v),p(W*0.50,y3+v),p(min(W*0.78,W-28),y3+v)]
-            )
-
-        case 2: // Wide Z — extreme outer lanes, lots of space in centre
-            let y1=H*0.11, y2=H*0.50, y3=H*0.89, xR=W*0.83, xL=W*0.17
-            let sr = min(xR+h, W-28)
-            return (
-                [p(-10,y1),p(xR,y1),p(xR,y2),p(xL,y2),p(xL,y3),p(W+10,y3)],
-                [p(W*0.20,y1+v),p(W*0.46,y1+v),p(W*0.66,y1+v),
-                 p(sr,y1+(y2-y1)*0.28),p(sr,y1+(y2-y1)*0.68),
-                 p(W*0.34,y2-v),p(W*0.58,y2-v),
-                 p(xL+h,y2+(y3-y2)*0.35),p(xL+h,y2+(y3-y2)*0.68),
-                 p(xL+h+4,y3-v),p(W*0.50,y3-v),p(min(W*0.82,W-28),y3-v)]
-            )
-
-        case 3: // Tight Centre Z — all lanes close together in the middle third
-            let y1=H*0.31, y2=H*0.50, y3=H*0.69, xR=W*0.68, xL=W*0.32
-            let sr = min(xR+h, W-28), sl = max(xL-h, 28)
-            return (
-                [p(-10,y1),p(xR,y1),p(xR,y2),p(xL,y2),p(xL,y3),p(W+10,y3)],
-                [p(W*0.10,y1+v),p(W*0.38,y1+v),p(W*0.60,y1+v),
-                 p(sr,y1+(y2-y1)*0.5),p(sl,y1+(y2-y1)*0.5),
-                 p(W*0.36,y2-v),p(W*0.62,y2-v),
-                 p(xL+h,y2+(y3-y2)*0.5),p(sr,y2+(y3-y2)*0.5),
-                 p(xL+h+4,y3-v),p(W*0.50,y3-v),p(min(W*0.82,W-28),y3-v)]
-            )
-
-        case 4: // Left-heavy Z — vertical connectors biased left, open right field
-            let y1=H*0.20, y2=H*0.53, y3=H*0.83, xR=W*0.58, xL=W*0.14
-            let sr = min(xR+h, W-28)
-            return (
-                [p(-10,y1),p(xR,y1),p(xR,y2),p(xL,y2),p(xL,y3),p(W+10,y3)],
-                [p(W*0.12,y1+v),p(W*0.36,y1+v),p(W*0.72,y1+v),
-                 p(sr,y1+(y2-y1)*0.30),p(sr,y1+(y2-y1)*0.72),
-                 p(W*0.42,y2-v),p(W*0.72,y2-v),p(W*0.88,y2),
-                 p(xL+h,y2+(y3-y2)*0.42),p(xL+h,y2+(y3-y2)*0.78),
-                 p(W*0.44,y3-v),p(min(W*0.82,W-28),y3-v)]
-            )
-
-        default: // Layout 0 — Forward Z (identical to buildDynamicLayout)
-            let y1=H*0.20, y2=H*0.50, y3=H*0.78, xR=W*0.74, xL=W*0.26
-            let sr = min(xR+h, W-30)
-            return (
-                [p(-10,y1),p(xR,y1),p(xR,y2),p(xL,y2),p(xL,y3),p(W+10,y3)],
-                [p(W*0.14,y1+v),p(W*0.40,y1+v),p(W*0.64,y1+v),
-                 p(sr,y1+(y2-y1)*0.28),p(sr,y1+(y2-y1)*0.72),
-                 p(W*0.36,y2-v),p(W*0.62,y2-v),
-                 p(xL+h,y2+(y3-y2)*0.42),p(sr,y2+(y3-y2)*0.38),
-                 p(xL+h+5,y3-v),p((xL+W)*0.5+10,y3-v),p(min(W*0.84,W-32),y3-v)]
-            )
-        }
+        let p = layoutParams[index % layoutParams.count]
+        let y1 = H*p.0, y2 = H*p.1, y3 = H*p.2, xL = W*p.3, xR = W*p.4
+        let waypoints: [CGPoint] = [
+            CGPoint(x: -10,   y: y1),
+            CGPoint(x: xR,    y: y1),
+            CGPoint(x: xR,    y: y2),
+            CGPoint(x: xL,    y: y2),
+            CGPoint(x: xL,    y: y3),
+            CGPoint(x: W+10,  y: y3),
+        ]
+        return (waypoints, computeSlots(y1: y1, y2: y2, y3: y3, xL: xL, xR: xR))
     }
 
     private func performRiftShift() {
-        // Pick a completely different layout from the current one
-        var newIndex = Int.random(in: 0..<5)
-        if newIndex == currentLayoutIndex { newIndex = (newIndex + 1 + Int.random(in: 1..<5)) % 5 }
+        // Pick a completely different layout — never repeat the same one
+        var newIndex = Int.random(in: 0..<layoutParams.count)
+        if newIndex == currentLayoutIndex {
+            newIndex = (newIndex + 1 + Int.random(in: 1..<layoutParams.count)) % layoutParams.count
+        }
         currentLayoutIndex = newIndex
         let layout = layoutConfig(index: newIndex)
 
