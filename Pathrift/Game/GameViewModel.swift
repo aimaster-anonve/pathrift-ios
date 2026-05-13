@@ -32,7 +32,8 @@ final class GameViewModel: ObservableObject {
         scene.onWaveChanged = { [weak self] wave in
             DispatchQueue.main.async {
                 self?.currentWave = wave
-                self?.isWaveActive = true
+                // isWaveActive is set by startNextWave(), not here.
+                // wave=0 is the initial idle state — must NOT set active.
             }
         }
         scene.onKillsChanged = { [weak self] kills in

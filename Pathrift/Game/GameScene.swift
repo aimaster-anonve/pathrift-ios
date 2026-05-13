@@ -100,26 +100,31 @@ final class GameScene: SKScene {
             CGPoint(x: W+10, y: y3)
         ]
 
-        let gap: CGFloat = 70  // clear distance from path center
+        // Slot clearance: ≥85pt from horizontal paths, ≥58pt from vertical paths.
+        // No two slots closer than 80pt center-to-center (slot visual = 46pt).
+        let vGap: CGFloat = 85
+        let hGap: CGFloat = 58
+        let safeRight = min(xR + hGap, W - 30)
 
         gridSystem.updateSlots([
-            // Above bottom lane (y1), x scattered
-            CGPoint(x: W*0.13, y: y1+gap),
-            CGPoint(x: W*0.34, y: y1+gap),
-            CGPoint(x: W*0.55, y: y1+gap),
-            // Right of right vertical (xR)
-            CGPoint(x: xR+gap, y: y1+(y2-y1)*0.30),
-            CGPoint(x: xR+gap, y: y1+(y2-y1)*0.70),
-            // Below middle lane (y2)
-            CGPoint(x: W*0.40, y: y2-gap),
-            CGPoint(x: W*0.60, y: y2-gap),
-            // Right of left vertical (xL)
-            CGPoint(x: xL+gap, y: y2+(y3-y2)*0.28),
-            CGPoint(x: xL+gap, y: y2+(y3-y2)*0.68),
-            // Below top lane (y3)
-            CGPoint(x: W*0.30, y: y3-gap),
-            CGPoint(x: W*0.52, y: y3-gap),
-            CGPoint(x: W*0.72, y: y3-gap),
+            // Above bottom lane — 3 slots
+            CGPoint(x: W*0.14, y: y1+vGap),
+            CGPoint(x: W*0.40, y: y1+vGap),
+            CGPoint(x: W*0.64, y: y1+vGap),
+            // Right of right vertical — 2 slots
+            CGPoint(x: safeRight, y: y1+(y2-y1)*0.28),
+            CGPoint(x: safeRight, y: y1+(y2-y1)*0.72),
+            // Below middle lane — 2 slots inside the two verticals
+            CGPoint(x: W*0.36, y: y2-vGap),
+            CGPoint(x: W*0.62, y: y2-vGap),
+            // Right of left vertical — 1 slot
+            CGPoint(x: xL+hGap, y: y2+(y3-y2)*0.42),
+            // Open zone right side (x>xR, y>y2 — no path)
+            CGPoint(x: safeRight, y: y2+(y3-y2)*0.38),
+            // Below top lane — 3 slots well-separated
+            CGPoint(x: W*0.20, y: y3-vGap),
+            CGPoint(x: W*0.50, y: y3-vGap),
+            CGPoint(x: W*0.78, y: y3-vGap),
         ])
     }
 
