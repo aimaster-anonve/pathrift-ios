@@ -44,7 +44,7 @@ final class RunnerEnemy: EnemyNode {
         pupil.position = CGPoint(x: 3, y: 3)
         container.addChild(pupil)
 
-        let (bg, bar) = EnemyNode.makeHealthBarNodes()
+        let (bg, bar) = RunnerEnemy.makeHealthBarNodes()
         container.addChild(bg)
         container.addChild(bar)
 

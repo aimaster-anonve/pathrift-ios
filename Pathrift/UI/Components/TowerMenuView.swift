@@ -32,7 +32,7 @@ struct TowerMenuView: View {
                 headerRow
                 towerGrid
                 if let type = selectedType {
-                    towerDetailPanel(type: type)
+                    towerDetailPanel(type)
                         .transition(.opacity.combined(with: .scale(scale: 0.95)))
                 }
                 confirmButton

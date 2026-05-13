@@ -49,7 +49,7 @@ final class TankEnemy: EnemyNode {
         cannon.position = CGPoint(x: 0, y: 18)
         container.addChild(cannon)
 
-        let (bg, bar) = EnemyNode.makeHealthBarNodes()
+        let (bg, bar) = TankEnemy.makeHealthBarNodes()
         bg.position = CGPoint(x: 0, y: 30)
         bar.position = CGPoint(x: 0, y: 30)
         container.addChild(bg)
