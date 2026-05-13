@@ -11,4 +11,6 @@ final class PremiumStore {
     }
 
     func activate() { isPremium = true }
+    func toggle()   { isPremium = !isPremium }
+    func deactivate() { isPremium = false }
 }

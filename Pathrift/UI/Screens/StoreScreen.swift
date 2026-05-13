@@ -94,6 +94,17 @@ struct StoreScreen: View {
                             .foregroundColor(.pathriftTextSecondary)
                     }
                     Spacer()
+                    Button(action: {
+                        PremiumStore.shared.toggle()
+                        isPremium = PremiumStore.shared.isPremium
+                    }) {
+                        Text("DEACTIVATE")
+                            .font(.system(size: 10, weight: .bold))
+                            .foregroundColor(.pathriftDanger)
+                            .padding(.horizontal, 8).padding(.vertical, 4)
+                            .background(Color.pathriftDanger.opacity(0.12))
+                            .cornerRadius(6)
+                    }
                 }
                 .padding(16)
                 .background(
@@ -124,8 +135,8 @@ struct StoreScreen: View {
                     )
 
                     Button(action: {
-                        PremiumStore.shared.activate()
-                        isPremium = true
+                        PremiumStore.shared.toggle()
+                        isPremium = PremiumStore.shared.isPremium
                     }) {
                         HStack(spacing: 8) {
                             Image(systemName: "bolt.fill")
