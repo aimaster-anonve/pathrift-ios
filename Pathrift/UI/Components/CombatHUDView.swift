@@ -4,7 +4,6 @@ struct CombatHUDView: View {
     @ObservedObject var viewModel: GameViewModel
     let onStartWave: () -> Void
     let onPause: () -> Void
-    @State private var waveButtonPulse = false
 
     private var isLandscape: Bool {
         UIScreen.main.bounds.width > UIScreen.main.bounds.height
@@ -14,6 +13,8 @@ struct CombatHUDView: View {
         VStack(spacing: 0) {
             if isLandscape {
                 landscapeTopBar
+                waveProgressStrip
+                    .padding(.top, 2)
             } else {
                 portraitTopBar
             }
@@ -25,6 +26,33 @@ struct CombatHUDView: View {
             bottomBar
         }
         .animation(.spring(response: 0.3), value: viewModel.waveCompleteMessage)
+    }
+
+    // MARK: - Wave Progress Strip (4pt bar below top HUD)
+
+    private var waveProgressStrip: some View {
+        GeometryReader { geo in
+            ZStack(alignment: .leading) {
+                // Track
+                Capsule()
+                    .fill(Color.white.opacity(0.08))
+                    .frame(height: 4)
+
+                // Fill
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [.pathriftNeonBlue, .pathriftPurple],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(width: geo.size.width * CGFloat(viewModel.waveProgress), height: 4)
+                    .animation(.linear(duration: 0.3), value: viewModel.waveProgress)
+            }
+        }
+        .frame(height: 4)
+        .padding(.horizontal, 8)
     }
 
     // MARK: - Landscape Top Bar (three-section: wave | stats | speed+pause)
@@ -40,9 +68,9 @@ struct CombatHUDView: View {
 
             Spacer()
 
-            // CENTER: Lives + Gold + Diamond (clustered together)
-            HStack(spacing: 12) {
-                // Lives hearts
+            // CENTER: Lives + Gold + Diamond (clustered with pill backgrounds)
+            HStack(spacing: 10) {
+                // Lives hearts pill
                 HStack(spacing: 2) {
                     ForEach(0..<max(0, viewModel.lives), id: \.self) { _ in
                         Image(systemName: "heart.fill")
@@ -55,8 +83,9 @@ struct CombatHUDView: View {
                             .foregroundColor(.pathriftTextSecondary.opacity(0.3))
                     }
                 }
+                .statPill()
 
-                // Gold
+                // Gold pill
                 HStack(spacing: 3) {
                     Image(systemName: "dollarsign.circle.fill")
                         .font(.system(size: 11))
@@ -65,8 +94,9 @@ struct CombatHUDView: View {
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
                         .foregroundColor(.pathriftGold)
                 }
+                .statPill()
 
-                // Diamond
+                // Diamond pill
                 HStack(spacing: 3) {
                     Text("♦")
                         .font(.system(size: 11, weight: .bold))
@@ -75,6 +105,7 @@ struct CombatHUDView: View {
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
                         .foregroundColor(Color(red: 0, green: 0.78, blue: 1))
                 }
+                .statPill()
             }
 
             Spacer()
@@ -88,8 +119,13 @@ struct CombatHUDView: View {
         }
         .frame(height: 44)
         .background(
-            Color.pathriftBackground.opacity(0.88)
-                .ignoresSafeArea(edges: .top)
+            ZStack {
+                Color.pathriftBackground.opacity(0.6)
+                Rectangle()
+                    .fill(.ultraThinMaterial)
+                    .opacity(0.7)
+            }
+            .ignoresSafeArea(edges: .top)
         )
     }
 
@@ -168,27 +204,41 @@ struct CombatHUDView: View {
         }
     }
 
+    // MARK: - Speed Button (polished pill with active glow)
+
     private var speedBtn: some View {
         Button(action: { viewModel.toggleSpeed() }) {
-            Text(viewModel.speedMultiplier == 1.0 ? "×1" : "×2")
-                .font(.system(size: 13, weight: .bold, design: .monospaced))
-                .foregroundColor(viewModel.speedMultiplier == 2.0 ? .pathriftNeonBlue : .pathriftTextSecondary)
-                .frame(width: 36, height: 28)
-                .background(Color.black.opacity(0.4))
-                .cornerRadius(6)
-                .overlay(RoundedRectangle(cornerRadius: 6).strokeBorder(
-                    viewModel.speedMultiplier == 2.0 ? Color.pathriftNeonBlue : Color.pathriftTextSecondary.opacity(0.3),
-                    lineWidth: 1
-                ))
+            HStack(spacing: 3) {
+                Image(systemName: "speedometer")
+                    .font(.system(size: 9))
+                Text(viewModel.speedMultiplier == 1.0 ? "×1" : "×2")
+                    .font(.system(size: 12, weight: .bold, design: .monospaced))
+            }
+            .foregroundColor(viewModel.speedMultiplier == 2.0 ? .pathriftNeonBlue : .pathriftTextSecondary)
+            .padding(.horizontal, 8).padding(.vertical, 5)
+            .background(
+                viewModel.speedMultiplier == 2.0
+                    ? Color.pathriftNeonBlue.opacity(0.2)
+                    : Color.white.opacity(0.07)
+            )
+            .cornerRadius(8)
+            .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(
+                viewModel.speedMultiplier == 2.0
+                    ? Color.pathriftNeonBlue.opacity(0.5)
+                    : Color.white.opacity(0.1),
+                lineWidth: 1
+            ))
         }
         .buttonStyle(ScaleButtonStyle())
     }
 
+    // MARK: - Pause Button
+
     private var pauseBtn: some View {
         Button(action: onPause) {
             Image(systemName: "pause.circle.fill")
-                .font(.system(size: 22))
-                .foregroundColor(.pathriftTextSecondary.opacity(0.8))
+                .font(.system(size: 24))
+                .foregroundColor(.white.opacity(0.75))
         }
         .buttonStyle(ScaleButtonStyle())
     }
@@ -197,40 +247,40 @@ struct CombatHUDView: View {
 
     private var bottomBar: some View {
         HStack {
-            // LEFT: kills stat (compact in landscape, full in portrait)
             if isLandscape {
+                // Kills pill
                 HStack(spacing: 4) {
-                    Image(systemName: "bolt.fill")
-                        .font(.system(size: 10))
+                    Image(systemName: "xmark.shield.fill")
+                        .font(.system(size: 11))
                         .foregroundColor(.pathriftOrange)
                     Text("\(viewModel.enemyKills)")
-                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .font(.system(size: 13, weight: .bold, design: .monospaced))
                         .foregroundColor(.pathriftOrange)
                 }
+                .statPill()
                 .padding(.leading, 16)
             } else {
-                killsStat
-                    .padding(.leading, 20)
+                killsStat.padding(.leading, 16)
             }
 
             Spacer()
 
-            // RIGHT: Wave progress or send wave button
             Group {
-                if !viewModel.isWaveActive && !viewModel.isGameOver {
-                    sendWaveButton
-                } else if viewModel.isWaveActive {
+                if viewModel.isWaveActive {
                     waveProgressIndicator
+                } else if !viewModel.isGameOver {
+                    sendWaveButton
                 }
             }
-            .padding(.trailing, isLandscape ? 16 : 20)
+            .padding(.trailing, 16)
         }
         .frame(height: 44)
         .background(
             LinearGradient(
-                colors: [.clear, Color.pathriftBackground.opacity(0.88)],
+                colors: [.clear, Color.pathriftBackground.opacity(0.85)],
                 startPoint: .top, endPoint: .bottom
             )
+            .ignoresSafeArea(edges: .bottom)
         )
     }
 
@@ -249,70 +299,59 @@ struct CombatHUDView: View {
         }
     }
 
+    // MARK: - Send Wave Button (gradient + shadow polish)
+
     private var sendWaveButton: some View {
         Button(action: onStartWave) {
-            HStack(spacing: 8) {
-                Image(systemName: "play.fill").font(.system(size: isLandscape ? 10 : 11, weight: .bold))
-                Text("SEND WAVE").font(.system(size: isLandscape ? 12 : 13, weight: .bold, design: .rounded)).kerning(0.5)
+            HStack(spacing: 6) {
+                Image(systemName: "chevron.right.2")
+                    .font(.system(size: 11, weight: .bold))
+                Text(viewModel.currentWave == 0 ? "START" : "NEXT WAVE")
+                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                    .kerning(0.5)
             }
-            .foregroundColor(.pathriftBackground)
-            .padding(.horizontal, 22)
-            .frame(height: isLandscape ? 40 : 48)
-            .background(Color.pathriftNeonBlue)
-            .cornerRadius(12)
-            .shadow(color: .pathriftNeonBlue.opacity(waveButtonPulse ? 0.7 : 0.25), radius: waveButtonPulse ? 10 : 4)
+            .foregroundColor(Color.pathriftBackground)
+            .padding(.horizontal, 14)
+            .frame(height: 36)
+            .background(
+                LinearGradient(
+                    colors: [.pathriftNeonBlue, .pathriftPurple],
+                    startPoint: .leading, endPoint: .trailing
+                )
+            )
+            .cornerRadius(18)
+            .shadow(color: .pathriftNeonBlue.opacity(0.3), radius: 6, y: 2)
         }
         .buttonStyle(ScaleButtonStyle())
-        .onAppear {
-            withAnimation(.easeInOut(duration: 1.0).repeatForever(autoreverses: true)) { waveButtonPulse = true }
-        }
     }
 
+    // MARK: - Wave Progress Indicator (polished capsule with fraction)
+
     private var waveProgressIndicator: some View {
-        VStack(alignment: .trailing, spacing: 5) {
-            HStack(spacing: 6) {
-                Text("\(viewModel.waveEnemiesCleared)")
-                    .font(.system(size: 13, weight: .black, design: .rounded))
-                    .foregroundColor(.pathriftNeonBlue)
-                    .monospacedDigit()
-                Text("/")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.pathriftTextSecondary)
-                Text("\(viewModel.waveEnemyTotal)")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
-                    .foregroundColor(.pathriftTextSecondary)
-                    .monospacedDigit()
-                Text("CLEARED")
-                    .font(.system(size: 8, weight: .bold, design: .monospaced))
-                    .foregroundColor(.pathriftTextSecondary)
-                    .kerning(1.5)
-            }
+        HStack(spacing: 8) {
+            Text("\(viewModel.waveEnemiesCleared)/\(viewModel.waveEnemyTotal)")
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
+                .foregroundColor(.pathriftTextSecondary)
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.pathriftSurface)
-                        .frame(height: 7)
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(
-                            LinearGradient(
-                                colors: [Color.pathriftNeonBlue, Color.pathriftPurple],
-                                startPoint: .leading, endPoint: .trailing
-                            )
-                        )
-                        .frame(
-                            width: max(8, geo.size.width * CGFloat(viewModel.waveProgress)),
-                            height: 7
-                        )
-                        .animation(.spring(response: 0.3, dampingFraction: 0.8),
-                                   value: viewModel.waveProgress)
+                    Capsule()
+                        .fill(Color.white.opacity(0.1))
+                        .frame(height: 5)
+                    Capsule()
+                        .fill(LinearGradient(
+                            colors: [.pathriftNeonBlue, .pathriftPurple],
+                            startPoint: .leading, endPoint: .trailing
+                        ))
+                        .frame(width: geo.size.width * CGFloat(viewModel.waveProgress), height: 5)
+                        .animation(.linear(duration: 0.2), value: viewModel.waveProgress)
                 }
             }
-            .frame(width: isLandscape ? 120 : 140, height: 7)
+            .frame(width: 100, height: 5)
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(Color.pathriftSurface.opacity(0.85))
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.white.opacity(0.07))
         .cornerRadius(12)
     }
 }

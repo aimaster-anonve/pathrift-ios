@@ -10,10 +10,14 @@ struct GameView: View {
 
     var body: some View {
         ZStack {
-            // Game scene — tüm ekranı kaplar (safe area dahil)
+            // Background fills full screen including behind Dynamic Island
+            Color.pathriftBackground.ignoresSafeArea()
+
+            // Game scene — respects safe area (no .ignoresSafeArea)
             SpriteView(scene: viewModel.scene, options: [.allowsTransparency])
-                .ignoresSafeArea()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                // small horizontal padding to keep map from touching side edges
+                .padding(.horizontal, 4)
 
             // HUD — safe area içinde otomatik kalır
             CombatHUDView(
@@ -121,6 +125,8 @@ struct GameView: View {
         }
         // NO .ignoresSafeArea() on ZStack
         .onAppear {
+            viewModel.scene.hudTopInset = 48
+            viewModel.scene.hudBottomInset = 46
             viewModel.configure(appState: appState)
             viewModel.scene.onSlotTapped = { [weak viewModel] slotId in
                 guard let vm = viewModel, !isPaused else { return }

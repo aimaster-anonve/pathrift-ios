@@ -49,6 +49,16 @@ final class GameScene: SKScene {
     var speedMultiplier: Double = 1.0
     private var hasUsedRevive: Bool = false
 
+    // MARK: - HUD Insets (set by GameView to keep path/slots out from under the HUD)
+    var hudTopInset: CGFloat = 48
+    var hudBottomInset: CGFloat = 46
+
+    /// Effective game area (excluding HUD, in SpriteKit coordinates where y=0 is bottom)
+    private var contentMinY: CGFloat { hudBottomInset }
+    private var contentMaxY: CGFloat { size.height - hudTopInset }
+    private var contentHeight: CGFloat { max(1, contentMaxY - contentMinY) }
+    private var contentWidth: CGFloat { max(1, size.width - 8) }  // 4pt each side
+
     var onReviveAvailable: (() -> Void)?
     var onSpeedChanged: ((Double) -> Void)?
 
@@ -959,7 +969,7 @@ final class GameScene: SKScene {
     // Works for both forward (y1<y2<y3) and reverse (y1>y2>y3) Z-shapes.
     private func computeSlots(y1: CGFloat, y2: CGFloat, y3: CGFloat,
                                xL: CGFloat, xR: CGFloat) -> [CGPoint] {
-        let W = size.width, H = size.height
+        let W = size.width
         let vGap: CGFloat = 92   // vertical clearance from horizontal segment
         let hGap: CGFloat = 68   // horizontal clearance from vertical segment
         let edge: CGFloat = 30   // minimum distance from screen edge
@@ -996,7 +1006,9 @@ final class GameScene: SKScene {
 
         var result: [CGPoint] = []
         for c in cands {
-            guard c.x >= edge, c.x <= W-edge, c.y >= edge, c.y <= H-edge else { continue }
+            // x bounds: screen edges; y bounds: content area (respects HUD insets)
+            guard c.x >= edge, c.x <= W-edge,
+                  c.y >= contentMinY + edge, c.y <= contentMaxY - edge else { continue }
             let tooClose = result.contains { e in hypot(c.x-e.x, c.y-e.y) < minSep }
             if !tooClose { result.append(c) }
         }
@@ -1008,7 +1020,7 @@ final class GameScene: SKScene {
     /// slot 80 pt perpendicular to the segment midpoint when a zone has no coverage.
     private func guaranteePathCoverage(slots: [CGPoint], waypoints: [CGPoint]) -> [CGPoint] {
         guard waypoints.count >= 2 else { return slots }
-        let W = size.width, H = size.height
+        let W = size.width
         let edge: CGFloat = 30
         let nearDist: CGFloat = 100   // "near segment" threshold
         let offsetDist: CGFloat = 80  // perpendicular offset for injected slot
@@ -1053,7 +1065,8 @@ final class GameScene: SKScene {
             for sign: CGFloat in [1, -1] {
                 let cx = mx + px * offsetDist * sign
                 let cy = my + py * offsetDist * sign
-                guard cx >= edge, cx <= W - edge, cy >= edge, cy <= H - edge else { continue }
+                guard cx >= edge, cx <= W - edge,
+                      cy >= contentMinY + edge, cy <= contentMaxY - edge else { continue }
                 let tooClose = result.contains { hypot($0.x - cx, $0.y - cy) < minSep }
                 if !tooClose {
                     result.append(CGPoint(x: cx, y: cy))
@@ -1109,16 +1122,25 @@ final class GameScene: SKScene {
         let safeIndex = index % totalLayoutCount
         if safeIndex < layoutParams.count {
             // Z-layout — all ground
-            let W = size.width, H = size.height
+            let H = contentHeight   // use inset height
+            let CW = contentWidth   // use inset width
+            let yBase = contentMinY // SpriteKit y-offset
+            let xOffset = (size.width - CW) / 2  // center the path within content area
+
             let p = layoutParams[safeIndex]
-            let y1 = H*p.0, y2 = H*p.1, y3 = H*p.2, xL = W*p.3, xR = W*p.4
+            let y1 = yBase + H*p.0
+            let y2 = yBase + H*p.1
+            let y3 = yBase + H*p.2
+            let xL = xOffset + CW*p.3
+            let xR = xOffset + CW*p.4
+
             let waypoints: [CGPoint] = [
-                CGPoint(x: -10,   y: y1),
-                CGPoint(x: xR,    y: y1),
-                CGPoint(x: xR,    y: y2),
-                CGPoint(x: xL,    y: y2),
-                CGPoint(x: xL,    y: y3),
-                CGPoint(x: W+10,  y: y3),
+                CGPoint(x: xOffset - 10,       y: y1),
+                CGPoint(x: xR,                 y: y1),
+                CGPoint(x: xR,                 y: y2),
+                CGPoint(x: xL,                 y: y2),
+                CGPoint(x: xL,                 y: y3),
+                CGPoint(x: xOffset + CW + 10,  y: y3),
             ]
             let layers: [PathLayer] = Array(repeating: .ground, count: waypoints.count)
             let rawSlots = computeSlots(y1: y1, y2: y2, y3: y3, xL: xL, xR: xR)
@@ -1136,7 +1158,7 @@ final class GameScene: SKScene {
     /// Generates slots for an arbitrary waypoint path using perpendicular offsets.
     private func computeSlotsForPath(waypoints: [CGPoint]) -> [CGPoint] {
         guard waypoints.count >= 2 else { return [] }
-        let W = size.width, H = size.height
+        let W = size.width
         let edge: CGFloat = 30
         let minSep: CGFloat = 56
         let offsetDist: CGFloat = 80
@@ -1160,7 +1182,8 @@ final class GameScene: SKScene {
 
         var result: [CGPoint] = []
         for c in cands {
-            guard c.x >= edge, c.x <= W - edge, c.y >= edge, c.y <= H - edge else { continue }
+            guard c.x >= edge, c.x <= W - edge,
+                  c.y >= contentMinY + edge, c.y <= contentMaxY - edge else { continue }
             let tooClose = result.contains { hypot($0.x - c.x, $0.y - c.y) < minSep }
             if !tooClose { result.append(c) }
         }
@@ -1186,80 +1209,86 @@ final class GameScene: SKScene {
     ]
 
     private func crossLayoutConfig(index: Int) -> (waypoints: [CGPoint], layers: [PathLayer], slots: [CGPoint]) {
-        let W = size.width, H = size.height
+        let CH = contentHeight   // use inset height
+        let CW = contentWidth    // use inset width
+        let yBase = contentMinY  // SpriteKit y-offset
+        let xOff = (size.width - CW) / 2  // center path within content area
+
+        // Helper to convert fractional coordinates to content-area absolute positions
+        func cx(_ f: CGFloat) -> CGFloat { xOff + CW * f }
+        func cy(_ f: CGFloat) -> CGFloat { yBase + CH * f }
 
         let waypoints: [CGPoint]
         switch index % 6 {
         case 0:
             // Cross-0: Figure-S (smooth horizontal S-curve, no self-intersection)
             waypoints = [
-                CGPoint(x: -10,    y: H * 0.50),
-                CGPoint(x: W*0.15, y: H * 0.50),
-                CGPoint(x: W*0.25, y: H * 0.20),
-                CGPoint(x: W*0.50, y: H * 0.50),
-                CGPoint(x: W*0.75, y: H * 0.80),
-                CGPoint(x: W*0.85, y: H * 0.50),
-                CGPoint(x: W+10,   y: H * 0.50),
+                CGPoint(x: xOff - 10,  y: cy(0.50)),
+                CGPoint(x: cx(0.15),   y: cy(0.50)),
+                CGPoint(x: cx(0.25),   y: cy(0.20)),
+                CGPoint(x: cx(0.50),   y: cy(0.50)),
+                CGPoint(x: cx(0.75),   y: cy(0.80)),
+                CGPoint(x: cx(0.85),   y: cy(0.50)),
+                CGPoint(x: xOff+CW+10, y: cy(0.50)),
             ]
         case 1:
             // Cross-1: X-Cross (diamond loop — path passes through mid twice)
             waypoints = [
-                CGPoint(x: -10,    y: H * 0.50),
-                CGPoint(x: W*0.20, y: H * 0.50),
-                CGPoint(x: W*0.40, y: H * 0.15),
-                CGPoint(x: W*0.60, y: H * 0.50),
-                CGPoint(x: W*0.40, y: H * 0.85),
-                CGPoint(x: W*0.60, y: H * 0.50),
-                CGPoint(x: W*0.80, y: H * 0.50),
-                CGPoint(x: W+10,   y: H * 0.50),
+                CGPoint(x: xOff - 10,  y: cy(0.50)),
+                CGPoint(x: cx(0.20),   y: cy(0.50)),
+                CGPoint(x: cx(0.40),   y: cy(0.15)),
+                CGPoint(x: cx(0.60),   y: cy(0.50)),
+                CGPoint(x: cx(0.40),   y: cy(0.85)),
+                CGPoint(x: cx(0.60),   y: cy(0.50)),
+                CGPoint(x: cx(0.80),   y: cy(0.50)),
+                CGPoint(x: xOff+CW+10, y: cy(0.50)),
             ]
         case 2:
             // Cross-2: Double-Z (two Z-zigzags chained)
             waypoints = [
-                CGPoint(x: -10,    y: H * 0.20),
-                CGPoint(x: W*0.30, y: H * 0.20),
-                CGPoint(x: W*0.50, y: H * 0.50),
-                CGPoint(x: W*0.20, y: H * 0.50),
-                CGPoint(x: W*0.40, y: H * 0.80),
-                CGPoint(x: W*0.70, y: H * 0.80),
-                CGPoint(x: W*0.80, y: H * 0.50),
-                CGPoint(x: W+10,   y: H * 0.50),
+                CGPoint(x: xOff - 10,  y: cy(0.20)),
+                CGPoint(x: cx(0.30),   y: cy(0.20)),
+                CGPoint(x: cx(0.50),   y: cy(0.50)),
+                CGPoint(x: cx(0.20),   y: cy(0.50)),
+                CGPoint(x: cx(0.40),   y: cy(0.80)),
+                CGPoint(x: cx(0.70),   y: cy(0.80)),
+                CGPoint(x: cx(0.80),   y: cy(0.50)),
+                CGPoint(x: xOff+CW+10, y: cy(0.50)),
             ]
         case 3:
             // Cross-3: Spiral approach (U-turn near top, then diagonal exit)
             waypoints = [
-                CGPoint(x: -10,    y: H * 0.75),
-                CGPoint(x: W*0.50, y: H * 0.75),
-                CGPoint(x: W*0.50, y: H * 0.25),
-                CGPoint(x: W*0.20, y: H * 0.25),
-                CGPoint(x: W*0.20, y: H * 0.55),
-                CGPoint(x: W*0.70, y: H * 0.55),
-                CGPoint(x: W+10,   y: H * 0.55),
+                CGPoint(x: xOff - 10,  y: cy(0.75)),
+                CGPoint(x: cx(0.50),   y: cy(0.75)),
+                CGPoint(x: cx(0.50),   y: cy(0.25)),
+                CGPoint(x: cx(0.20),   y: cy(0.25)),
+                CGPoint(x: cx(0.20),   y: cy(0.55)),
+                CGPoint(x: cx(0.70),   y: cy(0.55)),
+                CGPoint(x: xOff+CW+10, y: cy(0.55)),
             ]
         case 4:
             // Cross-4: W-shape (three dips)
             waypoints = [
-                CGPoint(x: -10,    y: H * 0.50),
-                CGPoint(x: W*0.10, y: H * 0.50),
-                CGPoint(x: W*0.20, y: H * 0.15),
-                CGPoint(x: W*0.40, y: H * 0.55),
-                CGPoint(x: W*0.60, y: H * 0.15),
-                CGPoint(x: W*0.80, y: H * 0.55),
-                CGPoint(x: W*0.90, y: H * 0.50),
-                CGPoint(x: W+10,   y: H * 0.50),
+                CGPoint(x: xOff - 10,  y: cy(0.50)),
+                CGPoint(x: cx(0.10),   y: cy(0.50)),
+                CGPoint(x: cx(0.20),   y: cy(0.15)),
+                CGPoint(x: cx(0.40),   y: cy(0.55)),
+                CGPoint(x: cx(0.60),   y: cy(0.15)),
+                CGPoint(x: cx(0.80),   y: cy(0.55)),
+                CGPoint(x: cx(0.90),   y: cy(0.50)),
+                CGPoint(x: xOff+CW+10, y: cy(0.50)),
             ]
         default: // case 5:
             // Cross-5: Long diagonal reverse (top-right then bottom-right)
             waypoints = [
-                CGPoint(x: -10,    y: H * 0.20),
-                CGPoint(x: W*0.30, y: H * 0.20),
-                CGPoint(x: W*0.60, y: H * 0.20),
-                CGPoint(x: W*0.40, y: H * 0.80),
-                CGPoint(x: W*0.70, y: H * 0.80),
-                CGPoint(x: W+10,   y: H * 0.80),
+                CGPoint(x: xOff - 10,  y: cy(0.20)),
+                CGPoint(x: cx(0.30),   y: cy(0.20)),
+                CGPoint(x: cx(0.60),   y: cy(0.20)),
+                CGPoint(x: cx(0.40),   y: cy(0.80)),
+                CGPoint(x: cx(0.70),   y: cy(0.80)),
+                CGPoint(x: xOff+CW+10, y: cy(0.80)),
             ]
         }
-
         let slots = computeSlotsForPath(waypoints: waypoints)
         let crossIdx = index % 6
         var layers: [PathLayer]
