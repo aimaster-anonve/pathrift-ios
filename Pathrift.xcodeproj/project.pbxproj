@@ -11,7 +11,9 @@
 		0D9D079497C02A023C11D7BB /* BlastTower.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DF333D93A342C51A8F9F459 /* BlastTower.swift */; };
 		0EE6B5BC977D179C979132D3 /* RunEndScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684BFDA9A9571B9AD40ECD48 /* RunEndScreen.swift */; };
 		1596E749DFB0073C54544675 /* TowerInfoPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DCABAF689009E8CB0548C9 /* TowerInfoPanel.swift */; };
+		1642059FD0BD18BBD541BEDE /* ShieldEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD17ECF91AB687E5054B48C /* ShieldEnemy.swift */; };
 		17E7B13DCFC132D0E69D600F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 88CDBB48B13880491055CEB0 /* Assets.xcassets */; };
+		25204E202FDEE848CA66D42A /* GhostEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D0ABBBA7F42F1D945C72C6 /* GhostEnemy.swift */; };
 		2A438639282B960837248356 /* LocalRunStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32FF60CD7966D4225C7AC0F5 /* LocalRunStorage.swift */; };
 		30F843ABAC527DB9A36F7663 /* Enemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A906724EBB50552DAD7738 /* Enemy.swift */; };
 		40B7C8B48528DA6C5450BEF1 /* GameViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 75F0830F4E75B28F25C53130 /* GameViewModel.swift */; };
@@ -20,6 +22,7 @@
 		54EFF30E359E2D7A2B3C8863 /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02FF28657F3A49119BD4905B /* AppState.swift */; };
 		5751EAE39AD3E066F9463448 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 984F7E26DF60568DD6333A5B /* PrivacyInfo.xcprivacy */; };
 		57A93C99342E771C6DD19861 /* EventBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 77B180B11BA7DE5AD28C33D6 /* EventBannerView.swift */; };
+		5A3FB78A39D791AA24C90EF2 /* SwarmEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA6E3FEEA11E5EEB42C07EC3 /* SwarmEnemy.swift */; };
 		6333CB55385FFFE8DE0A1CD6 /* PathSystem.swift in Sources */ = {isa = PBXBuildFile; fileRef = E493FFA3EFB068BA379A4382 /* PathSystem.swift */; };
 		6B0F2B00F5805C953E94E981 /* BossEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12204FCA50953C50CF44C3C9 /* BossEnemy.swift */; };
 		6EAA670285A4474295A0D9CD /* ViewExtensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 95376E451D1C715286855AB2 /* ViewExtensions.swift */; };
@@ -76,10 +79,13 @@
 		984F7E26DF60568DD6333A5B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		9D0BE562F8DF38CEB7708B7E /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		A489DA2D996FBB0D340B7198 /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
+		A6D0ABBBA7F42F1D945C72C6 /* GhostEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhostEnemy.swift; sourceTree = "<group>"; };
 		AC415A9CA4B47AD1A5CADAB0 /* GameScene.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
 		B2FF8E3ACD8A5D9D4B665D20 /* HowToPlayScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HowToPlayScreen.swift; sourceTree = "<group>"; };
 		B83A22CB3EBD2471C389E9B3 /* Tower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Tower.swift; sourceTree = "<group>"; };
 		C9C26431543546D5D15D9CB4 /* LanguageManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LanguageManager.swift; sourceTree = "<group>"; };
+		CA6E3FEEA11E5EEB42C07EC3 /* SwarmEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwarmEnemy.swift; sourceTree = "<group>"; };
+		CBD17ECF91AB687E5054B48C /* ShieldEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShieldEnemy.swift; sourceTree = "<group>"; };
 		CBDF95002FFE22A49199414E /* TankEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TankEnemy.swift; sourceTree = "<group>"; };
 		CD2F2647DDA468FE9435C5D0 /* Color+Pathrift.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Pathrift.swift"; sourceTree = "<group>"; };
 		CFE5ED737339F33EA7E8588E /* GameplayKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameplayKit.framework; path = System/Library/Frameworks/GameplayKit.framework; sourceTree = SDKROOT; };
@@ -232,7 +238,10 @@
 			children = (
 				12204FCA50953C50CF44C3C9 /* BossEnemy.swift */,
 				D6A906724EBB50552DAD7738 /* Enemy.swift */,
+				A6D0ABBBA7F42F1D945C72C6 /* GhostEnemy.swift */,
 				390A24DBF0718B98D471CA1A /* RunnerEnemy.swift */,
+				CBD17ECF91AB687E5054B48C /* ShieldEnemy.swift */,
+				CA6E3FEEA11E5EEB42C07EC3 /* SwarmEnemy.swift */,
 				CBDF95002FFE22A49199414E /* TankEnemy.swift */,
 			);
 			path = Enemies;
@@ -352,6 +361,7 @@
 				0129EDC21643C2DE0B0D0060 /* GameScene.swift in Sources */,
 				DB45FF99F29F356842EDC1E3 /* GameView.swift in Sources */,
 				40B7C8B48528DA6C5450BEF1 /* GameViewModel.swift in Sources */,
+				25204E202FDEE848CA66D42A /* GhostEnemy.swift in Sources */,
 				735831476BEFCFD38F17CC6A /* GoldManager.swift in Sources */,
 				BD57727477650C35AC447C77 /* GridSystem.swift in Sources */,
 				925D8B54DCC86D24ED81303E /* HomeScreen.swift in Sources */,
@@ -365,7 +375,9 @@
 				8D3CCA7EBD986B2A35D77274 /* RunnerEnemy.swift in Sources */,
 				712B1BEAA01E682F934241D1 /* ScoreCalculator.swift in Sources */,
 				BAB6676D83CFF4275232A5CA /* SettingsScreen.swift in Sources */,
+				1642059FD0BD18BBD541BEDE /* ShieldEnemy.swift in Sources */,
 				CD3F5BBB0AFA694FF0798DB9 /* StoreScreen.swift in Sources */,
+				5A3FB78A39D791AA24C90EF2 /* SwarmEnemy.swift in Sources */,
 				859C2576630E44C0CAAB4CD4 /* TankEnemy.swift in Sources */,
 				A4B75A2203FE418D18002D4A /* Tower.swift in Sources */,
 				1596E749DFB0073C54544675 /* TowerInfoPanel.swift in Sources */,

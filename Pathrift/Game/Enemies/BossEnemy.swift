@@ -6,126 +6,245 @@ final class BossEnemy: EnemyNode {
     let type: EnemyType = .boss
     let maxHP: CGFloat
     var currentHP: CGFloat
-    let baseSpeed: CGFloat = 28
+    let baseSpeed: CGFloat
     var currentSpeed: CGFloat
-    let armor: CGFloat = 0.35       // 35% damage reduction
-    let goldReward: Int = 100
+    var armor: CGFloat
+    var goldReward: Int = 120
     var pathProgress: CGFloat = 0
     var hasReachedEnd: Bool = false
     var slowTimer: TimeInterval = 0
     let node: SKNode
+    let bossVariant: Int  // 0-4, cycles through 5 distinct bosses
 
     init(waveNumber: Int) {
-        let bossNumber = waveNumber / 10
-        let hp = CGFloat(800 + bossNumber * 400)  // scales with each boss cycle
-        self.maxHP = hp
-        self.currentHP = hp
-        self.currentSpeed = 28
-        self.node = BossEnemy.makeNode(bossNumber: bossNumber)
+        let bossIndex = (waveNumber / 10 - 1) % 5   // cycles through 5 variants
+        let cycle = waveNumber / 50                   // HP boost every 50 waves
+        let baseHp = CGFloat(800 + (waveNumber / 10) * 300 + cycle * 500)
+        self.bossVariant = bossIndex
+        self.maxHP = baseHp
+        self.currentHP = baseHp
+
+        switch bossIndex {
+        case 1: // Iron Colossus — heavily armored, very slow
+            self.baseSpeed = 22
+            self.currentSpeed = 22
+            self.armor = 0.50
+        case 2: // Swarm Queen — fast, light armor
+            self.baseSpeed = 50
+            self.currentSpeed = 50
+            self.armor = 0.10
+        case 3: // Phase Runner — fastest boss, minimal armor
+            self.baseSpeed = 70
+            self.currentSpeed = 70
+            self.armor = 0.05
+        case 4: // Void Titan — massive, heavy armor
+            self.baseSpeed = 18
+            self.currentSpeed = 18
+            self.armor = 0.60
+        default: // 0: Rift Guardian — standard purple spiky boss
+            self.baseSpeed = 32
+            self.currentSpeed = 32
+            self.armor = 0.30
+        }
+
+        self.node = BossEnemy.makeNode(variant: bossIndex, waveNumber: waveNumber)
         self.node.position = PathSystem.waypoints.first ?? .zero
     }
 
-    // Override refreshHealthBar for the wider 48pt boss health bar
+    // Override refreshHealthBar for the wider 56pt boss health bar
     func refreshHealthBar() {
         guard let bar = node.childNode(withName: "healthBar") as? SKShapeNode else { return }
         let ratio = max(0, currentHP / maxHP)
-        let totalWidth: CGFloat = 48
+        let totalWidth: CGFloat = 56
         let filledWidth = totalWidth * ratio
 
         let path = CGMutablePath()
-        path.addRect(CGRect(x: -totalWidth / 2, y: 0, width: filledWidth, height: 6))
+        path.addRect(CGRect(x: -totalWidth / 2, y: 0, width: filledWidth, height: 7))
         bar.path = path
 
         let color: SKColor
-        if ratio > 0.6 {
-            color = SKColor(red: 0.8, green: 0.2, blue: 1.0, alpha: 1)
-        } else if ratio > 0.3 {
-            color = SKColor.yellow
-        } else {
-            color = SKColor.red
+        switch bossVariant {
+        case 1: color = ratio > 0.5 ? SKColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1) : SKColor.red
+        case 2: color = ratio > 0.5 ? SKColor(red: 1.0, green: 0.6, blue: 0.0, alpha: 1) : SKColor.red
+        case 3: color = ratio > 0.5 ? SKColor(red: 0.0, green: 0.9, blue: 0.9, alpha: 1) : SKColor.red
+        case 4: color = ratio > 0.5 ? SKColor(red: 0.6, green: 0.0, blue: 0.8, alpha: 1) : SKColor.red
+        default: color = ratio > 0.5 ? SKColor(red: 0.6, green: 0.3, blue: 1.0, alpha: 1) : SKColor.red
         }
         bar.fillColor = color
     }
 
-    private static func makeNode(bossNumber: Int) -> SKNode {
-        // Root container — holds the rotating body AND static UI separately
+    private static func makeNode(variant: Int, waveNumber: Int) -> SKNode {
         let container = SKNode()
         container.zPosition = 4
 
-        // --- Rotating body sub-node ---
-        let body = SKNode()
-        container.addChild(body)
-
-        // Large menacing body
-        let bodyShape = SKShapeNode(circleOfRadius: 22)
-        bodyShape.fillColor = SKColor(red: 0.6, green: 0.0, blue: 0.7, alpha: 1)
-        bodyShape.strokeColor = SKColor(red: 0.9, green: 0.4, blue: 1.0, alpha: 1)
-        bodyShape.lineWidth = 3
-        body.addChild(bodyShape)
-
-        // Inner core
-        let core = SKShapeNode(circleOfRadius: 10)
-        core.fillColor = SKColor(red: 1.0, green: 0.3, blue: 0.8, alpha: 1)
-        core.strokeColor = SKColor.white
-        core.lineWidth = 1.5
-        body.addChild(core)
-
-        // Outer aura ring
-        let aura = SKShapeNode(circleOfRadius: 26)
-        aura.fillColor = SKColor.clear
-        aura.strokeColor = SKColor(red: 0.8, green: 0.3, blue: 1.0, alpha: 0.4)
-        aura.lineWidth = 2
-        body.addChild(aura)
-
-        // Spike ornaments (4 diagonal spikes)
-        let spikeAngles: [CGFloat] = [.pi/4, 3 * .pi/4, 5 * .pi/4, 7 * .pi/4]
-        for angle in spikeAngles {
-            let spike = SKShapeNode(rectOf: CGSize(width: 4, height: 14), cornerRadius: 2)
-            spike.fillColor = SKColor(red: 0.9, green: 0.5, blue: 1.0, alpha: 0.9)
-            spike.strokeColor = SKColor.clear
-            spike.position = CGPoint(x: cos(angle) * 20, y: sin(angle) * 20)
-            spike.zRotation = angle
-            body.addChild(spike)
-        }
-
-        // Pulsing aura animation
-        let pulse = SKAction.repeatForever(SKAction.sequence([
-            SKAction.scale(to: 1.12, duration: 0.5),
-            SKAction.scale(to: 0.92, duration: 0.5)
-        ]))
-        aura.run(pulse)
-
-        // Slow rotation of body sub-node only
-        let rotate = SKAction.repeatForever(SKAction.rotate(byAngle: .pi * 2, duration: 3.0))
-        body.run(rotate)
-
-        // --- Static UI (label + health bar) — added to root container, not body ---
-        let bossLabel = SKLabelNode(text: bossNumber == 1 ? "BOSS" : "BOSS \(bossNumber)")
-        bossLabel.fontSize = 9
-        bossLabel.fontName = "AvenirNext-Bold"
-        bossLabel.fontColor = .white
-        bossLabel.verticalAlignmentMode = .center
-        bossLabel.horizontalAlignmentMode = .center
-        container.addChild(bossLabel)
-
-        // Wide health bar background (48pt)
+        // Wide health bar background (56pt) — added to root container (static UI)
         let bgPath = CGMutablePath()
-        bgPath.addRect(CGRect(x: -24, y: 0, width: 48, height: 6))
+        bgPath.addRect(CGRect(x: -28, y: 0, width: 56, height: 7))
         let bg = SKShapeNode(path: bgPath)
         bg.fillColor = SKColor.darkGray
         bg.strokeColor = SKColor.clear
         bg.name = "healthBarBg"
-        bg.position = CGPoint(x: 0, y: 30)
+        bg.position = CGPoint(x: 0, y: 38)
         container.addChild(bg)
 
         let barPath = CGMutablePath()
-        barPath.addRect(CGRect(x: -24, y: 0, width: 48, height: 6))
+        barPath.addRect(CGRect(x: -28, y: 0, width: 56, height: 7))
         let bar = SKShapeNode(path: barPath)
-        bar.fillColor = SKColor(red: 0.8, green: 0.2, blue: 1.0, alpha: 1)
         bar.strokeColor = SKColor.clear
         bar.name = "healthBar"
-        bar.position = CGPoint(x: 0, y: 30)
+        bar.position = CGPoint(x: 0, y: 38)
         container.addChild(bar)
+
+        // Boss number label
+        let bossNum = waveNumber / 10
+        let numLabel = SKLabelNode(text: "#\(bossNum)")
+        numLabel.fontSize = 8
+        numLabel.fontName = "AvenirNext-Bold"
+        numLabel.fontColor = SKColor(white: 1, alpha: 0.7)
+        numLabel.verticalAlignmentMode = .center
+        numLabel.horizontalAlignmentMode = .center
+        numLabel.position = CGPoint(x: 0, y: 50)
+        container.addChild(numLabel)
+
+        // Variant-specific visuals
+        switch variant {
+        case 1: // Iron Colossus — grey armored square, 50% armor
+            bar.fillColor = SKColor(red: 0.7, green: 0.7, blue: 0.7, alpha: 1)
+            let hull = SKShapeNode(rectOf: CGSize(width: 38, height: 38), cornerRadius: 5)
+            hull.fillColor = SKColor(red: 0.4, green: 0.4, blue: 0.45, alpha: 1)
+            hull.strokeColor = SKColor(red: 0.7, green: 0.7, blue: 0.8, alpha: 1)
+            hull.lineWidth = 3
+            container.addChild(hull)
+            let plates = SKShapeNode(rectOf: CGSize(width: 32, height: 12), cornerRadius: 2)
+            plates.fillColor = SKColor(red: 0.5, green: 0.5, blue: 0.55, alpha: 1)
+            plates.strokeColor = SKColor.clear
+            container.addChild(plates)
+            let nameLabel = SKLabelNode(text: "IRON")
+            nameLabel.fontSize = 8
+            nameLabel.fontName = "AvenirNext-Bold"
+            nameLabel.fontColor = .white
+            nameLabel.verticalAlignmentMode = .center
+            nameLabel.horizontalAlignmentMode = .center
+            container.addChild(nameLabel)
+
+        case 2: // Swarm Queen — orange pulsing orb with spawn sacs
+            bar.fillColor = SKColor(red: 1.0, green: 0.6, blue: 0.0, alpha: 1)
+            let body = SKShapeNode(circleOfRadius: 20)
+            body.fillColor = SKColor(red: 0.8, green: 0.3, blue: 0.0, alpha: 1)
+            body.strokeColor = SKColor(red: 1.0, green: 0.6, blue: 0.0, alpha: 1)
+            body.lineWidth = 3
+            container.addChild(body)
+            // 4 spawn sacs at cardinal diagonals
+            let sacAngles: [CGFloat] = [0, CGFloat.pi / 2, CGFloat.pi, 3 * CGFloat.pi / 2]
+            for angle in sacAngles {
+                let sac = SKShapeNode(circleOfRadius: 5)
+                sac.fillColor = SKColor(red: 1.0, green: 0.7, blue: 0.0, alpha: 0.8)
+                sac.strokeColor = SKColor.clear
+                sac.position = CGPoint(x: cos(angle) * 18, y: sin(angle) * 18)
+                container.addChild(sac)
+            }
+            let nameLabel = SKLabelNode(text: "QUEEN")
+            nameLabel.fontSize = 7
+            nameLabel.fontName = "AvenirNext-Bold"
+            nameLabel.fontColor = .white
+            nameLabel.verticalAlignmentMode = .center
+            nameLabel.horizontalAlignmentMode = .center
+            container.addChild(nameLabel)
+            body.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.scale(to: 1.1, duration: 0.4),
+                SKAction.scale(to: 0.9, duration: 0.4)
+            ])))
+
+        case 3: // Phase Runner — cyan fast angular body
+            bar.fillColor = SKColor(red: 0.0, green: 0.9, blue: 0.9, alpha: 1)
+            let body = SKShapeNode(rectOf: CGSize(width: 20, height: 30), cornerRadius: 8)
+            body.fillColor = SKColor(red: 0.0, green: 0.6, blue: 0.8, alpha: 1)
+            body.strokeColor = SKColor(red: 0.0, green: 0.9, blue: 1.0, alpha: 1)
+            body.lineWidth = 2
+            container.addChild(body)
+            // Speed lines
+            for yOff: CGFloat in [-8, 0, 8] {
+                let line = SKShapeNode(rectOf: CGSize(width: 14, height: 2))
+                line.fillColor = SKColor(red: 0.0, green: 1.0, blue: 1.0, alpha: 0.6)
+                line.strokeColor = SKColor.clear
+                line.position = CGPoint(x: 0, y: yOff)
+                container.addChild(line)
+            }
+            let nameLabel = SKLabelNode(text: "PHASE")
+            nameLabel.fontSize = 7
+            nameLabel.fontName = "AvenirNext-Bold"
+            nameLabel.fontColor = .white
+            nameLabel.verticalAlignmentMode = .center
+            nameLabel.horizontalAlignmentMode = .center
+            container.addChild(nameLabel)
+
+        case 4: // Void Titan — dark purple massive with rotating ring
+            bar.fillColor = SKColor(red: 0.6, green: 0.0, blue: 0.8, alpha: 1)
+            let outer = SKShapeNode(circleOfRadius: 26)
+            outer.fillColor = SKColor(red: 0.1, green: 0.0, blue: 0.2, alpha: 1)
+            outer.strokeColor = SKColor(red: 0.5, green: 0.0, blue: 0.8, alpha: 1)
+            outer.lineWidth = 4
+            container.addChild(outer)
+            let inner = SKShapeNode(circleOfRadius: 14)
+            inner.fillColor = SKColor(red: 0.3, green: 0.0, blue: 0.5, alpha: 1)
+            inner.strokeColor = SKColor(red: 0.8, green: 0.3, blue: 1.0, alpha: 0.8)
+            inner.lineWidth = 2
+            container.addChild(inner)
+            // Void swirl — rotating ring
+            let swirl = SKShapeNode(circleOfRadius: 20)
+            swirl.fillColor = SKColor.clear
+            swirl.strokeColor = SKColor(red: 0.7, green: 0.2, blue: 1.0, alpha: 0.4)
+            swirl.lineWidth = 2
+            container.addChild(swirl)
+            swirl.run(SKAction.repeatForever(SKAction.rotate(byAngle: .pi * 2, duration: 2.0)))
+            let nameLabel = SKLabelNode(text: "VOID")
+            nameLabel.fontSize = 8
+            nameLabel.fontName = "AvenirNext-Bold"
+            nameLabel.fontColor = SKColor(red: 0.8, green: 0.5, blue: 1.0, alpha: 1)
+            nameLabel.verticalAlignmentMode = .center
+            nameLabel.horizontalAlignmentMode = .center
+            container.addChild(nameLabel)
+
+        default: // 0: Rift Guardian — purple spiky standard boss, 30% armor
+            bar.fillColor = SKColor(red: 0.6, green: 0.3, blue: 1.0, alpha: 1)
+            // Rotating body sub-node
+            let body = SKNode()
+            container.addChild(body)
+            let bodyShape = SKShapeNode(circleOfRadius: 22)
+            bodyShape.fillColor = SKColor(red: 0.4, green: 0.0, blue: 0.6, alpha: 1)
+            bodyShape.strokeColor = SKColor(red: 0.7, green: 0.4, blue: 1.0, alpha: 1)
+            bodyShape.lineWidth = 3
+            body.addChild(bodyShape)
+            let core = SKShapeNode(circleOfRadius: 10)
+            core.fillColor = SKColor(red: 0.8, green: 0.4, blue: 1.0, alpha: 1)
+            core.strokeColor = SKColor.white
+            core.lineWidth = 1
+            body.addChild(core)
+            // Diagonal spikes
+            let spikeAngles: [CGFloat] = [CGFloat.pi / 4, 3 * CGFloat.pi / 4,
+                                          5 * CGFloat.pi / 4, 7 * CGFloat.pi / 4]
+            for angle in spikeAngles {
+                let spike = SKShapeNode(rectOf: CGSize(width: 4, height: 14), cornerRadius: 2)
+                spike.fillColor = SKColor(red: 0.7, green: 0.4, blue: 1.0, alpha: 0.9)
+                spike.strokeColor = SKColor.clear
+                spike.position = CGPoint(x: cos(angle) * 20, y: sin(angle) * 20)
+                spike.zRotation = angle
+                body.addChild(spike)
+            }
+            let nameLabel = SKLabelNode(text: "RIFT")
+            nameLabel.fontSize = 8
+            nameLabel.fontName = "AvenirNext-Bold"
+            nameLabel.fontColor = .white
+            nameLabel.verticalAlignmentMode = .center
+            nameLabel.horizontalAlignmentMode = .center
+            container.addChild(nameLabel)
+            // Slow rotation
+            body.run(SKAction.repeatForever(SKAction.rotate(byAngle: .pi * 2, duration: 3.0)))
+            bodyShape.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.scale(to: 1.08, duration: 0.5),
+                SKAction.scale(to: 0.94, duration: 0.5)
+            ])))
+        }
 
         return container
     }

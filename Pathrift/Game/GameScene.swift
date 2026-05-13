@@ -30,6 +30,16 @@ final class GameScene: SKScene {
     private var layoutBuilt = false
     private var currentLayoutIndex: Int = 0
 
+    /// Slots available increases with wave — more room to defend as game gets harder.
+    private func activeSlotCount() -> Int {
+        switch currentWaveNumber {
+        case ..<5:   return 6
+        case 5..<10: return 8
+        case 10..<15: return 10
+        default:     return 12
+        }
+    }
+
     private(set) var lives: Int = EconomyConstants.startingLives
     private(set) var currentWaveNumber: Int = 0
     private(set) var enemyKills: Int = 0
@@ -479,6 +489,12 @@ final class GameScene: SKScene {
             enemy = TankEnemy(hpMultiplier: hpMult)
         case .boss:
             enemy = BossEnemy(waveNumber: currentWaveNumber)
+        case .shield:
+            enemy = ShieldEnemy(hpMultiplier: hpMult)
+        case .swarm:
+            enemy = SwarmEnemy(hpMultiplier: hpMult)
+        case .ghost:
+            enemy = GhostEnemy(hpMultiplier: hpMult)
         }
 
         activeEnemies.append(enemy)
@@ -806,7 +822,7 @@ final class GameScene: SKScene {
             let tooClose = result.contains { e in hypot(c.x-e.x, c.y-e.y) < minSep }
             if !tooClose { result.append(c) }
         }
-        return Array(result.prefix(12))
+        return Array(result.prefix(activeSlotCount()))
     }
 
     // 12 layout parameter sets — (y1%, y2%, y3%, xL%, xR%) all as fractions of H/W.
@@ -863,9 +879,13 @@ final class GameScene: SKScene {
 
         // Decide which towers survive the Rift
         // Each tower independently: 60% survive, 40% destroyed. Always keep ≥1.
-        var survivors = towerSnapshot.filter { _ in Int.random(in: 0..<5) < 3 }
-        if survivors.isEmpty, let first = towerSnapshot.first { survivors = [first] }
-        let destroyedTowers = towerSnapshot.filter { snap in !survivors.contains(where: { $0.slotId == snap.slotId }) }
+        // Deterministic survival: 65% of towers survive, minimum 2 (or all if ≤2).
+        // Shuffle then take prefix — no "unlucky wipe" possible.
+        let n = towerSnapshot.count
+        let survivorCount = n <= 2 ? n : min(n, max(2, Int(ceil(Double(n) * 0.65))))
+        let shuffled = towerSnapshot.shuffled()
+        let survivors     = Array(shuffled.prefix(survivorCount))
+        let destroyedTowers = Array(shuffled.dropFirst(survivorCount))
 
         // Destroy non-survivors
         for snap in destroyedTowers {

@@ -5,6 +5,9 @@ enum EnemyType: String, CaseIterable {
     case runner = "Runner"
     case tank   = "Tank"
     case boss   = "Boss"
+    case shield = "Shield"   // intro cycle 2 (wave 8+): absorbs first 80 dmg
+    case swarm  = "Swarm"    // intro cycle 3 (wave 19+): fast packs, low HP
+    case ghost  = "Ghost"    // intro cycle 4 (wave 28+): 90% frost immune
 }
 
 struct EnemySpawnEntry {
@@ -59,15 +62,16 @@ final class WaveSystem {
                        spawns: [EnemySpawnEntry(type: .runner, count: 8),
                                 EnemySpawnEntry(type: .tank,   count: 3)],
                        spawnInterval: 1.4),
-        // Wave 8: runner swarm
+        // Wave 8: first shield wave (shields introduced here, cycle repeats from wave 17+)
         WaveDefinition(waveNumber: 8,
-                       spawns: [EnemySpawnEntry(type: .runner, count: 10),
-                                EnemySpawnEntry(type: .tank,   count: 2)],
-                       spawnInterval: 1.2),
-        // Wave 9: pre-boss gauntlet
+                       spawns: [EnemySpawnEntry(type: .runner, count: 5),
+                                EnemySpawnEntry(type: .shield, count: 2)],
+                       spawnInterval: 1.5),
+        // Wave 9: pre-boss mixed pressure
         WaveDefinition(waveNumber: 9,
-                       spawns: [EnemySpawnEntry(type: .runner, count: 8),
-                                EnemySpawnEntry(type: .tank,   count: 4)],
+                       spawns: [EnemySpawnEntry(type: .runner, count: 6),
+                                EnemySpawnEntry(type: .tank,   count: 2),
+                                EnemySpawnEntry(type: .shield, count: 1)],
                        spawnInterval: 1.3),
     ]
 
@@ -108,9 +112,21 @@ final class WaveSystem {
 
         if cycleNumber == 0 { return WaveDefinition(waveNumber: waveNumber, spawns: base.spawns, spawnInterval: base.spawnInterval) }
 
-        let scaledSpawns = base.spawns.map { entry in
+        // Scale base spawns by cycle depth
+        var scaledSpawns = base.spawns.map { entry in
             EnemySpawnEntry(type: entry.type, count: entry.count + cycleNumber)
         }
+
+        // Cycle 2+ (wave 19+): inject swarm packs every 3rd pattern slot
+        if cycleNumber >= 2 && patternIndex % 3 == 0 {
+            scaledSpawns.append(EnemySpawnEntry(type: .swarm, count: 5 + cycleNumber))
+        }
+
+        // Cycle 3+ (wave 28+): inject ghost enemies every 4th pattern slot (offset by 1)
+        if cycleNumber >= 3 && patternIndex % 4 == 1 {
+            scaledSpawns.append(EnemySpawnEntry(type: .ghost, count: 2 + cycleNumber))
+        }
+
         let adjustedInterval = max(0.8, base.spawnInterval - Double(cycleNumber) * 0.08)
         return WaveDefinition(waveNumber: waveNumber, spawns: scaledSpawns, spawnInterval: adjustedInterval)
     }
