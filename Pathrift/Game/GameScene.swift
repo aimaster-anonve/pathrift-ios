@@ -122,52 +122,11 @@ final class GameScene: SKScene {
     }
 
     private func buildDynamicLayout() {
-        let W = size.width
-        let H = size.height
-
-        // Z-shaped path (3 horizontal lanes, 2 vertical connectors)
-        // SpriteKit Y: 0=bottom, H=top
-        let y1 = H * 0.20  // bottom lane
-        let y2 = H * 0.50  // middle lane
-        let y3 = H * 0.78  // top lane
-        let xR = W * 0.74  // right vertical x
-        let xL = W * 0.26  // left vertical x
-
-        PathSystem.waypoints = [
-            CGPoint(x: -10,  y: y1),
-            CGPoint(x: xR,   y: y1),
-            CGPoint(x: xR,   y: y2),
-            CGPoint(x: xL,   y: y2),
-            CGPoint(x: xL,   y: y3),
-            CGPoint(x: W+10, y: y3)
-        ]
-
-        // Slot clearance: ≥85pt from horizontal paths, ≥58pt from vertical paths.
-        // No two slots closer than 80pt center-to-center (slot visual = 46pt).
-        let vGap: CGFloat = 85
-        let hGap: CGFloat = 58
-        let safeRight = min(xR + hGap, W - 30)
-
-        gridSystem.updateSlots([
-            // Above bottom lane — 3 slots
-            CGPoint(x: W*0.14, y: y1+vGap),
-            CGPoint(x: W*0.40, y: y1+vGap),
-            CGPoint(x: W*0.64, y: y1+vGap),
-            // Right of right vertical — 2 slots
-            CGPoint(x: safeRight, y: y1+(y2-y1)*0.28),
-            CGPoint(x: safeRight, y: y1+(y2-y1)*0.72),
-            // Below middle lane — 2 slots inside the two verticals
-            CGPoint(x: W*0.36, y: y2-vGap),
-            CGPoint(x: W*0.62, y: y2-vGap),
-            // Right of left vertical — 1 slot
-            CGPoint(x: xL+hGap, y: y2+(y3-y2)*0.42),
-            // Open zone right side (x>xR, y>y2 — no path)
-            CGPoint(x: safeRight, y: y2+(y3-y2)*0.38),
-            // Below top lane — 3 slots, leftmost anchored past xL so never on left vertical
-            CGPoint(x: xL + hGap + 5,        y: y3-vGap),  // just right of left vertical
-            CGPoint(x: (xL + W) * 0.5 + 10,  y: y3-vGap),  // center-right
-            CGPoint(x: min(W*0.84, W-32),     y: y3-vGap),  // right side, clamped from edge
-        ])
+        // Pick a random starting layout — every run feels different from the first wave
+        currentLayoutIndex = Int.random(in: 0..<layoutParams.count)
+        let layout = layoutConfig(index: currentLayoutIndex)
+        PathSystem.waypoints = layout.waypoints
+        gridSystem.updateSlots(layout.slots)
     }
 
     private func setupLayers() {
