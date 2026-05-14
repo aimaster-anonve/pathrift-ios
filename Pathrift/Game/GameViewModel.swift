@@ -72,15 +72,29 @@ final class GameViewModel: ObservableObject {
             DispatchQueue.main.async {
                 self?.isGameOver = true
                 self?.runResult = result
+                GameSaveStore.shared.clear()
             }
         }
         scene.onWaveComplete = { [weak self] wave in
             DispatchQueue.main.async {
-                self?.isWaveActive = false
-                self?.waveCompleteMessage = "Wave \(wave) cleared!"
+                guard let self else { return }
+                self.isWaveActive = false
+                self.waveCompleteMessage = "Wave \(wave) cleared!"
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
-                    self?.waveCompleteMessage = nil
+                    self.waveCompleteMessage = nil
                 }
+                // Save game state after each wave
+                let towers = self.scene.activeTowers.map {
+                    SavedTower(slotId: $0.slotId, type: $0.type.rawValue, level: $0.level, totalInvested: $0.totalInvested)
+                }
+                GameSaveStore.shared.save(
+                    wave: wave,
+                    lives: self.lives,
+                    gold: self.gold,
+                    kills: self.enemyKills,
+                    layoutIndex: self.scene.currentLayoutIndex,
+                    towers: towers
+                )
             }
         }
         scene.onTowerTapped = { [weak self] slotId in

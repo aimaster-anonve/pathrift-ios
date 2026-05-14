@@ -28,7 +28,7 @@ final class GameScene: SKScene {
     private var currentSpawnBatches: [EnemySpawnEntry] = []
 
     private var layoutBuilt = false
-    private var currentLayoutIndex: Int = 0
+    private(set) var currentLayoutIndex: Int = 0
 
     /// Slots available increases with wave — more room to defend as game gets harder.
     private func activeSlotCount() -> Int {

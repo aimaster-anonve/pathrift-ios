@@ -164,155 +164,100 @@ struct TowerInfoPanel: View {
         }
     }
 
-    // MARK: - Portrait Panel (original)
+    // MARK: - Portrait Panel (compact — max ~160pt visible height)
 
     private var portraitPanel: some View {
         VStack(spacing: 0) {
-            // Drag handle
             RoundedRectangle(cornerRadius: 2)
                 .fill(Color.pathriftTextSecondary.opacity(0.4))
                 .frame(width: 36, height: 4)
-                .padding(.top, 10)
+                .padding(.top, 8)
 
-            VStack(spacing: 16) {
+            VStack(spacing: 10) {
                 // Header
                 HStack {
                     Circle()
                         .fill(info.towerType.swiftUIColor)
-                        .frame(width: 12, height: 12)
-                        .shadow(color: info.towerType.swiftUIColor, radius: 4)
+                        .frame(width: 10, height: 10)
+                        .shadow(color: info.towerType.swiftUIColor, radius: 3)
                     Text(info.towerType.displayName.uppercased())
-                        .font(.system(size: 15, weight: .black, design: .rounded))
+                        .font(.system(size: 13, weight: .black, design: .rounded))
                         .foregroundColor(.pathriftTextPrimary)
-                        .kerning(1)
                     Text("Lv.\(info.level)")
-                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .font(.system(size: 10, weight: .bold, design: .monospaced))
                         .foregroundColor(.pathriftNeonBlue)
-                        .padding(.horizontal, 7).padding(.vertical, 3)
-                        .background(Color.pathriftNeonBlue.opacity(0.15))
-                        .cornerRadius(6)
+                        .padding(.horizontal, 6).padding(.vertical, 2)
+                        .background(Color.pathriftNeonBlue.opacity(0.15)).cornerRadius(5)
+                    if let hint = info.towerType.typeAdvantageHint {
+                        Text("⚡")
+                            .font(.system(size: 11))
+                            .help(hint)
+                    }
                     Spacer()
                     Button(action: onDismiss) {
                         Image(systemName: "xmark.circle.fill")
-                            .font(.system(size: 18))
+                            .font(.system(size: 16))
                             .foregroundColor(.pathriftTextSecondary)
                     }
                 }
 
-                // Stats row
+                // Stats + buttons in one row
                 HStack(spacing: 0) {
-                    statItem(icon: "bolt.fill", label: "DMG",
-                             value: String(format: "%.0f", info.damage),
-                             color: .pathriftOrange)
-                    Divider().background(Color.pathriftTextSecondary.opacity(0.2)).frame(height: 32)
-                    statItem(icon: "scope", label: "RNG",
-                             value: String(format: "%.0f", info.range / 64 * 3) + "t",
-                             color: .pathriftNeonBlue)
-                    Divider().background(Color.pathriftTextSecondary.opacity(0.2)).frame(height: 32)
-                    statItem(icon: "timer", label: "SPD",
-                             value: String(format: "%.1f/s", 1.0 / info.attackSpeed),
-                             color: .pathriftPurple)
-                }
-                .padding(.vertical, 4)
-                .background(Color.black.opacity(0.2))
-                .cornerRadius(10)
-
-                // Type advantage hint
-                if let hint = info.towerType.typeAdvantageHint {
-                    HStack(spacing: 6) {
-                        Image(systemName: "bolt.circle.fill")
-                            .font(.system(size: 11))
-                            .foregroundColor(.pathriftGold)
-                        Text(hint)
-                            .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.pathriftGold)
-                        Spacer()
+                    // Stats inline
+                    HStack(spacing: 0) {
+                        statItem(icon: "bolt.fill", label: "DMG",
+                                 value: String(format: "%.0f", info.damage), color: .pathriftOrange)
+                        Divider().frame(height: 28)
+                        statItem(icon: "scope", label: "RNG",
+                                 value: String(format: "%.0f", info.range / 64 * 3) + "t", color: .pathriftNeonBlue)
+                        Divider().frame(height: 28)
+                        statItem(icon: "timer", label: "SPD",
+                                 value: String(format: "%.1f/s", 1.0 / info.attackSpeed), color: .pathriftPurple)
                     }
-                    .padding(.horizontal, 10).padding(.vertical, 6)
-                    .background(Color.pathriftGold.opacity(0.1))
+                    .frame(maxWidth: .infinity)
+                    .background(Color.black.opacity(0.2))
                     .cornerRadius(8)
-                    .overlay(RoundedRectangle(cornerRadius: 8).strokeBorder(Color.pathriftGold.opacity(0.25), lineWidth: 1))
-                }
 
-                // Targeting mode badge (portrait)
-                let tMode = info.towerType.targetingMode
-                if tMode != .groundOnly {
+                    // Buttons
                     HStack(spacing: 6) {
-                        Image(systemName: tMode == .allLayers ? "square.stack.fill" : "arrow.up.square.fill")
-                            .font(.system(size: 10))
-                            .foregroundColor(.pathriftTextSecondary)
-                        Text(tMode == .allLayers ? "ALL LAYERS" : "BRIDGE ONLY")
-                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
-                            .foregroundColor(.pathriftTextSecondary)
-                        Spacer()
-                    }
-                }
-
-                // Upgrade & Sell buttons
-                HStack(spacing: 12) {
-                    Button(action: onUpgrade) {
-                        VStack(spacing: 4) {
-                            HStack(spacing: 5) {
-                                Image(systemName: "arrow.up.circle.fill").font(.system(size: 13))
-                                Text("UPGRADE")
-                                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                                    .kerning(0.5)
+                        Button(action: onUpgrade) {
+                            VStack(spacing: 2) {
+                                Text("UPGRADE").font(.system(size: 11, weight: .bold, design: .rounded))
+                                Text("\(info.upgradeCost)g").font(.system(size: 9, design: .monospaced)).opacity(0.8)
                             }
-                            Text("\(info.upgradeCost)g")
-                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                                .opacity(0.8)
+                            .foregroundColor(canAffordUpgrade ? .pathriftBackground : .pathriftTextSecondary)
+                            .frame(width: 80).frame(height: 40)
+                            .background(canAffordUpgrade ? Color.pathriftNeonBlue : Color.pathriftSurface)
+                            .cornerRadius(10)
+                            .overlay(RoundedRectangle(cornerRadius: 10)
+                                .strokeBorder(canAffordUpgrade ? .clear : Color.pathriftTextSecondary.opacity(0.3), lineWidth: 1))
                         }
-                        .foregroundColor(canAffordUpgrade ? .pathriftBackground : .pathriftTextSecondary)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 52)
-                        .background(canAffordUpgrade ? Color.pathriftNeonBlue : Color.pathriftSurface)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .strokeBorder(canAffordUpgrade ? .clear : Color.pathriftTextSecondary.opacity(0.3), lineWidth: 1)
-                        )
-                    }
-                    .disabled(!canAffordUpgrade)
-                    .buttonStyle(ScaleButtonStyle())
+                        .disabled(!canAffordUpgrade).buttonStyle(ScaleButtonStyle())
 
-                    Button(action: onSell) {
-                        VStack(spacing: 4) {
-                            HStack(spacing: 5) {
-                                Image(systemName: "dollarsign.circle").font(.system(size: 13))
-                                Text("SELL")
-                                    .font(.system(size: 13, weight: .bold, design: .rounded))
-                                    .kerning(0.5)
+                        Button(action: onSell) {
+                            VStack(spacing: 2) {
+                                Text("SELL").font(.system(size: 11, weight: .bold, design: .rounded))
+                                Text("+\(info.sellValue)g").font(.system(size: 9, design: .monospaced)).opacity(0.8)
                             }
-                            Text("+\(info.sellValue)g")
-                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                                .opacity(0.8)
+                            .foregroundColor(.pathriftDanger)
+                            .frame(width: 64).frame(height: 40)
+                            .background(Color.pathriftSurface)
+                            .cornerRadius(10)
+                            .overlay(RoundedRectangle(cornerRadius: 10)
+                                .strokeBorder(Color.pathriftDanger.opacity(0.4), lineWidth: 1))
                         }
-                        .foregroundColor(.pathriftDanger)
-                        .frame(width: 100)
-                        .frame(height: 52)
-                        .background(Color.pathriftSurface)
-                        .cornerRadius(12)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 12)
-                                .strokeBorder(Color.pathriftDanger.opacity(0.4), lineWidth: 1)
-                        )
+                        .buttonStyle(ScaleButtonStyle())
                     }
-                    .buttonStyle(ScaleButtonStyle())
+                    .padding(.leading, 8)
                 }
-
-                // Tower description
-                Text(info.towerType.description)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(.pathriftTextSecondary)
-                    .multilineTextAlignment(.leading)
-                    .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(.horizontal, 20)
-            .padding(.bottom, 32)
-            .padding(.top, 8)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 16)
+            .padding(.top, 6)
         }
-        .background(Color.pathriftSurface)
-        .cornerRadius(20, corners: [.topLeft, .topRight])
+        .background(.ultraThinMaterial)
+        .background(Color.pathriftSurface.opacity(0.92))
+        .cornerRadius(18, corners: [.topLeft, .topRight])
     }
 
     private func statItem(icon: String, label: String, value: String, color: Color) -> some View {

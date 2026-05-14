@@ -65,16 +65,16 @@ enum TowerType: String, CaseIterable, Identifiable {
 
     var range: CGFloat {
         switch self {
-        case .bolt:      return 192
-        case .blast:     return 160
-        case .frost:     return 192
-        case .pierce:    return 192
-        case .core:      return 160
-        case .inferno:   return 160
-        case .tesla:     return 200
-        case .nova:      return 220
-        case .sniper:    return 260
-        case .artillery: return 200
+        case .bolt:      return 155
+        case .blast:     return 130
+        case .frost:     return 150
+        case .pierce:    return 155
+        case .core:      return 125
+        case .inferno:   return 125
+        case .tesla:     return 160
+        case .nova:      return 170
+        case .sniper:    return 210
+        case .artillery: return 155
         }
     }
 

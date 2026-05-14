@@ -20,6 +20,11 @@ final class AppState: ObservableObject {
         currentScreen = .game
     }
 
+    func continueGame() {
+        lastRunResult = nil
+        currentScreen = .game
+    }
+
     func endRun(result: RunResult) {
         lastRunResult = result
         currentScreen = .runEnd

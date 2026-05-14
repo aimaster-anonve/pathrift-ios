@@ -7,6 +7,8 @@ struct HomeScreen: View {
     @State private var titleGlow: CGFloat = 0.3
     @State private var highScore: Int = 0
     @State private var showBestScore = false
+    @State private var hasSave: Bool = false
+    @State private var savedWave: Int = 0
 
     private var isLandscape: Bool {
         UIScreen.main.bounds.width > UIScreen.main.bounds.height
@@ -26,6 +28,8 @@ struct HomeScreen: View {
         .onAppear {
             highScore = LocalRunStorage.shared.loadHighScore()
             showBestScore = highScore > 0
+            hasSave = GameSaveStore.shared.hasSave()
+            savedWave = GameSaveStore.shared.savedWave
             withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
                 titleScale = 1.03
                 titleGlow = 0.8
@@ -133,8 +137,33 @@ struct HomeScreen: View {
         VStack(spacing: 8) {
             Spacer()
 
+            // CONTINUE button (shown only if a saved game exists)
+            if hasSave {
+                Button(action: { appState.continueGame() }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "arrow.clockwise").font(.system(size: 13, weight: .bold))
+                        Text("CONTINUE — WAVE \(savedWave)")
+                            .font(.system(size: 14, weight: .black, design: .rounded))
+                            .kerning(1)
+                    }
+                    .foregroundColor(.pathriftBackground)
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 44)
+                    .background(
+                        LinearGradient(colors: [Color.pathriftOrange, Color.pathriftGold],
+                                       startPoint: .leading, endPoint: .trailing)
+                    )
+                    .cornerRadius(14)
+                    .shadow(color: .pathriftOrange.opacity(0.4), radius: 8, y: 3)
+                }
+                .buttonStyle(ScaleButtonStyle())
+            }
+
             // PLAY button
-            Button(action: { appState.startGame() }) {
+            Button(action: {
+                if hasSave { GameSaveStore.shared.clear() }
+                appState.startGame()
+            }) {
                 HStack(spacing: 8) {
                     Image(systemName: "play.fill").font(.system(size: 14, weight: .bold))
                     Text(lang.s(L.play))

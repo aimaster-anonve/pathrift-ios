@@ -134,13 +134,16 @@ struct TowerMenuView: View {
             VStack(spacing: 4) {
                 ZStack {
                     Circle()
-                        .fill(isSelected ? type.swiftUIColor : type.swiftUIColor.opacity(0.15))
-                        .frame(width: 32, height: 32)
-                        .overlay(Circle().strokeBorder(type.swiftUIColor.opacity(isSelected ? 1 : 0.4), lineWidth: isSelected ? 2 : 1))
-                    if !isUnlocked {
+                        .fill(isSelected ? type.swiftUIColor.opacity(0.2) : type.swiftUIColor.opacity(0.08))
+                        .frame(width: 44, height: 44)
+                        .overlay(Circle().strokeBorder(type.swiftUIColor.opacity(isSelected ? 0.8 : 0.3), lineWidth: isSelected ? 2 : 1))
+                        .shadow(color: isSelected ? type.swiftUIColor.opacity(0.5) : .clear, radius: 6)
+                    if isUnlocked {
+                        TowerShapeView(type: type, size: 28)
+                    } else {
                         Image(systemName: "lock.fill")
-                            .font(.system(size: 10))
-                            .foregroundColor(.white)
+                            .font(.system(size: 12, weight: .bold))
+                            .foregroundColor(.white.opacity(0.7))
                     }
                 }
                 Text(String(type.displayName.prefix(4)).uppercased())
@@ -150,12 +153,12 @@ struct TowerMenuView: View {
                     .font(.system(size: 8, weight: .bold, design: .monospaced))
                     .foregroundColor(isUnlocked ? (canAfford ? .pathriftGold : .pathriftDanger) : Color(red: 0, green: 0.8, blue: 1))
             }
-            .frame(width: 52)
+            .frame(width: 60)
             .padding(.vertical, 6)
-            .background(isSelected ? type.swiftUIColor.opacity(0.1) : Color.clear)
+            .background(isSelected ? type.swiftUIColor.opacity(0.08) : Color.clear)
             .cornerRadius(10)
         }
-        .opacity(isUnlocked && canAfford ? 1.0 : 0.5)
+        .opacity(isUnlocked && canAfford ? 1.0 : 0.55)
         .buttonStyle(ScaleButtonStyle())
     }
 

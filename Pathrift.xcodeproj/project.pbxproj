@@ -79,7 +79,7 @@
 		338113AEA2F29744A75C6DE8 /* TeslaTower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeslaTower.swift; sourceTree = "<group>"; };
 		34E3850FB6781D37BC157249 /* TowerMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TowerMenuView.swift; sourceTree = "<group>"; };
 		390A24DBF0718B98D471CA1A /* RunnerEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerEnemy.swift; sourceTree = "<group>"; };
-		47B7B9544B3FD9C03F1A5777 /* Pathrift.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Pathrift.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		47B7B9544B3FD9C03F1A5777 /* Pathrift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pathrift.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5BD1ECA9E5C38AAB65960269 /* DiamondStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiamondStore.swift; sourceTree = "<group>"; };
 		5DF333D93A342C51A8F9F459 /* BlastTower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlastTower.swift; sourceTree = "<group>"; };
 		620C7E2C9254801FDEA8DCD4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -97,7 +97,7 @@
 		88CDBB48B13880491055CEB0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8C96FE3ED23408AF336BABA6 /* CombatHUDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatHUDView.swift; sourceTree = "<group>"; };
 		95376E451D1C715286855AB2 /* ViewExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewExtensions.swift; sourceTree = "<group>"; };
-		984F7E26DF60568DD6333A5B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		984F7E26DF60568DD6333A5B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		9D0BE562F8DF38CEB7708B7E /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		A489DA2D996FBB0D340B7198 /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
 		A6D0ABBBA7F42F1D945C72C6 /* GhostEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhostEnemy.swift; sourceTree = "<group>"; };
@@ -350,8 +350,6 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
-				TargetAttributes = {
-				};
 			};
 			buildConfigurationList = C569ACFFC5FA3EC9E7D3D75B /* Build configuration list for PBXProject "Pathrift" */;
 			developmentRegion = en;
@@ -453,6 +451,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = R99M943BHG;
 				INFOPLIST_FILE = Pathrift/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -536,6 +535,7 @@
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CURRENT_PROJECT_VERSION = 3;
+				DEVELOPMENT_TEAM = R99M943BHG;
 				INFOPLIST_FILE = Pathrift/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
