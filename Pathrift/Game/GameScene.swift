@@ -277,30 +277,30 @@ final class GameScene: SKScene {
                 pathLayer.addChild(dot)
             }
         }
-        // Start indicator — text only on path
+        // Start indicator — minimal text just above path entry
         if let first = PathSystem.waypoints.first {
             let entryPos = CGPoint(x: 24, y: first.y)
             let inLabel = SKLabelNode(text: "IN")
-            inLabel.fontSize = 9
+            inLabel.fontSize = 11
             inLabel.fontName = "AvenirNext-Bold"
-            inLabel.fontColor = SKColor(red: 0.0, green: 0.9, blue: 0.3, alpha: 1.0)
+            inLabel.fontColor = SKColor(white: 0.95, alpha: 0.75)
             inLabel.verticalAlignmentMode = .center
             inLabel.horizontalAlignmentMode = .center
-            inLabel.position = CGPoint(x: entryPos.x, y: entryPos.y + 16)
+            inLabel.position = CGPoint(x: entryPos.x, y: entryPos.y + 14)
             inLabel.zPosition = 3.0
             pathLayer.addChild(inLabel)
         }
 
-        // End indicator — text only on path
+        // End indicator — minimal text just above path exit
         if let last = PathSystem.waypoints.last {
             let exitPos = CGPoint(x: size.width - 24, y: last.y)
             let outLabel = SKLabelNode(text: "OUT")
-            outLabel.fontSize = 9
+            outLabel.fontSize = 11
             outLabel.fontName = "AvenirNext-Bold"
-            outLabel.fontColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 1.0)
+            outLabel.fontColor = SKColor(white: 0.95, alpha: 0.75)
             outLabel.verticalAlignmentMode = .center
             outLabel.horizontalAlignmentMode = .center
-            outLabel.position = CGPoint(x: exitPos.x, y: exitPos.y + 16)
+            outLabel.position = CGPoint(x: exitPos.x, y: exitPos.y + 14)
             outLabel.zPosition = 3.0
             pathLayer.addChild(outLabel)
         }
