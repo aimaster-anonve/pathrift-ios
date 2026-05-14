@@ -286,7 +286,7 @@ final class GameScene: SKScene {
             inLabel.fontColor = SKColor(red: 0.0, green: 0.9, blue: 0.3, alpha: 1.0)
             inLabel.verticalAlignmentMode = .center
             inLabel.horizontalAlignmentMode = .center
-            inLabel.position = entryPos
+            inLabel.position = CGPoint(x: entryPos.x, y: entryPos.y + 16)
             inLabel.zPosition = 3.0
             pathLayer.addChild(inLabel)
         }
@@ -300,7 +300,7 @@ final class GameScene: SKScene {
             outLabel.fontColor = SKColor(red: 1.0, green: 0.2, blue: 0.2, alpha: 1.0)
             outLabel.verticalAlignmentMode = .center
             outLabel.horizontalAlignmentMode = .center
-            outLabel.position = exitPos
+            outLabel.position = CGPoint(x: exitPos.x, y: exitPos.y + 16)
             outLabel.zPosition = 3.0
             pathLayer.addChild(outLabel)
         }
