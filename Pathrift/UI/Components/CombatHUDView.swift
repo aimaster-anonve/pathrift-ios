@@ -13,8 +13,6 @@ struct CombatHUDView: View {
         VStack(spacing: 0) {
             if isLandscape {
                 landscapeTopBar
-                waveProgressStrip
-                    .padding(.top, 2)
             } else {
                 portraitTopBar
             }
@@ -104,6 +102,17 @@ struct CombatHUDView: View {
                     Text("\(viewModel.diamonds)")
                         .font(.system(size: 12, weight: .bold, design: .monospaced))
                         .foregroundColor(Color(red: 0, green: 0.78, blue: 1))
+                }
+                .statPill()
+
+                // Kills pill
+                HStack(spacing: 3) {
+                    Image(systemName: "xmark.shield.fill")
+                        .font(.system(size: 11))
+                        .foregroundColor(.pathriftOrange)
+                    Text("\(viewModel.enemyKills)")
+                        .font(.system(size: 12, weight: .bold, design: .monospaced))
+                        .foregroundColor(.pathriftOrange)
                 }
                 .statPill()
             }
@@ -247,19 +256,7 @@ struct CombatHUDView: View {
 
     private var bottomBar: some View {
         HStack {
-            if isLandscape {
-                // Kills pill
-                HStack(spacing: 4) {
-                    Image(systemName: "xmark.shield.fill")
-                        .font(.system(size: 11))
-                        .foregroundColor(.pathriftOrange)
-                    Text("\(viewModel.enemyKills)")
-                        .font(.system(size: 13, weight: .bold, design: .monospaced))
-                        .foregroundColor(.pathriftOrange)
-                }
-                .statPill()
-                .padding(.leading, 16)
-            } else {
+            if !isLandscape {
                 killsStat.padding(.leading, 16)
             }
 

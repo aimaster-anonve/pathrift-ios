@@ -40,6 +40,7 @@ final class DiamondStore {
     }
 
     func isUnlocked(_ type: TowerType) -> Bool {
+        if PremiumStore.shared.isPremium { return true }
         guard type.diamondCost > 0 else { return true }
         return unlockedTowers.contains(type.rawValue)
     }
