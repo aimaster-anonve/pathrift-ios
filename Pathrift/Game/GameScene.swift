@@ -277,32 +277,106 @@ final class GameScene: SKScene {
                 pathLayer.addChild(dot)
             }
         }
-        // Start indicator — minimal text just above path entry
+        // Entry indicator — neon portal beacon (pulsing rings + right-pointing arrow)
         if let first = PathSystem.waypoints.first {
-            let entryPos = CGPoint(x: 24, y: first.y)
-            let inLabel = SKLabelNode(text: "IN")
-            inLabel.fontSize = 11
-            inLabel.fontName = "AvenirNext-Bold"
-            inLabel.fontColor = SKColor(white: 0.95, alpha: 0.75)
-            inLabel.verticalAlignmentMode = .center
-            inLabel.horizontalAlignmentMode = .center
-            inLabel.position = CGPoint(x: entryPos.x, y: entryPos.y + 14)
-            inLabel.zPosition = 3.0
-            pathLayer.addChild(inLabel)
+            let entryX: CGFloat = 22
+            let entryY = first.y
+
+            // Outer ring
+            let outerRing = SKShapeNode(circleOfRadius: 13)
+            outerRing.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.9)
+            outerRing.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.08)
+            outerRing.lineWidth = 1.5
+            outerRing.position = CGPoint(x: entryX, y: entryY)
+            outerRing.zPosition = 3.0
+            pathLayer.addChild(outerRing)
+
+            // Inner ring
+            let innerRing = SKShapeNode(circleOfRadius: 7)
+            innerRing.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.7)
+            innerRing.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.25)
+            innerRing.lineWidth = 1.5
+            innerRing.position = CGPoint(x: entryX, y: entryY)
+            innerRing.zPosition = 3.0
+            pathLayer.addChild(innerRing)
+
+            // Right-pointing arrow (chevron)
+            let entryArrowPath = CGMutablePath()
+            entryArrowPath.move(to: CGPoint(x: entryX + 4, y: entryY))
+            entryArrowPath.addLine(to: CGPoint(x: entryX - 2, y: entryY + 5))
+            entryArrowPath.move(to: CGPoint(x: entryX + 4, y: entryY))
+            entryArrowPath.addLine(to: CGPoint(x: entryX - 2, y: entryY - 5))
+            let entryArrow = SKShapeNode(path: entryArrowPath)
+            entryArrow.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 1.0)
+            entryArrow.lineWidth = 2.0
+            entryArrow.lineCap = .round
+            entryArrow.zPosition = 3.1
+            pathLayer.addChild(entryArrow)
+
+            // Pulse: outer ring breathes outward
+            outerRing.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.group([
+                    SKAction.scale(to: 1.45, duration: 1.1),
+                    SKAction.fadeAlpha(to: 0.25, duration: 1.1)
+                ]),
+                SKAction.group([
+                    SKAction.scale(to: 1.0, duration: 0.9),
+                    SKAction.fadeAlpha(to: 1.0, duration: 0.9)
+                ])
+            ])))
         }
 
-        // End indicator — minimal text just above path exit
+        // Exit indicator — danger breach point (dashed ring + right-pointing arrow)
         if let last = PathSystem.waypoints.last {
-            let exitPos = CGPoint(x: size.width - 24, y: last.y)
-            let outLabel = SKLabelNode(text: "OUT")
-            outLabel.fontSize = 11
-            outLabel.fontName = "AvenirNext-Bold"
-            outLabel.fontColor = SKColor(white: 0.95, alpha: 0.75)
-            outLabel.verticalAlignmentMode = .center
-            outLabel.horizontalAlignmentMode = .center
-            outLabel.position = CGPoint(x: exitPos.x, y: exitPos.y + 14)
-            outLabel.zPosition = 3.0
-            pathLayer.addChild(outLabel)
+            let exitX = size.width - 22
+            let exitY = last.y
+
+            // Dashed danger ring via 6 short arc segments
+            let dashCount = 6
+            for i in 0..<dashCount {
+                let angle = CGFloat(i) * (2 * .pi / CGFloat(dashCount))
+                let arcPath = CGMutablePath()
+                let r: CGFloat = 13
+                arcPath.addArc(center: CGPoint(x: exitX, y: exitY),
+                               radius: r,
+                               startAngle: angle,
+                               endAngle: angle + .pi / CGFloat(dashCount) - 0.18,
+                               clockwise: false)
+                let dash = SKShapeNode(path: arcPath)
+                dash.strokeColor = SKColor(red: 1.0, green: 0.17, blue: 0.33, alpha: 0.85)
+                dash.lineWidth = 2.5
+                dash.lineCap = .round
+                dash.zPosition = 3.0
+                pathLayer.addChild(dash)
+            }
+
+            // Solid core dot — danger fill
+            let exitCore = SKShapeNode(circleOfRadius: 5)
+            exitCore.fillColor = SKColor(red: 1.0, green: 0.17, blue: 0.33, alpha: 0.35)
+            exitCore.strokeColor = SKColor(red: 1.0, green: 0.17, blue: 0.33, alpha: 0.8)
+            exitCore.lineWidth = 1.5
+            exitCore.position = CGPoint(x: exitX, y: exitY)
+            exitCore.zPosition = 3.0
+            pathLayer.addChild(exitCore)
+
+            // Right-pointing arrow (chevron)
+            let exitArrowPath = CGMutablePath()
+            exitArrowPath.move(to: CGPoint(x: exitX + 4, y: exitY))
+            exitArrowPath.addLine(to: CGPoint(x: exitX - 2, y: exitY + 5))
+            exitArrowPath.move(to: CGPoint(x: exitX + 4, y: exitY))
+            exitArrowPath.addLine(to: CGPoint(x: exitX - 2, y: exitY - 5))
+            let exitArrow = SKShapeNode(path: exitArrowPath)
+            exitArrow.strokeColor = SKColor(red: 1.0, green: 0.17, blue: 0.33, alpha: 1.0)
+            exitArrow.lineWidth = 2.0
+            exitArrow.lineCap = .round
+            exitArrow.zPosition = 3.1
+            pathLayer.addChild(exitArrow)
+
+            // Pulse: core throbs (alarm feel)
+            exitCore.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.scale(to: 1.6, duration: 0.4),
+                SKAction.scale(to: 1.0, duration: 0.4)
+            ])))
         }
     }
 
