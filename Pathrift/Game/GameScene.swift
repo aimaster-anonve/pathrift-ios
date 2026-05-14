@@ -125,19 +125,106 @@ final class GameScene: SKScene {
         buildAndSetupGame()
     }
 
+    // Set before presentation to restore a saved game instead of starting fresh
+    private var pendingRestore: GameSaveState? = nil
+
+    func queueRestore(_ save: GameSaveState) {
+        pendingRestore = save
+    }
+
     private func buildAndSetupGame() {
         layoutBuilt = true
         hasUsedRevive = false
         speedMultiplier = 1.0
-        buildDynamicLayout()
+
+        if let save = pendingRestore {
+            currentLayoutIndex = save.layoutIndex
+            applyLayout(index: currentLayoutIndex)
+        } else {
+            buildDynamicLayout()
+        }
+
         groundLayer.removeAllChildren()
         pathLayer.removeAllChildren()
         towerSlotLayer.removeAllChildren()
         setupGround()
         setupPath()
         setupTowerSlots()
+
+        if let save = pendingRestore {
+            pendingRestore = nil
+            applyRestore(save)
+        }
+
         onGoldChanged?(goldManager.gold)
         onLivesChanged?(lives)
+    }
+
+    private func applyRestore(_ save: GameSaveState) {
+        currentWaveNumber = save.wave
+        lives = save.lives
+        enemyKills = save.enemyKills
+        goldManager.setGold(save.gold)
+
+        onWaveChanged?(currentWaveNumber)
+        onLivesChanged?(lives)
+        onKillsChanged?(enemyKills)
+
+        for savedTower in save.towers {
+            guard let type = TowerType(rawValue: savedTower.type),
+                  let slot = gridSystem.slot(at: savedTower.slotId) else { continue }
+            gridSystem.placeTower(type: type, at: savedTower.slotId)
+            var tower = buildTowerInstance(type: type, position: slot.position, slotId: savedTower.slotId)
+            tower.level = savedTower.level
+            tower.totalInvested = savedTower.totalInvested
+            activeTowers.append(tower)
+            towerLayer.addChild(tower.node)
+            addLevelBadge(to: tower)
+            let tap = SKShapeNode(circleOfRadius: 28)
+            tap.fillColor = .clear; tap.strokeColor = .clear
+            tap.name = "slot_\(savedTower.slotId)"; tap.position = slot.position; tap.zPosition = 6
+            towerLayer.addChild(tap)
+            towerSlotLayer.childNode(withName: "slot_\(savedTower.slotId)")?.isHidden = true
+        }
+    }
+
+    private func buildTowerInstance(type: TowerType, position: CGPoint, slotId: Int) -> any Tower {
+        switch type {
+        case .bolt:      return BoltTower(position: position, slotId: slotId)
+        case .frost:     return FrostTower(position: position, slotId: slotId)
+        case .pierce:    return PierceTower(position: position, slotId: slotId)
+        case .core:      return CoreTower(position: position, slotId: slotId)
+        case .sniper:    return SniperTower(position: position, slotId: slotId)
+        case .inferno:   return InfernoTower(position: position, slotId: slotId)
+        case .tesla:     return TeslaTower(position: position, slotId: slotId)
+        case .blast:
+            let t = BlastTower(position: position, slotId: slotId)
+            t.blastDamageCallback = { [weak self] center, radius, damage in
+                self?.activeEnemies.filter { $0.isAlive }.forEach { e in
+                    let d = hypot(e.node.position.x - center.x, e.node.position.y - center.y)
+                    if d <= radius { e.applyDamage(damage) }
+                }
+            }
+            return t
+        case .nova:
+            let t = NovaTower(position: position, slotId: slotId)
+            t.novaDamageCallback = { [weak self] center, radius, damage in
+                self?.activeEnemies.filter { $0.isAlive }.forEach { e in
+                    let d = hypot(e.node.position.x - center.x, e.node.position.y - center.y)
+                    if d <= radius { e.applyDamage(damage) }
+                }
+            }
+            return t
+        case .artillery:
+            let t = ArtilleryTower(position: position, slotId: slotId)
+            t.artilleryDamageCallback = { [weak self] center, radius, damage in
+                self?.activeEnemies.filter { $0.isAlive }.forEach { e in
+                    let d = hypot(e.node.position.x - center.x, e.node.position.y - center.y)
+                    if d <= radius { e.applyDamage(damage) }
+                }
+            }
+            return t
+        }
     }
 
     private func buildDynamicLayout() {
@@ -1062,6 +1149,7 @@ final class GameScene: SKScene {
             let px = -dy / len, py = dx / len
 
             // Try both sides of the path; pick whichever is in-bounds
+            // Insert at front so prefix(activeSlotCount) never cuts guaranteed slots
             for sign: CGFloat in [1, -1] {
                 let cx = mx + px * offsetDist * sign
                 let cy = my + py * offsetDist * sign
@@ -1069,14 +1157,13 @@ final class GameScene: SKScene {
                       cy >= contentMinY + edge, cy <= contentMaxY - edge else { continue }
                 let tooClose = result.contains { hypot($0.x - cx, $0.y - cy) < minSep }
                 if !tooClose {
-                    result.append(CGPoint(x: cx, y: cy))
+                    result.insert(CGPoint(x: cx, y: cy), at: 0)
                     break
                 }
             }
         }
 
-        // Respect activeSlotCount cap
-        return Array(result.prefix(activeSlotCount()))
+        return result
     }
 
     /// Ensures the slots array has at least `activeSlotCount()` entries.

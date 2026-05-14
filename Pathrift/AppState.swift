@@ -14,14 +14,17 @@ enum Screen: Equatable {
 final class AppState: ObservableObject {
     @Published var currentScreen: Screen = .home
     @Published var lastRunResult: RunResult?
+    @Published var shouldRestoreSave: Bool = false
 
     func startGame() {
         lastRunResult = nil
+        shouldRestoreSave = false
         currentScreen = .game
     }
 
     func continueGame() {
         lastRunResult = nil
+        shouldRestoreSave = true
         currentScreen = .game
     }
 

@@ -22,7 +22,7 @@ struct ContentRootView: View {
             case .home:
                 HomeScreen()
             case .game:
-                GameView()
+                GameView(restoreFromSave: appState.shouldRestoreSave)
             case .runEnd:
                 RunEndScreen()
             case .howToPlay:

@@ -43,10 +43,13 @@ final class GameViewModel: ObservableObject {
 
     let scene: GameScene
 
-    init() {
+    init(restoreFromSave: Bool = false) {
         let screenSize = UIScreen.main.bounds.size
         let scene = GameScene(size: screenSize)
         scene.scaleMode = .resizeFill
+        if restoreFromSave, let save = GameSaveStore.shared.load() {
+            scene.queueRestore(save)
+        }
         self.scene = scene
         bindScene()
     }

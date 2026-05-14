@@ -16,6 +16,7 @@
 		17E7B13DCFC132D0E69D600F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 88CDBB48B13880491055CEB0 /* Assets.xcassets */; };
 		25204E202FDEE848CA66D42A /* GhostEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6D0ABBBA7F42F1D945C72C6 /* GhostEnemy.swift */; };
 		2A438639282B960837248356 /* LocalRunStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 32FF60CD7966D4225C7AC0F5 /* LocalRunStorage.swift */; };
+		2CA93A118449F0919836E142 /* TowerShapeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E63B8D0047945460CCB703E /* TowerShapeView.swift */; };
 		2D899661AA87B13F24FB2161 /* InfernoTower.swift in Sources */ = {isa = PBXBuildFile; fileRef = F181E90A5FE6891995B85710 /* InfernoTower.swift */; };
 		303EDB2035E47DCBD0E3F9D7 /* PremiumStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BD414EB7D6622CE9A95BDE0D /* PremiumStore.swift */; };
 		30F843ABAC527DB9A36F7663 /* Enemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A906724EBB50552DAD7738 /* Enemy.swift */; };
@@ -35,6 +36,7 @@
 		712B1BEAA01E682F934241D1 /* ScoreCalculator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 25795B44C8A7319D7061E5C7 /* ScoreCalculator.swift */; };
 		735831476BEFCFD38F17CC6A /* GoldManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66B9E3A197BF73F3FD984E35 /* GoldManager.swift */; };
 		75D3EBF6B218AB49FF0B6702 /* NovaTower.swift in Sources */ = {isa = PBXBuildFile; fileRef = 69EFB333DB3CD21E65FB742F /* NovaTower.swift */; };
+		780F47A1AD1A875F29DEFBBF /* GameSaveStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85FC589019F37A977A92ACF /* GameSaveStore.swift */; };
 		7BD72EB0B7DE02854FB2CD71 /* Color+Pathrift.swift in Sources */ = {isa = PBXBuildFile; fileRef = CD2F2647DDA468FE9435C5D0 /* Color+Pathrift.swift */; };
 		7EE72230397E24E27D28A335 /* ButtonStyles.swift in Sources */ = {isa = PBXBuildFile; fileRef = A489DA2D996FBB0D340B7198 /* ButtonStyles.swift */; };
 		859C2576630E44C0CAAB4CD4 /* TankEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBDF95002FFE22A49199414E /* TankEnemy.swift */; };
@@ -79,7 +81,8 @@
 		338113AEA2F29744A75C6DE8 /* TeslaTower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TeslaTower.swift; sourceTree = "<group>"; };
 		34E3850FB6781D37BC157249 /* TowerMenuView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TowerMenuView.swift; sourceTree = "<group>"; };
 		390A24DBF0718B98D471CA1A /* RunnerEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RunnerEnemy.swift; sourceTree = "<group>"; };
-		47B7B9544B3FD9C03F1A5777 /* Pathrift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Pathrift.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3E63B8D0047945460CCB703E /* TowerShapeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TowerShapeView.swift; sourceTree = "<group>"; };
+		47B7B9544B3FD9C03F1A5777 /* Pathrift.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Pathrift.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		5BD1ECA9E5C38AAB65960269 /* DiamondStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DiamondStore.swift; sourceTree = "<group>"; };
 		5DF333D93A342C51A8F9F459 /* BlastTower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BlastTower.swift; sourceTree = "<group>"; };
 		620C7E2C9254801FDEA8DCD4 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
@@ -97,7 +100,7 @@
 		88CDBB48B13880491055CEB0 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		8C96FE3ED23408AF336BABA6 /* CombatHUDView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CombatHUDView.swift; sourceTree = "<group>"; };
 		95376E451D1C715286855AB2 /* ViewExtensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ViewExtensions.swift; sourceTree = "<group>"; };
-		984F7E26DF60568DD6333A5B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		984F7E26DF60568DD6333A5B /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		9D0BE562F8DF38CEB7708B7E /* SettingsScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsScreen.swift; sourceTree = "<group>"; };
 		A489DA2D996FBB0D340B7198 /* ButtonStyles.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ButtonStyles.swift; sourceTree = "<group>"; };
 		A6D0ABBBA7F42F1D945C72C6 /* GhostEnemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GhostEnemy.swift; sourceTree = "<group>"; };
@@ -116,6 +119,7 @@
 		CD2F2647DDA468FE9435C5D0 /* Color+Pathrift.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Pathrift.swift"; sourceTree = "<group>"; };
 		CFE5ED737339F33EA7E8588E /* GameplayKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameplayKit.framework; path = System/Library/Frameworks/GameplayKit.framework; sourceTree = SDKROOT; };
 		D6A906724EBB50552DAD7738 /* Enemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enemy.swift; sourceTree = "<group>"; };
+		D85FC589019F37A977A92ACF /* GameSaveStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSaveStore.swift; sourceTree = "<group>"; };
 		DCC7378CF359B1F945AF5B0E /* CoreTower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTower.swift; sourceTree = "<group>"; };
 		E1AA98E792F35CB28E593BA4 /* WaveSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveSystem.swift; sourceTree = "<group>"; };
 		E1DCABAF689009E8CB0548C9 /* TowerInfoPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TowerInfoPanel.swift; sourceTree = "<group>"; };
@@ -197,6 +201,7 @@
 			children = (
 				77E94B40320C1F0732DF963C /* ArsenalStore.swift */,
 				5BD1ECA9E5C38AAB65960269 /* DiamondStore.swift */,
+				D85FC589019F37A977A92ACF /* GameSaveStore.swift */,
 				C9C26431543546D5D15D9CB4 /* LanguageManager.swift */,
 				BD414EB7D6622CE9A95BDE0D /* PremiumStore.swift */,
 			);
@@ -220,6 +225,7 @@
 				77B180B11BA7DE5AD28C33D6 /* EventBannerView.swift */,
 				E1DCABAF689009E8CB0548C9 /* TowerInfoPanel.swift */,
 				34E3850FB6781D37BC157249 /* TowerMenuView.swift */,
+				3E63B8D0047945460CCB703E /* TowerShapeView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -350,6 +356,8 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+				};
 			};
 			buildConfigurationList = C569ACFFC5FA3EC9E7D3D75B /* Build configuration list for PBXProject "Pathrift" */;
 			developmentRegion = en;
@@ -403,6 +411,7 @@
 				30F843ABAC527DB9A36F7663 /* Enemy.swift in Sources */,
 				57A93C99342E771C6DD19861 /* EventBannerView.swift in Sources */,
 				E6C17D2509C6CFF4E3EE2D00 /* FrostTower.swift in Sources */,
+				780F47A1AD1A875F29DEFBBF /* GameSaveStore.swift in Sources */,
 				0129EDC21643C2DE0B0D0060 /* GameScene.swift in Sources */,
 				DB45FF99F29F356842EDC1E3 /* GameView.swift in Sources */,
 				40B7C8B48528DA6C5450BEF1 /* GameViewModel.swift in Sources */,
@@ -436,6 +445,7 @@
 				A4B75A2203FE418D18002D4A /* Tower.swift in Sources */,
 				1596E749DFB0073C54544675 /* TowerInfoPanel.swift in Sources */,
 				9EE1E38AB9BC70B93E87E1D5 /* TowerMenuView.swift in Sources */,
+				2CA93A118449F0919836E142 /* TowerShapeView.swift in Sources */,
 				6EAA670285A4474295A0D9CD /* ViewExtensions.swift in Sources */,
 				A7159071F3F8089A72FEAA34 /* WaveSystem.swift in Sources */,
 			);
@@ -450,8 +460,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 3;
-				DEVELOPMENT_TEAM = R99M943BHG;
+				CURRENT_PROJECT_VERSION = 4;
 				INFOPLIST_FILE = Pathrift/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -534,8 +543,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
-				CURRENT_PROJECT_VERSION = 3;
-				DEVELOPMENT_TEAM = R99M943BHG;
+				CURRENT_PROJECT_VERSION = 4;
 				INFOPLIST_FILE = Pathrift/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

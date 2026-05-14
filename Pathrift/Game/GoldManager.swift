@@ -26,6 +26,11 @@ final class GoldManager: ObservableObject {
         onGoldChanged?(gold)
     }
 
+    func setGold(_ amount: Int) {
+        gold = amount
+        onGoldChanged?(gold)
+    }
+
     func canAfford(_ amount: Int) -> Bool {
         return gold >= amount
     }

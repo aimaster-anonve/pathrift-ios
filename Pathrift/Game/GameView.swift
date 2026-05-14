@@ -3,7 +3,13 @@ import SpriteKit
 
 struct GameView: View {
     @EnvironmentObject var appState: AppState
-    @StateObject private var viewModel = GameViewModel()
+    let restoreFromSave: Bool
+    @StateObject private var viewModel: GameViewModel
+
+    init(restoreFromSave: Bool = false) {
+        self.restoreFromSave = restoreFromSave
+        _viewModel = StateObject(wrappedValue: GameViewModel(restoreFromSave: restoreFromSave))
+    }
     @State private var selectedSlotId: Int? = nil
     @State private var showTowerMenu: Bool = false
     @State private var isPaused: Bool = false
@@ -78,6 +84,7 @@ struct GameView: View {
                     onQuit: {
                         viewModel.scene.isPaused = false
                         isPaused = false
+                        GameSaveStore.shared.clear()
                         appState.goHome()
                     }
                 )
