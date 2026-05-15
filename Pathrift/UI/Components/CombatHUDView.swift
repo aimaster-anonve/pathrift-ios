@@ -183,28 +183,36 @@ struct CombatHUDView: View {
         }
     }
 
+    // Wave number IS the info button — whole card tappable, no separate icon to get clipped
     private var waveStat: some View {
-        HStack(spacing: 6) {
-            VStack(spacing: 2) {
+        Button(action: { onShowNextWaveInfo?() }) {
+            VStack(spacing: 0) {
                 Text(viewModel.currentWave == 0 ? "READY" : "WAVE")
-                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .font(.system(size: 8, weight: .bold, design: .monospaced))
                     .foregroundColor(.pathriftTextSecondary).kerning(2)
                 Text(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")
-                    .font(.system(size: 24, weight: .black, design: .rounded))
-                    .foregroundColor(.pathriftNeonBlue).monospacedDigit()
-            }
-            Button(action: { onShowNextWaveInfo?() }) {
-                ZStack {
-                    Circle()
-                        .fill(Color(red: 0, green: 0.78, blue: 1).opacity(0.18))
-                        .frame(width: 28, height: 28)
+                    .font(.system(size: 22, weight: .black, design: .rounded))
+                    .foregroundColor(Color(red: 0, green: 0.78, blue: 1)).monospacedDigit()
+                HStack(spacing: 3) {
                     Image(systemName: "info.circle.fill")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(Color(red: 0, green: 0.78, blue: 1))
+                        .font(.system(size: 8))
+                    Text("INFO")
+                        .font(.system(size: 7, weight: .bold, design: .monospaced))
+                        .kerning(0.5)
                 }
+                .foregroundColor(Color(red: 0, green: 0.78, blue: 1).opacity(0.7))
             }
-            .buttonStyle(ScaleButtonStyle())
+            .padding(.horizontal, 10).padding(.vertical, 3)
+            .background(
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(Color(red: 0, green: 0.78, blue: 1).opacity(0.10))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 8)
+                    .strokeBorder(Color(red: 0, green: 0.78, blue: 1).opacity(0.35), lineWidth: 1)
+            )
         }
+        .buttonStyle(.plain)
     }
 
     private var diamondStat: some View {
