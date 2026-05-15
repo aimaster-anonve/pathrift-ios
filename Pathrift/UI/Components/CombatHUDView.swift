@@ -142,20 +142,23 @@ struct CombatHUDView: View {
     // MARK: - Portrait Top Bar (original)
 
     private var portraitTopBar: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 8) {
+            // LEFT: Gold
             goldStat
-            Spacer()
+            Spacer(minLength: 4)
+            // CENTER: Wave + info button (guaranteed visible)
             waveStat
-            Spacer()
-            HStack(spacing: 10) {
+            Spacer(minLength: 4)
+            // RIGHT: compact stats + controls
+            HStack(spacing: 8) {
                 diamondStat
-                livesStat
+                livesStat       // compact: ❤ 3
                 speedBtn
                 pauseBtn
             }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
         .background(
             LinearGradient(
                 colors: [Color.pathriftBackground.opacity(0.9), .clear],
@@ -216,14 +219,16 @@ struct CombatHUDView: View {
         }
     }
 
+    // Compact lives: ❤ 3 (single icon + count) — saves ~60pt vs individual hearts
     private var livesStat: some View {
         HStack(spacing: 3) {
-            ForEach(0..<EconomyConstants.startingLives, id: \.self) { idx in
-                Image(systemName: idx < viewModel.lives ? "heart.fill" : "heart")
-                    .foregroundColor(idx < viewModel.lives ? .pathriftDanger : .pathriftTextSecondary.opacity(0.3))
-                    .font(.system(size: 16))
-                    .scaleEffect(idx < viewModel.lives ? 1.0 : 0.8)
-            }
+            Image(systemName: viewModel.lives > 0 ? "heart.fill" : "heart")
+                .foregroundColor(viewModel.lives > 0 ? .pathriftDanger : .pathriftTextSecondary)
+                .font(.system(size: 13))
+            Text("\(viewModel.lives)")
+                .font(.system(size: 13, weight: .bold, design: .monospaced))
+                .foregroundColor(viewModel.lives > 0 ? .pathriftDanger : .pathriftTextSecondary)
+                .monospacedDigit()
         }
     }
 

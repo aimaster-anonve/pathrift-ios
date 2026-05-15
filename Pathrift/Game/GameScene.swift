@@ -1090,46 +1090,45 @@ final class GameScene: SKScene {
     private func computeSlots(y1: CGFloat, y2: CGFloat, y3: CGFloat,
                                xL: CGFloat, xR: CGFloat) -> [CGPoint] {
         let W = size.width
-        let vGap: CGFloat = 92   // vertical clearance from horizontal segment
-        let hGap: CGFloat = 68   // horizontal clearance from vertical segment
+        let vGap: CGFloat = 88   // vertical clearance from horizontal segment
+        let hGap: CGFloat = 64   // horizontal clearance from vertical segment
         let edge: CGFloat = 30   // minimum distance from screen edge
-        let minSep: CGFloat = 56 // minimum slot-to-slot distance
+        let minSep: CGFloat = 52 // minimum slot-to-slot distance
 
         let fwd = y1 < y2
-        // Interior-facing offsets — always place slots on the "inside" of the Z
         let seg1Side = y1 + (fwd ?  vGap : -vGap)
         let seg3Side = y2 + (fwd ? -vGap :  vGap)
         let seg5Side = y3 + (fwd ? -vGap :  vGap)
-        let srx = min(xR + hGap, W - edge)   // right of xR, clamped to screen
+        let srx = min(xR + hGap, W - edge)
 
+        // Ordered so far-end (seg5 / right zone) candidates come FIRST →
+        // prefix(activeSlotCount) always includes right-side coverage.
         let cands: [CGPoint] = [
-            // Adjacent to first horizontal (seg1)
-            CGPoint(x: W*0.14,                         y: seg1Side),
-            CGPoint(x: W*0.40,                         y: seg1Side),
-            CGPoint(x: min(W*0.64, xR-hGap-8),        y: seg1Side),
-            // Right of right vertical (seg2)
+            // ─── FAR END — last horizontal (seg5) and right-of-screen zone ───
+            CGPoint(x: min(W - edge, W*0.86),           y: seg5Side),           // far right
+            CGPoint(x: min(W*0.72, W - edge),           y: seg5Side),           // right-centre
+            CGPoint(x: (xL + W) * 0.5,                  y: seg5Side),           // midpoint of exit path
+            CGPoint(x: srx,                              y: y2 + (y3-y2)*0.50), // open right mid
+            // ─── MID-RIGHT — right vertical (seg2) ───
             CGPoint(x: srx, y: y1 + (y2-y1)*0.27),
             CGPoint(x: srx, y: y1 + (y2-y1)*0.73),
-            // Adjacent to middle horizontal (seg3) — between the two verticals
-            CGPoint(x: max(W*0.36, xL+hGap+12),       y: seg3Side),
-            CGPoint(x: min(W*0.62, xR-hGap-12),       y: seg3Side),
-            // Right of left vertical (seg4)
-            CGPoint(x: xL + hGap,  y: y2 + (y3-y2)*0.33),
-            CGPoint(x: xL + hGap,  y: y2 + (y3-y2)*0.68),
-            // Open right zone (x > xR between y2 and y3 — no path segment here)
-            CGPoint(x: srx,         y: y2 + (y3-y2)*0.46),
-            // Adjacent to last horizontal (seg5)
-            CGPoint(x: max(xL+hGap+6, W*0.20),        y: seg5Side),
-            CGPoint(x: (xL+W)*0.5 + 8,                y: seg5Side),
-            CGPoint(x: min(W*0.80, W-edge),            y: seg5Side),
+            // ─── MIDDLE — middle horizontal (seg3) ───
+            CGPoint(x: max(W*0.38, xL+hGap+10),         y: seg3Side),
+            CGPoint(x: min(W*0.62, xR-hGap-10),         y: seg3Side),
+            // ─── MID-LEFT — left vertical (seg4) ───
+            CGPoint(x: xL + hGap, y: y2 + (y3-y2)*0.33),
+            CGPoint(x: xL + hGap, y: y2 + (y3-y2)*0.68),
+            // ─── NEAR START — first horizontal (seg1) ───
+            CGPoint(x: W*0.14,                           y: seg1Side),
+            CGPoint(x: W*0.38,                           y: seg1Side),
+            CGPoint(x: min(W*0.62, xR-hGap-8),          y: seg1Side),
         ]
 
         var result: [CGPoint] = []
         for c in cands {
-            // x bounds: screen edges; y bounds: content area (respects HUD insets)
-            guard c.x >= edge, c.x <= W-edge,
+            guard c.x >= edge, c.x <= W - edge,
                   c.y >= contentMinY + edge, c.y <= contentMaxY - edge else { continue }
-            let tooClose = result.contains { e in hypot(c.x-e.x, c.y-e.y) < minSep }
+            let tooClose = result.contains { e in hypot(c.x - e.x, c.y - e.y) < minSep }
             if !tooClose { result.append(c) }
         }
         return Array(result.prefix(activeSlotCount()))
