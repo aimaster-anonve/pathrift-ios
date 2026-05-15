@@ -12,6 +12,7 @@
 		0873B8A40BF32F961A3C00CF /* HealerEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8882D365675A38795E035688 /* HealerEnemy.swift */; };
 		0D9D079497C02A023C11D7BB /* BlastTower.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DF333D93A342C51A8F9F459 /* BlastTower.swift */; };
 		0EE6B5BC977D179C979132D3 /* RunEndScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 684BFDA9A9571B9AD40ECD48 /* RunEndScreen.swift */; };
+		1090D987D45C714D2AF42B86 /* NextWaveBannerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DF6E8AE7E3A8077B3C6526F5 /* NextWaveBannerView.swift */; };
 		1596E749DFB0073C54544675 /* TowerInfoPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1DCABAF689009E8CB0548C9 /* TowerInfoPanel.swift */; };
 		1642059FD0BD18BBD541BEDE /* ShieldEnemy.swift in Sources */ = {isa = PBXBuildFile; fileRef = CBD17ECF91AB687E5054B48C /* ShieldEnemy.swift */; };
 		17E7B13DCFC132D0E69D600F /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 88CDBB48B13880491055CEB0 /* Assets.xcassets */; };
@@ -127,6 +128,7 @@
 		D6A906724EBB50552DAD7738 /* Enemy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Enemy.swift; sourceTree = "<group>"; };
 		D85FC589019F37A977A92ACF /* GameSaveStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GameSaveStore.swift; sourceTree = "<group>"; };
 		DCC7378CF359B1F945AF5B0E /* CoreTower.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CoreTower.swift; sourceTree = "<group>"; };
+		DF6E8AE7E3A8077B3C6526F5 /* NextWaveBannerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NextWaveBannerView.swift; sourceTree = "<group>"; };
 		E1AA98E792F35CB28E593BA4 /* WaveSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WaveSystem.swift; sourceTree = "<group>"; };
 		E1DCABAF689009E8CB0548C9 /* TowerInfoPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TowerInfoPanel.swift; sourceTree = "<group>"; };
 		E493FFA3EFB068BA379A4382 /* PathSystem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PathSystem.swift; sourceTree = "<group>"; };
@@ -229,6 +231,7 @@
 				A489DA2D996FBB0D340B7198 /* ButtonStyles.swift */,
 				8C96FE3ED23408AF336BABA6 /* CombatHUDView.swift */,
 				77B180B11BA7DE5AD28C33D6 /* EventBannerView.swift */,
+				DF6E8AE7E3A8077B3C6526F5 /* NextWaveBannerView.swift */,
 				24F1DBB79E36E07360D9B816 /* NextWaveInfoPanel.swift */,
 				E1DCABAF689009E8CB0548C9 /* TowerInfoPanel.swift */,
 				34E3850FB6781D37BC157249 /* TowerMenuView.swift */,
@@ -434,6 +437,7 @@
 				6D97E1D7ED28B9E7699E6BE9 /* JumperEnemy.swift in Sources */,
 				9583714A0B82157C35E9E374 /* LanguageManager.swift in Sources */,
 				2A438639282B960837248356 /* LocalRunStorage.swift in Sources */,
+				1090D987D45C714D2AF42B86 /* NextWaveBannerView.swift in Sources */,
 				22C0B3859CD3458885445A13 /* NextWaveInfoPanel.swift in Sources */,
 				75D3EBF6B218AB49FF0B6702 /* NovaTower.swift in Sources */,
 				F92849EDD31229FA97459725 /* PathLayer.swift in Sources */,

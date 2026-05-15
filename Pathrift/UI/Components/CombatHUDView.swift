@@ -181,28 +181,13 @@ struct CombatHUDView: View {
     }
 
     private var waveStat: some View {
-        HStack(spacing: 4) {
-            VStack(spacing: 2) {
-                Text(viewModel.currentWave == 0 ? "READY" : "WAVE")
-                    .font(.system(size: 9, weight: .bold, design: .monospaced))
-                    .foregroundColor(.pathriftTextSecondary).kerning(2)
-                Text(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")
-                    .font(.system(size: 24, weight: .black, design: .rounded))
-                    .foregroundColor(.pathriftNeonBlue).monospacedDigit()
-            }
-            // Next wave info button — always visible, prominent circle background
-            Button(action: { onShowNextWaveInfo?() }) {
-                ZStack {
-                    Circle()
-                        .fill(Color(red: 0, green: 0.78, blue: 1).opacity(0.18))
-                        .frame(width: 26, height: 26)
-                    Image(systemName: "info.circle.fill")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundColor(Color(red: 0, green: 0.78, blue: 1))
-                }
-            }
-            .buttonStyle(ScaleButtonStyle())
-            .padding(.leading, 4)
+        VStack(spacing: 2) {
+            Text(viewModel.currentWave == 0 ? "READY" : "WAVE")
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundColor(.pathriftTextSecondary).kerning(2)
+            Text(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")
+                .font(.system(size: 24, weight: .black, design: .rounded))
+                .foregroundColor(.pathriftNeonBlue).monospacedDigit()
         }
     }
 
@@ -271,23 +256,37 @@ struct CombatHUDView: View {
     // MARK: - Bottom Bar
 
     private var bottomBar: some View {
-        HStack {
-            if !isLandscape {
-                killsStat.padding(.leading, 16)
+        VStack(spacing: 0) {
+            // Next wave info banner — shown above START WAVE button when wave not active
+            if !viewModel.isWaveActive && !viewModel.isGameOver {
+                NextWaveBannerView(
+                    waveDef: viewModel.nextWaveDefinition,
+                    onTap: { onShowNextWaveInfo?() }
+                )
+                .padding(.horizontal, 16)
+                .padding(.bottom, 4)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .animation(.spring(response: 0.3), value: viewModel.isWaveActive)
             }
 
-            Spacer()
-
-            Group {
-                if viewModel.isWaveActive {
-                    waveProgressIndicator
-                } else if !viewModel.isGameOver {
-                    sendWaveButton
+            HStack {
+                if !isLandscape {
+                    killsStat.padding(.leading, 16)
                 }
+
+                Spacer()
+
+                Group {
+                    if viewModel.isWaveActive {
+                        waveProgressIndicator
+                    } else if !viewModel.isGameOver {
+                        sendWaveButton
+                    }
+                }
+                .padding(.trailing, 16)
             }
-            .padding(.trailing, 16)
+            .frame(height: 44)
         }
-        .frame(height: 44)
         .background(
             LinearGradient(
                 colors: [.clear, Color.pathriftBackground.opacity(0.85)],

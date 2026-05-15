@@ -70,12 +70,12 @@ final class PhantomEnemy: EnemyNode {
     private static func makeNode() -> SKNode {
         let container = SKNode()
         container.zPosition = 4
-        container.alpha = 0.75  // semi-transparent by default
+        container.alpha = 0.75
 
-        // 5-point star body (violet phantom)
+        // 5-point star body — outerR 7 (0.70× 10), innerR 3 (0.70× 4.5)
         let starPath = CGMutablePath()
-        let outerR: CGFloat = 10
-        let innerR: CGFloat = 4.5
+        let outerR: CGFloat = 7
+        let innerR: CGFloat = 3
         for i in 0..<10 {
             let angle = CGFloat(i) * (.pi / 5) - (.pi / 2)
             let r: CGFloat = i.isMultiple(of: 2) ? outerR : innerR
@@ -87,11 +87,11 @@ final class PhantomEnemy: EnemyNode {
         let body = SKShapeNode(path: starPath)
         body.fillColor = SKColor(red: 0.55, green: 0.00, blue: 1.00, alpha: 0.75)
         body.strokeColor = SKColor(red: 0.80, green: 0.40, blue: 1.00, alpha: 0.90)
-        body.lineWidth = 1.25
+        body.lineWidth = 1.0
         container.addChild(body)
 
-        // Inner glow core
-        let core = SKShapeNode(circleOfRadius: 4)
+        // Inner glow core — radius 3 (0.70× 4)
+        let core = SKShapeNode(circleOfRadius: 3)
         core.fillColor = SKColor(red: 0.70, green: 0.30, blue: 1.00, alpha: 0.50)
         core.strokeColor = SKColor.clear
         container.addChild(core)

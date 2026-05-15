@@ -185,7 +185,7 @@ final class GameScene: SKScene {
             activeTowers.append(tower)
             towerLayer.addChild(tower.node)
             addLevelBadge(to: tower)
-            let tap = SKShapeNode(circleOfRadius: 28)
+            let tap = SKShapeNode(circleOfRadius: 22)
             tap.fillColor = .clear; tap.strokeColor = .clear
             tap.name = "slot_\(savedTower.slotId)"; tap.position = slot.position; tap.zPosition = 6
             towerLayer.addChild(tap)
@@ -263,8 +263,8 @@ final class GameScene: SKScene {
     private func setupGround() {
         let gridColor1 = SKColor(red: 0.07, green: 0.07, blue: 0.10, alpha: 1)
         let gridColor2 = SKColor(red: 0.09, green: 0.09, blue: 0.13, alpha: 1)
-        let cols = 12
-        let rows = 20
+        let cols = 16
+        let rows = 26
         let tileW = size.width / CGFloat(cols)
         let tileH = size.height / CGFloat(rows)
         for col in 0..<cols {
@@ -282,9 +282,9 @@ final class GameScene: SKScene {
     private func setupPath() {
         let waypoints = PathSystem.waypoints
         guard waypoints.count >= 2 else { return }
-        let thickness: CGFloat = 24
+        let thickness: CGFloat = 17  // scaled down from 24 to 17
 
-        // Single pass: draw all segments uniformly as dark slate corridor with cyan edge glow
+        // Single pass: draw all segments uniformly as violet-slate corridor with dual cyan edge glow
         for i in 1..<waypoints.count {
             let from = waypoints[i-1]
             let to = waypoints[i]
@@ -294,55 +294,67 @@ final class GameScene: SKScene {
             let len = sqrt(dx*dx + dy*dy)
             let angle = atan2(dy, dx)
 
-            // Main filled corridor (dark slate)
-            let seg = SKShapeNode(rectOf: CGSize(width: len, height: thickness), cornerRadius: 4)
-            seg.fillColor = SKColor(red: 0.10, green: 0.10, blue: 0.16, alpha: 1.0)
+            // Main filled corridor (violet-slate — clearly distinct from background grid)
+            let seg = SKShapeNode(rectOf: CGSize(width: len, height: thickness), cornerRadius: 3)
+            seg.fillColor = SKColor(red: 0.22, green: 0.20, blue: 0.32, alpha: 1.0)
             seg.strokeColor = SKColor.clear
             seg.position = CGPoint(x: (from.x+to.x)/2, y: (from.y+to.y)/2)
             seg.zRotation = angle
             seg.zPosition = 1.0
             pathLayer.addChild(seg)
 
-            // Left edge glow line
             let perpX = -sin(angle)
             let perpY =  cos(angle)
-            let halfW = thickness / 2 - 0.5
             let midX = (from.x + to.x) / 2
             let midY = (from.y + to.y) / 2
+            let halfW = thickness / 2
 
-            let leftEdge = SKShapeNode(rectOf: CGSize(width: len, height: 1.0))
-            leftEdge.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.30)
-            leftEdge.strokeColor = SKColor.clear
-            leftEdge.position = CGPoint(x: midX + perpX * halfW, y: midY + perpY * halfW)
-            leftEdge.zRotation = angle
-            leftEdge.zPosition = 1.1
-            pathLayer.addChild(leftEdge)
+            // Left inner glow (2pt, strong)
+            let leftInner = SKShapeNode(rectOf: CGSize(width: len, height: 2.0))
+            leftInner.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.55)
+            leftInner.strokeColor = SKColor.clear
+            leftInner.position = CGPoint(x: midX + perpX * (halfW - 1), y: midY + perpY * (halfW - 1))
+            leftInner.zRotation = angle
+            leftInner.zPosition = 1.1
+            pathLayer.addChild(leftInner)
 
-            let rightEdge = SKShapeNode(rectOf: CGSize(width: len, height: 1.0))
-            rightEdge.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.30)
-            rightEdge.strokeColor = SKColor.clear
-            rightEdge.position = CGPoint(x: midX - perpX * halfW, y: midY - perpY * halfW)
-            rightEdge.zRotation = angle
-            rightEdge.zPosition = 1.1
-            pathLayer.addChild(rightEdge)
+            // Left outer glow (1pt, soft)
+            let leftOuter = SKShapeNode(rectOf: CGSize(width: len, height: 1.0))
+            leftOuter.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.25)
+            leftOuter.strokeColor = SKColor.clear
+            leftOuter.position = CGPoint(x: midX + perpX * (halfW + 1), y: midY + perpY * (halfW + 1))
+            leftOuter.zRotation = angle
+            leftOuter.zPosition = 1.1
+            pathLayer.addChild(leftOuter)
+
+            // Right inner glow (2pt, strong)
+            let rightInner = SKShapeNode(rectOf: CGSize(width: len, height: 2.0))
+            rightInner.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.55)
+            rightInner.strokeColor = SKColor.clear
+            rightInner.position = CGPoint(x: midX - perpX * (halfW - 1), y: midY - perpY * (halfW - 1))
+            rightInner.zRotation = angle
+            rightInner.zPosition = 1.1
+            pathLayer.addChild(rightInner)
+
+            // Right outer glow (1pt, soft)
+            let rightOuter = SKShapeNode(rectOf: CGSize(width: len, height: 1.0))
+            rightOuter.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.25)
+            rightOuter.strokeColor = SKColor.clear
+            rightOuter.position = CGPoint(x: midX - perpX * (halfW + 1), y: midY - perpY * (halfW + 1))
+            rightOuter.zRotation = angle
+            rightOuter.zPosition = 1.1
+            pathLayer.addChild(rightOuter)
         }
 
-        // Joints at all waypoints — circular cap + accent dot
+        // Joints at all waypoints — filled circle cap (masks seam) + stroke accent
         for (_, point) in waypoints.enumerated() {
-            let cap = SKShapeNode(circleOfRadius: thickness/2)
-            cap.fillColor = SKColor(red: 0.10, green: 0.10, blue: 0.16, alpha: 1.0)
-            cap.strokeColor = SKColor.clear
+            let cap = SKShapeNode(circleOfRadius: thickness / 2)
+            cap.fillColor = SKColor(red: 0.22, green: 0.20, blue: 0.32, alpha: 1.0)
+            cap.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.50)
+            cap.lineWidth = 1.5
             cap.position = point
             cap.zPosition = 1.0
             pathLayer.addChild(cap)
-            // Accent circle at joint
-            let joint = SKShapeNode(circleOfRadius: 4)
-            joint.fillColor = .clear
-            joint.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.40)
-            joint.lineWidth = 1.0
-            joint.position = point
-            joint.zPosition = 1.15
-            pathLayer.addChild(joint)
         }
 
         // Entry indicator — neon portal beacon (pulsing rings + right-pointing arrow)
@@ -454,40 +466,41 @@ final class GameScene: SKScene {
             container.position = slot.position
             container.name = "slot_\(slot.id)"
 
-            // Octagon shape (8-sided polygon, flat top/bottom, outer radius 24)
-            let octPath = CGMutablePath()
-            for i in 0..<8 {
-                let angle = CGFloat(i) * (.pi / 4) + (.pi / 8)  // 22.5° offset
-                let pt = CGPoint(x: cos(angle) * 24, y: sin(angle) * 24)
-                i == 0 ? octPath.move(to: pt) : octPath.addLine(to: pt)
-            }
-            octPath.closeSubpath()
-
-            let bg = SKShapeNode(path: octPath)
+            // Square slot container 32×32pt (scaled down from 46×46)
+            let bg = SKShapeNode(rectOf: CGSize(width: 32, height: 32), cornerRadius: 5)
             bg.fillColor = SKColor(red: 0.05, green: 0.09, blue: 0.14, alpha: 1.0)
             bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.55)
-            bg.lineWidth = 1.5
+            bg.lineWidth = 1.0
             bg.name = "slot_\(slot.id)"
             container.addChild(bg)
 
-            // Inner ring (faint)
-            let innerRing = SKShapeNode(circleOfRadius: 8)
-            innerRing.fillColor = .clear
-            innerRing.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.20)
-            innerRing.lineWidth = 0.75
-            container.addChild(innerRing)
+            // Inner cross lines
+            let hLine = SKShapeNode(rectOf: CGSize(width: 13, height: 2))
+            hLine.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.20)
+            hLine.strokeColor = .clear
+            container.addChild(hLine)
 
-            // Corner accent dots at N/S/E/W cardinal flat-edge midpoints
-            // For octagon with 22.5° offset, cardinal flat edges are at 90° intervals: 90°, 180°, 270°, 0°
-            let dotAngles: [CGFloat] = [0, .pi/2, .pi, 3 * .pi / 2]
+            let vLine = SKShapeNode(rectOf: CGSize(width: 2, height: 13))
+            vLine.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.20)
+            vLine.strokeColor = .clear
+            container.addChild(vLine)
+
+            // Corner accent dots at 15pt offset from center
+            let dotAngles: [CGFloat] = [.pi/4, 3 * .pi/4, 5 * .pi/4, 7 * .pi/4]
             for angle in dotAngles {
-                let dot = SKShapeNode(circleOfRadius: 2)
+                let dot = SKShapeNode(circleOfRadius: 1.5)
                 dot.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.80)
                 dot.strokeColor = .clear
-                // Position at octagon edge midpoint (at radius 24 in the cardinal direction)
-                dot.position = CGPoint(x: cos(angle) * 22, y: sin(angle) * 22)
+                dot.position = CGPoint(x: cos(angle) * 15, y: sin(angle) * 15)
                 container.addChild(dot)
             }
+
+            // Invisible tap detector — 22pt radius (44pt diameter touch target)
+            let tap = SKShapeNode(circleOfRadius: 22)
+            tap.fillColor = .clear
+            tap.strokeColor = .clear
+            tap.name = "slot_\(slot.id)"
+            container.addChild(tap)
 
             // Idle pulse animation: stroke alpha 0.40 → 0.65
             let breathe = SKAction.repeatForever(SKAction.sequence([
@@ -618,7 +631,7 @@ final class GameScene: SKScene {
         addLevelBadge(to: tower)
 
         // Hidden slot node is NOT hit-testable — add transparent tap detector instead.
-        let tapDetector = SKShapeNode(circleOfRadius: 28)
+        let tapDetector = SKShapeNode(circleOfRadius: 22)
         tapDetector.fillColor = SKColor.clear
         tapDetector.strokeColor = SKColor.clear
         tapDetector.name = "slot_\(slotId)"
@@ -972,15 +985,15 @@ final class GameScene: SKScene {
     // MARK: - Level Badge
 
     private func addLevelBadge(to tower: any Tower) {
-        let badge = SKShapeNode(circleOfRadius: 7)
+        let badge = SKShapeNode(circleOfRadius: 5)
         badge.fillColor = SKColor(red: 0.05, green: 0.05, blue: 0.15, alpha: 0.95)
         badge.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.9)
         badge.lineWidth = 1
         badge.name = "levelBadge"
-        badge.position = CGPoint(x: 14, y: -14)
+        badge.position = CGPoint(x: 10, y: -10)
         badge.zPosition = 2
         let lbl = SKLabelNode(text: "1")
-        lbl.fontSize = 8
+        lbl.fontSize = 6
         lbl.fontName = "AvenirNext-Bold"
         lbl.fontColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 1)
         lbl.verticalAlignmentMode = .center
@@ -1227,7 +1240,7 @@ final class GameScene: SKScene {
     }
 
     /// Returns true if `slot` is at least `clearance` pixels away from every path segment.
-    private func isSlotClearOfPath(_ slot: CGPoint, waypoints: [CGPoint], clearance: CGFloat = 36) -> Bool {
+    private func isSlotClearOfPath(_ slot: CGPoint, waypoints: [CGPoint], clearance: CGFloat = 28) -> Bool {
         guard waypoints.count >= 2 else { return true }
         for i in 1..<waypoints.count {
             if pointToSegmentDist(slot, a: waypoints[i-1], b: waypoints[i]) < clearance {
@@ -1289,7 +1302,7 @@ final class GameScene: SKScene {
             ]
             let layers: [PathLayer] = Array(repeating: .ground, count: waypoints.count)
             let rawSlots = computeSlots(y1: y1, y2: y2, y3: y3, xL: xL, xR: xR)
-            let pathClearSlots = rawSlots.filter { isSlotClearOfPath($0, waypoints: waypoints, clearance: 36) }
+            let pathClearSlots = rawSlots.filter { isSlotClearOfPath($0, waypoints: waypoints, clearance: 28) }
             let guaranteedSlots = guaranteePathCoverage(slots: pathClearSlots, waypoints: waypoints)
             let finalSlots = ensureMinimumSlots(guaranteedSlots, waypoints: waypoints)
             return (waypoints, layers, finalSlots)
@@ -1333,7 +1346,7 @@ final class GameScene: SKScene {
             let tooClose = result.contains { hypot($0.x - c.x, $0.y - c.y) < minSep }
             if !tooClose { result.append(c) }
         }
-        let pathClear = result.filter { isSlotClearOfPath($0, waypoints: waypoints, clearance: 36) }
+        let pathClear = result.filter { isSlotClearOfPath($0, waypoints: waypoints, clearance: 28) }
         let raw = Array(pathClear.prefix(activeSlotCount()))
         return guaranteePathCoverage(slots: raw, waypoints: waypoints)
     }
@@ -1516,7 +1529,7 @@ final class GameScene: SKScene {
 
             // Move or recreate tap detector
             towerLayer.childNode(withName: "slot_\(snap.slotId)")?.removeFromParent()
-            let tapDet = SKShapeNode(circleOfRadius: 28)
+            let tapDet = SKShapeNode(circleOfRadius: 22)
             tapDet.fillColor = SKColor.clear; tapDet.strokeColor = SKColor.clear
             tapDet.name = "slot_\(targetSlotId)"; tapDet.position = newPos; tapDet.zPosition = 6
             towerLayer.addChild(tapDet)
@@ -1681,7 +1694,7 @@ final class GameScene: SKScene {
     private func isSlotOverlappingPath(_ position: CGPoint) -> Bool {
         let waypoints = PathSystem.waypoints
         guard waypoints.count >= 2 else { return false }
-        let minDistance: CGFloat = 36  // slot radius 23 + path halfwidth 13
+        let minDistance: CGFloat = 28  // slot half=16 + path half=8.5 + buffer=3.5
         for i in 0..<(waypoints.count - 1) {
             let dist = distanceFromPoint(position, toSegment: waypoints[i], waypoints[i+1])
             if dist < minDistance { return true }

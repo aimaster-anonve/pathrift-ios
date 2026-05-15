@@ -27,54 +27,52 @@ final class ArtilleryTower: Tower {
 
         let brass = SKColor(red: 0.75, green: 0.58, blue: 0.12, alpha: 1.0)
 
-        // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 40, height: 10))
+        // Floor shadow — 28pt (0.70× 40)
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 7))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -14)
+        shadow.position = CGPoint(x: 0, y: -10)
         container.addChild(shadow)
 
-        // Wide squat hexagon body (30pt wide × 22pt tall, flat-top)
+        // Wide squat hexagon body — 21×15pt (0.70× 30×22)
         let hexPath = CGMutablePath()
-        // Wide flat-top hex: width 30, height 22
-        let hw: CGFloat = 15, hh: CGFloat = 11
-        hexPath.move(to: CGPoint(x: -hw + 5, y: hh))
-        hexPath.addLine(to: CGPoint(x: hw - 5, y: hh))
+        let hw: CGFloat = 10.5, hh: CGFloat = 7.5
+        hexPath.move(to: CGPoint(x: -hw + 3.5, y: hh))
+        hexPath.addLine(to: CGPoint(x: hw - 3.5, y: hh))
         hexPath.addLine(to: CGPoint(x: hw, y: 0))
-        hexPath.addLine(to: CGPoint(x: hw - 5, y: -hh))
-        hexPath.addLine(to: CGPoint(x: -hw + 5, y: -hh))
+        hexPath.addLine(to: CGPoint(x: hw - 3.5, y: -hh))
+        hexPath.addLine(to: CGPoint(x: -hw + 3.5, y: -hh))
         hexPath.addLine(to: CGPoint(x: -hw, y: 0))
         hexPath.closeSubpath()
         let body = SKShapeNode(path: hexPath)
         body.fillColor = SKColor(red: 0.14, green: 0.10, blue: 0.01, alpha: 1.0)
         body.strokeColor = brass
-        body.lineWidth = 2.0
+        body.lineWidth = 1.5
         container.addChild(body)
 
-        // 2 horizontal band stripes (armor bands)
-        for yOff: CGFloat in [-2.0, 2.0] {
-            let band = SKShapeNode(rectOf: CGSize(width: 26, height: 2))
+        // 2 horizontal band stripes
+        for yOff: CGFloat in [-1.5, 1.5] {
+            let band = SKShapeNode(rectOf: CGSize(width: 18, height: 1.5))
             band.fillColor = SKColor(red: 0.75, green: 0.58, blue: 0.12, alpha: 0.40)
             band.strokeColor = .clear
             band.position = CGPoint(x: 0, y: yOff)
             container.addChild(band)
         }
 
-        // Wide barrel (widest of all towers) with flat end plate
-        let barrel = SKShapeNode(rectOf: CGSize(width: 8, height: 13), cornerRadius: 1)
+        // Barrel — 5×9pt (0.70× 8×13)
+        let barrel = SKShapeNode(rectOf: CGSize(width: 5, height: 9), cornerRadius: 1)
         barrel.fillColor = brass
         barrel.strokeColor = .clear
-        barrel.position = CGPoint(x: 0, y: hh + 6)
+        barrel.position = CGPoint(x: 0, y: hh + 4)
         container.addChild(barrel)
 
-        // Flat end plate on tip
-        let endPlate = SKShapeNode(rectOf: CGSize(width: 10, height: 3))
+        // Flat end plate
+        let endPlate = SKShapeNode(rectOf: CGSize(width: 7, height: 2))
         endPlate.fillColor = brass
         endPlate.strokeColor = .clear
-        endPlate.position = CGPoint(x: 0, y: hh + 12)
+        endPlate.position = CGPoint(x: 0, y: hh + 8)
         container.addChild(endPlate)
 
-        // Subtle barrel sway ±3°
         container.run(SKAction.repeatForever(SKAction.sequence([
             SKAction.rotate(byAngle: .pi * 3 / 180, duration: 1.0),
             SKAction.rotate(byAngle: -.pi * 3 / 180, duration: 1.0)

@@ -74,31 +74,30 @@ final class ShieldEnemy: EnemyNode {
     }
 
     private func setupNode() {
-        // Shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 18, height: 6))
+        // Shadow — 13×4pt (0.70× 18×6)
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 13, height: 4))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.30)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -14)
+        shadow.position = CGPoint(x: 0, y: -10)
         node.addChild(shadow)
 
-        // Circle body (dark green)
-        let body = SKShapeNode(circleOfRadius: 9)
+        // Circle body — radius 6 (0.70× 9)
+        let body = SKShapeNode(circleOfRadius: 6)
         body.fillColor = SKColor(red: 0.04, green: 0.24, blue: 0.12, alpha: 1.0)
         body.strokeColor = SKColor(red: 0.20, green: 0.85, blue: 0.40, alpha: 1.0)
-        body.lineWidth = 1.5
+        body.lineWidth = 1.0
         body.name = "core"
         node.addChild(body)
 
-        // Shield aura (D-shape — semi-transparent hexagon approximated by full hex at low alpha)
-        let shield = SKShapeNode(circleOfRadius: 14)
+        // Shield aura — radius 10 (0.70× 14)
+        let shield = SKShapeNode(circleOfRadius: 10)
         shield.fillColor = SKColor(red: 0.15, green: 0.90, blue: 0.40, alpha: 0.15)
         shield.strokeColor = SKColor(red: 0.20, green: 0.85, blue: 0.40, alpha: 0.50)
-        shield.lineWidth = 1.0
+        shield.lineWidth = 0.75
         shield.name = "shieldRing"
         node.addChild(shield)
         shieldNode = shield
 
-        // Shield pulse animation
         let pulse = SKAction.repeatForever(SKAction.sequence([
             SKAction.fadeAlpha(to: 0.5, duration: 0.6),
             SKAction.fadeAlpha(to: 1.0, duration: 0.6)

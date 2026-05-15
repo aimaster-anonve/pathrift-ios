@@ -29,29 +29,29 @@ final class RunnerEnemy: EnemyNode {
         let container = SKNode()
         container.zPosition = 4
 
-        // Shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 16, height: 6))
+        // Shadow — 11×4pt (0.70× 16×6)
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 11, height: 4))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.30)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -12)
+        shadow.position = CGPoint(x: 0, y: -8)
         container.addChild(shadow)
 
-        // Elongated oval capsule (teardrop, front-pointed)
+        // Elongated oval capsule — 7×11pt (0.70× 10×16)
         let capsulePath = CGMutablePath()
-        capsulePath.addEllipse(in: CGRect(x: -5, y: -8, width: 10, height: 16))
+        capsulePath.addEllipse(in: CGRect(x: -3.5, y: -5.5, width: 7, height: 11))
         let body = SKShapeNode(path: capsulePath)
         body.fillColor = SKColor(red: 0.00, green: 0.25, blue: 0.70, alpha: 1.0)
         body.strokeColor = SKColor(red: 0.20, green: 0.60, blue: 1.00, alpha: 1.0)
-        body.lineWidth = 1.25
+        body.lineWidth = 1.0
         container.addChild(body)
 
-        // 3 horizontal motion lines trailing behind (pointing backward from travel direction)
-        let lineWidths: [CGFloat] = [6, 10, 12]
+        // 3 motion lines — 0.70× widths
+        let lineWidths: [CGFloat] = [4, 7, 8]
         for (i, lw) in lineWidths.enumerated() {
-            let line = SKShapeNode(rectOf: CGSize(width: lw, height: 0.75))
+            let line = SKShapeNode(rectOf: CGSize(width: lw, height: 0.5))
             line.fillColor = SKColor(red: 0.30, green: 0.70, blue: 1.00, alpha: 0.60)
             line.strokeColor = .clear
-            line.position = CGPoint(x: 0, y: CGFloat(-10 - i * 3))
+            line.position = CGPoint(x: 0, y: CGFloat(-7 - i * 2))
             container.addChild(line)
         }
 
@@ -60,7 +60,6 @@ final class RunnerEnemy: EnemyNode {
         container.addChild(bg)
         container.addChild(bar)
 
-        // Running pulse animation (body compression/extension on X)
         body.run(SKAction.repeatForever(SKAction.sequence([
             SKAction.scaleX(to: 0.92, y: 1.0, duration: 0.15),
             SKAction.scaleX(to: 1.0, y: 1.0, duration: 0.15)

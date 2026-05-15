@@ -22,53 +22,52 @@ final class CoreTower: Tower {
         let container = SKNode()
         container.position = position
 
-        // Wide base platform (tabanlık — 40pt wide)
-        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 40, height: 12))
+        // Wide base platform — 28pt (0.70× 40)
+        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 28, height: 8))
         basePlat.fillColor = SKColor(red: 0.12, green: 0.03, blue: 0.00, alpha: 1.0)
         basePlat.strokeColor = SKColor(red: 1.00, green: 0.35, blue: 0.05, alpha: 0.50)
-        basePlat.lineWidth = 1.5
-        basePlat.position = CGPoint(x: 0, y: -14)
+        basePlat.lineWidth = 1.0
+        basePlat.position = CGPoint(x: 0, y: -10)
         container.addChild(basePlat)
 
         // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 40, height: 10))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 7))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -18)
+        shadow.position = CGPoint(x: 0, y: -13)
         container.addChild(shadow)
 
-        // Square body 26×26, sharp corners
-        let body = SKShapeNode(rectOf: CGSize(width: 26, height: 26))
+        // Square body 18×18 (0.70× 26)
+        let body = SKShapeNode(rectOf: CGSize(width: 18, height: 18))
         body.fillColor = SKColor(red: 0.18, green: 0.05, blue: 0.00, alpha: 1.0)
         body.strokeColor = SKColor(red: 1.00, green: 0.35, blue: 0.05, alpha: 1.0)
-        body.lineWidth = 2.0
+        body.lineWidth = 1.5
         container.addChild(body)
 
-        // Thin diagonal cross (inner detail)
+        // Thin diagonal cross
         for angle in [CGFloat.pi / 4, -CGFloat.pi / 4] {
             let cross = SKShapeNode()
             let crossPath = CGMutablePath()
-            crossPath.move(to: CGPoint(x: cos(angle) * -11, y: sin(angle) * -11))
-            crossPath.addLine(to: CGPoint(x: cos(angle) * 11, y: sin(angle) * 11))
+            crossPath.move(to: CGPoint(x: cos(angle) * -8, y: sin(angle) * -8))
+            crossPath.addLine(to: CGPoint(x: cos(angle) * 8, y: sin(angle) * 8))
             cross.path = crossPath
             cross.strokeColor = SKColor(red: 1.00, green: 0.35, blue: 0.05, alpha: 0.30)
-            cross.lineWidth = 0.75
+            cross.lineWidth = 0.5
             container.addChild(cross)
         }
 
-        // 4 corner rivet circles (4pt inset from corners)
+        // 4 corner rivets — 1.5pt radius (0.70× 2.5)
         let rivetPositions: [CGPoint] = [
-            CGPoint(x: -9, y: 9), CGPoint(x: 9, y: 9),
-            CGPoint(x: -9, y: -9), CGPoint(x: 9, y: -9)
+            CGPoint(x: -6, y: 6), CGPoint(x: 6, y: 6),
+            CGPoint(x: -6, y: -6), CGPoint(x: 6, y: -6)
         ]
         for (i, rPos) in rivetPositions.enumerated() {
-            let rivet = SKShapeNode(circleOfRadius: 2.5)
+            let rivet = SKShapeNode(circleOfRadius: 1.5)
             rivet.fillColor = SKColor(red: 0.90, green: 0.28, blue: 0.04, alpha: 1.0)
             rivet.strokeColor = SKColor(red: 1.00, green: 0.35, blue: 0.05, alpha: 1.0)
-            rivet.lineWidth = 1.0
+            rivet.lineWidth = 0.5
             rivet.position = rPos
             container.addChild(rivet)
-            // Staggered pulse
             let delay = Double(i) * 0.3
             rivet.run(SKAction.repeatForever(SKAction.sequence([
                 SKAction.wait(forDuration: delay),
@@ -77,11 +76,11 @@ final class CoreTower: Tower {
             ])))
         }
 
-        // Wide barrel
-        let barrel = SKShapeNode(rectOf: CGSize(width: 7, height: 10), cornerRadius: 1)
+        // Barrel — 5×7pt (0.70× 7×10)
+        let barrel = SKShapeNode(rectOf: CGSize(width: 5, height: 7), cornerRadius: 1)
         barrel.fillColor = SKColor(red: 1.00, green: 0.35, blue: 0.05, alpha: 1.0)
         barrel.strokeColor = .clear
-        barrel.position = CGPoint(x: 0, y: 16)
+        barrel.position = CGPoint(x: 0, y: 11)
         container.addChild(barrel)
 
         return container

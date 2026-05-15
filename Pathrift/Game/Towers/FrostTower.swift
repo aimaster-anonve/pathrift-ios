@@ -22,42 +22,42 @@ final class FrostTower: Tower {
         let container = SKNode()
         container.position = position
 
-        // Wide base platform (tabanlık — 40pt wide)
-        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 40, height: 12))
+        // Wide base platform — 28pt (0.70× 40)
+        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 28, height: 8))
         basePlat.fillColor = SKColor(red: 0.04, green: 0.01, blue: 0.10, alpha: 1.0)
         basePlat.strokeColor = SKColor(red: 0.56, green: 0.18, blue: 1.00, alpha: 0.45)
-        basePlat.lineWidth = 1.5
-        basePlat.position = CGPoint(x: 0, y: -12)
+        basePlat.lineWidth = 1.0
+        basePlat.position = CGPoint(x: 0, y: -8)
         container.addChild(basePlat)
 
         // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 40, height: 10))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 7))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -17)
+        shadow.position = CGPoint(x: 0, y: -12)
         container.addChild(shadow)
 
-        // Diamond body (rotated square 28×28 — already 28pt wide, meets 20pt minimum)
+        // Diamond body — 10pt half-radius (0.70× 14)
         let diamPath = CGMutablePath()
-        diamPath.move(to: CGPoint(x: 0, y: 14))
-        diamPath.addLine(to: CGPoint(x: 14, y: 0))
-        diamPath.addLine(to: CGPoint(x: 0, y: -14))
-        diamPath.addLine(to: CGPoint(x: -14, y: 0))
+        diamPath.move(to: CGPoint(x: 0, y: 10))
+        diamPath.addLine(to: CGPoint(x: 10, y: 0))
+        diamPath.addLine(to: CGPoint(x: 0, y: -10))
+        diamPath.addLine(to: CGPoint(x: -10, y: 0))
         diamPath.closeSubpath()
         let body = SKShapeNode(path: diamPath)
         body.fillColor = SKColor(red: 0.06, green: 0.02, blue: 0.14, alpha: 1.0)
         body.strokeColor = SKColor(red: 0.56, green: 0.18, blue: 1.00, alpha: 1.0)
-        body.lineWidth = 1.5
+        body.lineWidth = 1.0
         container.addChild(body)
 
-        // 4 ice crystal spikes at diamond corners (slightly larger for visibility)
-        let tipCorners: [(CGFloat, CGFloat)] = [(0, 14), (14, 0), (0, -14), (-14, 0)]
+        // 4 ice crystal spikes at diamond corners
+        let tipCorners: [(CGFloat, CGFloat)] = [(0, 10), (10, 0), (0, -10), (-10, 0)]
         let tipAngles: [CGFloat] = [.pi/2, 0, -.pi/2, .pi]
         for (i, (cx, cy)) in tipCorners.enumerated() {
             let tipPath = CGMutablePath()
-            tipPath.move(to: CGPoint(x: 0, y: 8))
-            tipPath.addLine(to: CGPoint(x: -3, y: 0))
-            tipPath.addLine(to: CGPoint(x: 3, y: 0))
+            tipPath.move(to: CGPoint(x: 0, y: 6))
+            tipPath.addLine(to: CGPoint(x: -2, y: 0))
+            tipPath.addLine(to: CGPoint(x: 2, y: 0))
             tipPath.closeSubpath()
             let tip = SKShapeNode(path: tipPath)
             tip.fillColor = SKColor(red: 0.70, green: 0.85, blue: 1.00, alpha: 0.70)
@@ -65,7 +65,6 @@ final class FrostTower: Tower {
             tip.position = CGPoint(x: cx, y: cy)
             tip.zRotation = tipAngles[i]
             container.addChild(tip)
-            // Staggered scale pulse
             let delay = Double(i) * 0.45
             tip.run(SKAction.repeatForever(SKAction.sequence([
                 SKAction.wait(forDuration: delay),
@@ -74,11 +73,11 @@ final class FrostTower: Tower {
             ])))
         }
 
-        // Barrel (pointing up)
-        let barrel = SKShapeNode(rectOf: CGSize(width: 4, height: 10), cornerRadius: 1)
+        // Barrel — 3×7pt (0.70× 4×10)
+        let barrel = SKShapeNode(rectOf: CGSize(width: 3, height: 7), cornerRadius: 1)
         barrel.fillColor = SKColor(red: 0.56, green: 0.18, blue: 1.00, alpha: 1.0)
         barrel.strokeColor = .clear
-        barrel.position = CGPoint(x: 0, y: 15)
+        barrel.position = CGPoint(x: 0, y: 11)
         container.addChild(barrel)
 
         return container

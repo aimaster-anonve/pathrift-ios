@@ -22,48 +22,47 @@ final class InfernoTower: Tower {
         let container = SKNode()
         container.position = position
 
-        // Wide base platform (tabanlık — 40pt wide)
-        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 40, height: 12))
+        // Wide base platform — 28pt (0.70× 40)
+        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 28, height: 8))
         basePlat.fillColor = SKColor(red: 0.14, green: 0.02, blue: 0.00, alpha: 1.0)
         basePlat.strokeColor = SKColor(red: 1.00, green: 0.18, blue: 0.08, alpha: 0.50)
-        basePlat.lineWidth = 1.5
-        basePlat.position = CGPoint(x: 0, y: -14)
+        basePlat.lineWidth = 1.0
+        basePlat.position = CGPoint(x: 0, y: -10)
         container.addChild(basePlat)
 
         // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 40, height: 10))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 7))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -18)
+        shadow.position = CGPoint(x: 0, y: -13)
         container.addChild(shadow)
 
-        // Irregular pentagon body (asymmetric, left-lean flame silhouette)
+        // Irregular pentagon body — 0.70× scale
         let pentPath = CGMutablePath()
-        pentPath.move(to: CGPoint(x: 0, y: 14))
-        pentPath.addLine(to: CGPoint(x: 12, y: 4))
-        pentPath.addLine(to: CGPoint(x: 10, y: -14))
-        pentPath.addLine(to: CGPoint(x: -11, y: -14))
-        pentPath.addLine(to: CGPoint(x: -13, y: 5))
+        pentPath.move(to: CGPoint(x: 0, y: 10))
+        pentPath.addLine(to: CGPoint(x: 8, y: 3))
+        pentPath.addLine(to: CGPoint(x: 7, y: -10))
+        pentPath.addLine(to: CGPoint(x: -8, y: -10))
+        pentPath.addLine(to: CGPoint(x: -9, y: 3))
         pentPath.closeSubpath()
         let body = SKShapeNode(path: pentPath)
         body.fillColor = SKColor(red: 0.20, green: 0.03, blue: 0.00, alpha: 1.0)
         body.strokeColor = SKColor(red: 1.00, green: 0.18, blue: 0.08, alpha: 1.0)
-        body.lineWidth = 1.75
+        body.lineWidth = 1.25
         container.addChild(body)
 
-        // 3 upward flame tip triangles on top edge
-        let flameTips: [(CGFloat, CGFloat, CGFloat)] = [(-6, 14, 6), (0, 18, 5), (6, 14, 6)]
+        // 3 upward flame tip triangles — 0.70× positions
+        let flameTips: [(CGFloat, CGFloat, CGFloat)] = [(-4, 10, 4), (0, 13, 3.5), (4, 10, 4)]
         for (i, (fx, fy, fh)) in flameTips.enumerated() {
             let flamePath = CGMutablePath()
             flamePath.move(to: CGPoint(x: fx, y: fy + fh))
-            flamePath.addLine(to: CGPoint(x: fx - 2, y: fy))
-            flamePath.addLine(to: CGPoint(x: fx + 2, y: fy))
+            flamePath.addLine(to: CGPoint(x: fx - 1.5, y: fy))
+            flamePath.addLine(to: CGPoint(x: fx + 1.5, y: fy))
             flamePath.closeSubpath()
             let flame = SKShapeNode(path: flamePath)
             flame.fillColor = SKColor(red: 1.00, green: 0.55, blue: 0.10, alpha: 0.80)
             flame.strokeColor = .clear
             container.addChild(flame)
-            // Flicker animation per flame
             let dur = Double.random(in: 0.2...0.5)
             let offset = Double(i) * 0.15
             flame.run(SKAction.repeatForever(SKAction.sequence([
@@ -79,11 +78,11 @@ final class InfernoTower: Tower {
             ])))
         }
 
-        // Barrel (pointing up)
-        let barrel = SKShapeNode(rectOf: CGSize(width: 5, height: 11), cornerRadius: 1)
+        // Barrel — 3×8pt (0.70× 5×11)
+        let barrel = SKShapeNode(rectOf: CGSize(width: 3, height: 8), cornerRadius: 1)
         barrel.fillColor = SKColor(red: 1.00, green: 0.18, blue: 0.08, alpha: 1.0)
         barrel.strokeColor = .clear
-        barrel.position = CGPoint(x: 0, y: 16)
+        barrel.position = CGPoint(x: 0, y: 11)
         container.addChild(barrel)
 
         return container

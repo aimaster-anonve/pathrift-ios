@@ -25,26 +25,26 @@ final class NovaTower: Tower {
         let container = SKNode()
         container.position = position
 
-        // Wide base platform (tabanlık — 42pt wide)
-        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 42, height: 12))
+        // Wide base platform — 29pt (0.70× 42)
+        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 29, height: 8))
         basePlat.fillColor = SKColor(red: 0.12, green: 0.10, blue: 0.00, alpha: 1.0)
         basePlat.strokeColor = SKColor(red: 1.00, green: 0.82, blue: 0.10, alpha: 0.50)
-        basePlat.lineWidth = 1.5
-        basePlat.position = CGPoint(x: 0, y: -14)
+        basePlat.lineWidth = 1.0
+        basePlat.position = CGPoint(x: 0, y: -10)
         container.addChild(basePlat)
 
         // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 42, height: 10))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 29, height: 7))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -18)
+        shadow.position = CGPoint(x: 0, y: -13)
         container.addChild(shadow)
 
-        // 6-pointed star body (Star of David geometry, outer radius 14, inner radius 7)
+        // 6-pointed star body — outer radius 10 (0.70× 14), inner radius 5 (0.70× 7)
         let starPath = CGMutablePath()
         for i in 0..<12 {
             let angle = CGFloat(i) * (.pi / 6) - (.pi / 2)
-            let r: CGFloat = i.isMultiple(of: 2) ? 14 : 7
+            let r: CGFloat = i.isMultiple(of: 2) ? 10 : 5
             let pt = CGPoint(x: cos(angle) * r, y: sin(angle) * r)
             i == 0 ? starPath.move(to: pt) : starPath.addLine(to: pt)
         }
@@ -52,28 +52,27 @@ final class NovaTower: Tower {
         let body = SKShapeNode(path: starPath)
         body.fillColor = SKColor(red: 0.18, green: 0.14, blue: 0.00, alpha: 1.0)
         body.strokeColor = SKColor(red: 1.00, green: 0.82, blue: 0.10, alpha: 1.0)
-        body.lineWidth = 1.5
+        body.lineWidth = 1.0
         container.addChild(body)
 
-        // Center core lens
-        let coreLens = SKShapeNode(circleOfRadius: 4)
+        // Center core lens — radius 3 (0.70× 4)
+        let coreLens = SKShapeNode(circleOfRadius: 3)
         coreLens.fillColor = SKColor(red: 1.00, green: 0.82, blue: 0.10, alpha: 0.60)
         coreLens.strokeColor = SKColor(red: 1.00, green: 0.82, blue: 0.10, alpha: 1.0)
-        coreLens.lineWidth = 1.0
+        coreLens.lineWidth = 0.75
         container.addChild(coreLens)
 
-        // Star slow rotation + core lens pulse
         body.run(SKAction.repeatForever(SKAction.rotate(byAngle: .pi * 2, duration: 8.0)))
         coreLens.run(SKAction.repeatForever(SKAction.sequence([
             SKAction.scale(to: 1.1, duration: 0.5),
             SKAction.scale(to: 0.9, duration: 0.5)
         ])))
 
-        // Barrel (pointing up, slightly tapered)
-        let barrel = SKShapeNode(rectOf: CGSize(width: 5, height: 10), cornerRadius: 1)
+        // Barrel — 3×7pt (0.70× 5×10)
+        let barrel = SKShapeNode(rectOf: CGSize(width: 3, height: 7), cornerRadius: 1)
         barrel.fillColor = SKColor(red: 1.00, green: 0.82, blue: 0.10, alpha: 1.0)
         barrel.strokeColor = .clear
-        barrel.position = CGPoint(x: 0, y: 16)
+        barrel.position = CGPoint(x: 0, y: 11)
         container.addChild(barrel)
 
         return container

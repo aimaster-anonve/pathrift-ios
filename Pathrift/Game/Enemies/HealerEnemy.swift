@@ -34,35 +34,35 @@ final class HealerEnemy: EnemyNode {
         let container = SKNode()
         container.zPosition = 4
 
-        // Outer aura ring (pulsing, always visible heal zone indicator)
-        let auraRing = SKShapeNode(circleOfRadius: 16)
+        // Outer aura ring — radius 11 (0.70× 16)
+        let auraRing = SKShapeNode(circleOfRadius: 11)
         auraRing.fillColor = SKColor(red: 0.18, green: 0.80, blue: 0.44, alpha: 0.12)
         auraRing.strokeColor = SKColor(red: 0.18, green: 0.80, blue: 0.44, alpha: 0.35)
-        auraRing.lineWidth = 1.5
+        auraRing.lineWidth = 1.0
         auraRing.name = "auraRing"
         container.addChild(auraRing)
 
-        // Outer ring (donut)
-        let outerRing = SKShapeNode(circleOfRadius: 11)
+        // Outer ring — radius 8 (0.70× 11)
+        let outerRing = SKShapeNode(circleOfRadius: 8)
         outerRing.fillColor = SKColor(red: 0.18, green: 0.80, blue: 0.44, alpha: 0.30)
         outerRing.strokeColor = SKColor(red: 0.67, green: 1.00, blue: 0.82, alpha: 0.90)
-        outerRing.lineWidth = 2.0
+        outerRing.lineWidth = 1.5
         container.addChild(outerRing)
 
-        // Inner circle (donut hole)
-        let innerCircle = SKShapeNode(circleOfRadius: 6)
+        // Inner circle — radius 4 (0.70× 6)
+        let innerCircle = SKShapeNode(circleOfRadius: 4)
         innerCircle.fillColor = SKColor(red: 0.10, green: 0.55, blue: 0.30, alpha: 0.70)
         innerCircle.strokeColor = SKColor(red: 0.18, green: 0.80, blue: 0.44, alpha: 0.60)
-        innerCircle.lineWidth = 1.0
+        innerCircle.lineWidth = 0.75
         container.addChild(innerCircle)
 
-        // Cross symbol (heal indicator)
-        let vBar = SKShapeNode(rectOf: CGSize(width: 2, height: 8))
+        // Cross symbol — 0.70× sizes
+        let vBar = SKShapeNode(rectOf: CGSize(width: 1.5, height: 6))
         vBar.fillColor = SKColor(red: 0.67, green: 1.00, blue: 0.82, alpha: 0.90)
         vBar.strokeColor = SKColor.clear
         container.addChild(vBar)
 
-        let hBar = SKShapeNode(rectOf: CGSize(width: 8, height: 2))
+        let hBar = SKShapeNode(rectOf: CGSize(width: 6, height: 1.5))
         hBar.fillColor = SKColor(red: 0.67, green: 1.00, blue: 0.82, alpha: 0.90)
         hBar.strokeColor = SKColor.clear
         container.addChild(hBar)

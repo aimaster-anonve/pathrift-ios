@@ -118,11 +118,11 @@ extension EnemyNode {
     func refreshHealthBar() {
         guard let bar = node.childNode(withName: "healthBar") as? SKShapeNode else { return }
         let ratio = max(0, currentHP / maxHP)
-        let totalWidth: CGFloat = 32
+        let totalWidth: CGFloat = 22
         let filledWidth = totalWidth * ratio
 
         let path = CGMutablePath()
-        path.addRect(CGRect(x: -totalWidth / 2, y: 0, width: filledWidth, height: 4))
+        path.addRect(CGRect(x: -totalWidth / 2, y: 0, width: filledWidth, height: 3))
         bar.path = path
 
         let color: SKColor
@@ -163,20 +163,20 @@ extension EnemyNode {
 
     static func makeHealthBarNodes() -> (bg: SKShapeNode, bar: SKShapeNode) {
         let bgPath = CGMutablePath()
-        bgPath.addRect(CGRect(x: -16, y: 0, width: 32, height: 4))
+        bgPath.addRect(CGRect(x: -11, y: 0, width: 22, height: 3))
         let bg = SKShapeNode(path: bgPath)
         bg.fillColor = SKColor.darkGray
         bg.strokeColor = SKColor.clear
         bg.name = "healthBarBg"
-        bg.position = CGPoint(x: 0, y: 24)
+        bg.position = CGPoint(x: 0, y: 17)
 
         let barPath = CGMutablePath()
-        barPath.addRect(CGRect(x: -16, y: 0, width: 32, height: 4))
+        barPath.addRect(CGRect(x: -11, y: 0, width: 22, height: 3))
         let bar = SKShapeNode(path: barPath)
         bar.fillColor = SKColor.green
         bar.strokeColor = SKColor.clear
         bar.name = "healthBar"
-        bar.position = CGPoint(x: 0, y: 24)
+        bar.position = CGPoint(x: 0, y: 17)
 
         return (bg, bar)
     }

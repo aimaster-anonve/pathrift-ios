@@ -31,51 +31,51 @@ struct WaveDefinition {
 
 final class WaveSystem {
     // 9-wave base cycle (wave 10 is boss, handled separately).
-    // Players have 250 gold = ~3 towers by wave 1.
+    // Build 5.3: enemy counts increased ~60% for higher engagement per session.
     private let basePatterns: [WaveDefinition] = [
-        // Wave 1: easy intro — 3 slow runners, generous interval
+        // Wave 1: easy intro — 5 runners (was 3)
         WaveDefinition(waveNumber: 1,
-                       spawns: [EnemySpawnEntry(type: .runner, count: 3)],
+                       spawns: [EnemySpawnEntry(type: .runner, count: 5)],
                        spawnInterval: 2.5),
-        // Wave 2: slightly more, introduce spacing challenge
+        // Wave 2: 7 runners (was 4)
         WaveDefinition(waveNumber: 2,
-                       spawns: [EnemySpawnEntry(type: .runner, count: 4)],
+                       spawns: [EnemySpawnEntry(type: .runner, count: 7)],
                        spawnInterval: 2.2),
-        // Wave 3: first tank — teaches armor counter
+        // Wave 3: first tank — 6 runners + 2 tanks (was 4+1)
         WaveDefinition(waveNumber: 3,
-                       spawns: [EnemySpawnEntry(type: .runner, count: 4),
-                                EnemySpawnEntry(type: .tank,   count: 1)],
+                       spawns: [EnemySpawnEntry(type: .runner, count: 6),
+                                EnemySpawnEntry(type: .tank,   count: 2)],
                        spawnInterval: 2.0),
-        // Wave 4: pressure ramps up
+        // Wave 4: pressure ramps — 9 runners + 2 tanks (was 6+1)
         WaveDefinition(waveNumber: 4,
-                       spawns: [EnemySpawnEntry(type: .runner, count: 6),
-                                EnemySpawnEntry(type: .tank,   count: 1)],
+                       spawns: [EnemySpawnEntry(type: .runner, count: 9),
+                                EnemySpawnEntry(type: .tank,   count: 2)],
                        spawnInterval: 1.8),
-        // Wave 5: dual tanks test + Rift Shift fires after this wave
+        // Wave 5: dual tanks — 9 runners + 3 tanks (was 5+2)
         WaveDefinition(waveNumber: 5,
-                       spawns: [EnemySpawnEntry(type: .runner, count: 5),
-                                EnemySpawnEntry(type: .tank,   count: 2)],
-                       spawnInterval: 1.6),
-        // Wave 6: heavier runner pressure
-        WaveDefinition(waveNumber: 6,
-                       spawns: [EnemySpawnEntry(type: .runner, count: 7),
-                                EnemySpawnEntry(type: .tank,   count: 2)],
-                       spawnInterval: 1.5),
-        // Wave 7: sustained DPS test
-        WaveDefinition(waveNumber: 7,
-                       spawns: [EnemySpawnEntry(type: .runner, count: 8),
+                       spawns: [EnemySpawnEntry(type: .runner, count: 9),
                                 EnemySpawnEntry(type: .tank,   count: 3)],
-                       spawnInterval: 1.4),
-        // Wave 8: first shield wave (shields introduced here, cycle repeats from wave 17+)
-        WaveDefinition(waveNumber: 8,
-                       spawns: [EnemySpawnEntry(type: .runner, count: 5),
-                                EnemySpawnEntry(type: .shield, count: 2)],
+                       spawnInterval: 1.6),
+        // Wave 6: heavier pressure — 11 runners + 3 tanks (was 7+2)
+        WaveDefinition(waveNumber: 6,
+                       spawns: [EnemySpawnEntry(type: .runner, count: 11),
+                                EnemySpawnEntry(type: .tank,   count: 3)],
                        spawnInterval: 1.5),
-        // Wave 9: pre-boss mixed pressure
+        // Wave 7: sustained DPS — 12 runners + 4 tanks (was 8+3)
+        WaveDefinition(waveNumber: 7,
+                       spawns: [EnemySpawnEntry(type: .runner, count: 12),
+                                EnemySpawnEntry(type: .tank,   count: 4)],
+                       spawnInterval: 1.4),
+        // Wave 8: shield wave — 7 runners + 3 shields (was 5+2)
+        WaveDefinition(waveNumber: 8,
+                       spawns: [EnemySpawnEntry(type: .runner, count: 7),
+                                EnemySpawnEntry(type: .shield, count: 3)],
+                       spawnInterval: 1.5),
+        // Wave 9: pre-boss mixed — 9 runners + 3 tanks + 2 shields (was 6+2+1)
         WaveDefinition(waveNumber: 9,
-                       spawns: [EnemySpawnEntry(type: .runner, count: 6),
-                                EnemySpawnEntry(type: .tank,   count: 2),
-                                EnemySpawnEntry(type: .shield, count: 1)],
+                       spawns: [EnemySpawnEntry(type: .runner, count: 9),
+                                EnemySpawnEntry(type: .tank,   count: 3),
+                                EnemySpawnEntry(type: .shield, count: 2)],
                        spawnInterval: 1.3),
     ]
 
@@ -116,9 +116,9 @@ final class WaveSystem {
 
         if cycleNumber == 0 { return WaveDefinition(waveNumber: waveNumber, spawns: base.spawns, spawnInterval: base.spawnInterval) }
 
-        // Scale base spawns by cycle depth
+        // Scale base spawns by cycle depth — 1.3x multiplier (was 1.0x)
         var scaledSpawns = base.spawns.map { entry in
-            EnemySpawnEntry(type: entry.type, count: entry.count + cycleNumber)
+            EnemySpawnEntry(type: entry.type, count: entry.count + Int((Double(cycleNumber) * 1.3).rounded(.up)))
         }
 
         // Cycle 2+ (wave 19+): inject swarm packs every 3rd pattern slot

@@ -22,49 +22,48 @@ final class TeslaTower: Tower {
         let container = SKNode()
         container.position = position
 
-        // Wide base platform (tabanlık — 42pt wide, coil mounting plate)
-        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 42, height: 12))
+        // Wide base platform — 29pt (0.70× 42)
+        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 29, height: 8))
         basePlat.fillColor = SKColor(red: 0.01, green: 0.06, blue: 0.12, alpha: 1.0)
         basePlat.strokeColor = SKColor(red: 0.20, green: 0.65, blue: 1.00, alpha: 0.50)
-        basePlat.lineWidth = 1.5
-        basePlat.position = CGPoint(x: 0, y: -14)
+        basePlat.lineWidth = 1.0
+        basePlat.position = CGPoint(x: 0, y: -10)
         container.addChild(basePlat)
 
         // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 42, height: 10))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 29, height: 7))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -18)
+        shadow.position = CGPoint(x: 0, y: -13)
         container.addChild(shadow)
 
-        // Circle body radius 13
-        let body = SKShapeNode(circleOfRadius: 13)
+        // Circle body radius 9 (0.70× 13)
+        let body = SKShapeNode(circleOfRadius: 9)
         body.fillColor = SKColor(red: 0.02, green: 0.08, blue: 0.18, alpha: 1.0)
         body.strokeColor = SKColor(red: 0.20, green: 0.65, blue: 1.00, alpha: 1.0)
-        body.lineWidth = 1.5
+        body.lineWidth = 1.0
         container.addChild(body)
 
-        // Outer arc ring (capacitor coil: top semicircle 30°–150°)
+        // Outer arc — radius 13 (0.70× 19)
         let arcPath1 = CGMutablePath()
-        arcPath1.addArc(center: .zero, radius: 19, startAngle: .pi * 30 / 180, endAngle: .pi * 150 / 180, clockwise: false)
+        arcPath1.addArc(center: .zero, radius: 13, startAngle: .pi * 30 / 180, endAngle: .pi * 150 / 180, clockwise: false)
         let arc1 = SKShapeNode(path: arcPath1)
         arc1.strokeColor = SKColor(red: 0.20, green: 0.65, blue: 1.00, alpha: 0.70)
-        arc1.lineWidth = 2.0
+        arc1.lineWidth = 1.5
         arc1.fillColor = .clear
         arc1.name = "arc1"
         container.addChild(arc1)
 
-        // Inner arc ring (60°–120°)
+        // Inner arc — radius 11 (0.70× 16)
         let arcPath2 = CGMutablePath()
-        arcPath2.addArc(center: .zero, radius: 16, startAngle: .pi * 60 / 180, endAngle: .pi * 120 / 180, clockwise: false)
+        arcPath2.addArc(center: .zero, radius: 11, startAngle: .pi * 60 / 180, endAngle: .pi * 120 / 180, clockwise: false)
         let arc2 = SKShapeNode(path: arcPath2)
         arc2.strokeColor = SKColor(red: 0.20, green: 0.65, blue: 1.00, alpha: 0.40)
-        arc2.lineWidth = 1.0
+        arc2.lineWidth = 0.75
         arc2.fillColor = .clear
         arc2.name = "arc2"
         container.addChild(arc2)
 
-        // Arc oscillation ±8°
         arc1.run(SKAction.repeatForever(SKAction.sequence([
             SKAction.rotate(byAngle: .pi * 8 / 180, duration: 0.7),
             SKAction.rotate(byAngle: -.pi * 8 / 180, duration: 0.7)
@@ -74,11 +73,11 @@ final class TeslaTower: Tower {
             SKAction.rotate(byAngle: .pi * 8 / 180, duration: 0.7)
         ])))
 
-        // Barrel
-        let barrel = SKShapeNode(rectOf: CGSize(width: 5, height: 10), cornerRadius: 1)
+        // Barrel — 3×7pt (0.70× 5×10)
+        let barrel = SKShapeNode(rectOf: CGSize(width: 3, height: 7), cornerRadius: 1)
         barrel.fillColor = SKColor(red: 0.20, green: 0.65, blue: 1.00, alpha: 1.0)
         barrel.strokeColor = .clear
-        barrel.position = CGPoint(x: 0, y: 16)
+        barrel.position = CGPoint(x: 0, y: 11)
         container.addChild(barrel)
 
         return container
