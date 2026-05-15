@@ -224,7 +224,7 @@ struct StoreScreen: View {
 
     private var towersSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("TOWERS", icon: "shield.fill")
+            sectionHeader("TOWERS — ALL 10", icon: "shield.fill")
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                 ForEach(TowerType.allCases) { type in
                     storeTowerCard(for: type)
@@ -234,44 +234,71 @@ struct StoreScreen: View {
     }
 
     private func storeTowerCard(for type: TowerType) -> some View {
-        let unlocked = DiamondStore.shared.isUnlocked(type)
+        let isFree     = type.diamondCost == 0
+        let unlocked   = isFree || DiamondStore.shared.isUnlocked(type)
+        let isPrem     = type.isPremium
+
         return Button(action: { selectedTower = type }) {
-            VStack(spacing: 8) {
-                ZStack {
+            VStack(spacing: 6) {
+                // Icon area
+                ZStack(alignment: .topTrailing) {
                     RoundedRectangle(cornerRadius: 10)
-                        .fill(type.swiftUIColor.opacity(0.1))
-                        .frame(height: 68)
-                    TowerShapeView(type: type, size: 38)
+                        .fill(type.swiftUIColor.opacity(isPrem ? 0.14 : 0.08))
+                        .frame(height: 72)
+
+                    TowerShapeView(type: type, size: 40)
                         .shadow(color: type.swiftUIColor.opacity(0.5), radius: 6)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                    // Premium badge
+                    if isPrem && !unlocked {
+                        Image(systemName: "lock.fill")
+                            .font(.system(size: 9))
+                            .foregroundColor(.white.opacity(0.7))
+                            .padding(4)
+                            .background(Color.black.opacity(0.45))
+                            .cornerRadius(5)
+                            .padding(5)
+                    }
                 }
+
+                // Name
                 Text(type.displayName.uppercased())
                     .font(.system(size: 11, weight: .bold, design: .rounded))
                     .foregroundColor(.pathriftTextPrimary)
-                if unlocked {
-                    Text("OWNED")
-                        .font(.system(size: 9, weight: .bold, design: .monospaced))
-                        .foregroundColor(.pathriftSuccess)
-                        .padding(.horizontal, 8).padding(.vertical, 3)
-                        .background(Color.pathriftSuccess.opacity(0.15))
-                        .cornerRadius(6)
-                } else {
-                    HStack(spacing: 3) {
-                        Text("♦")
-                        Text("\(type.diamondCost)")
+                    .lineLimit(1)
+
+                // Status badge
+                Group {
+                    if isFree {
+                        Text("FREE")
+                            .foregroundColor(.pathriftSuccess)
+                            .background(Color.pathriftSuccess.opacity(0.15))
+                    } else if unlocked {
+                        Text("OWNED ✓")
+                            .foregroundColor(.pathriftSuccess)
+                            .background(Color.pathriftSuccess.opacity(0.15))
+                    } else {
+                        HStack(spacing: 3) {
+                            Text("♦").foregroundColor(Color(red: 0, green: 0.8, blue: 1))
+                            Text("\(type.diamondCost)").foregroundColor(Color(red: 0, green: 0.8, blue: 1))
+                        }
+                        .background(Color.pathriftNeonBlue.opacity(0.12))
                     }
-                    .font(.system(size: 10, weight: .bold, design: .monospaced))
-                    .foregroundColor(Color(red: 0, green: 0.8, blue: 1))
-                    .padding(.horizontal, 8).padding(.vertical, 3)
-                    .background(Color.pathriftNeonBlue.opacity(0.12))
-                    .cornerRadius(6)
                 }
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .padding(.horizontal, 8).padding(.vertical, 3)
+                .cornerRadius(6)
             }
-            .padding(12)
+            .padding(10)
             .background(Color.pathriftSurface)
             .cornerRadius(12)
             .overlay(
                 RoundedRectangle(cornerRadius: 12)
-                    .strokeBorder(unlocked ? type.swiftUIColor.opacity(0.25) : Color.pathriftTextSecondary.opacity(0.15), lineWidth: 1)
+                    .strokeBorder(
+                        unlocked ? type.swiftUIColor.opacity(0.3) : Color.pathriftTextSecondary.opacity(0.12),
+                        lineWidth: unlocked ? 1.5 : 1
+                    )
             )
         }
         .buttonStyle(ScaleButtonStyle())
