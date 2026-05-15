@@ -33,10 +33,10 @@ final class GameScene: SKScene {
     /// Slots available increases with wave — more room to defend as game gets harder.
     private func activeSlotCount() -> Int {
         switch currentWaveNumber {
-        case ..<5:   return 6
-        case 5..<10: return 8
-        case 10..<15: return 10
-        default:     return 12
+        case ..<5:    return 5
+        case 5..<10:  return 7
+        case 10..<20: return 9
+        default:      return 11
         }
     }
 
@@ -63,6 +63,10 @@ final class GameScene: SKScene {
     var onSpeedChanged: ((Double) -> Void)?
 
     private var lastUpdateTime: TimeInterval = 0
+
+    // MARK: - Boss Ability State
+    /// Set to true while a Rift Pulse debuff is active — towers fire at 40% rate
+    private(set) var towerAttackSpeedDebuffActive: Bool = false
 
     // MARK: - Range Ring
     private var rangeRingNode: SKShapeNode?
@@ -162,6 +166,7 @@ final class GameScene: SKScene {
 
     private func applyRestore(_ save: GameSaveState) {
         currentWaveNumber = save.wave
+        waveSystem.syncWave(save.wave)
         lives = save.lives
         enemyKills = save.enemyKills
         goldManager.setGold(save.gold)
@@ -279,7 +284,7 @@ final class GameScene: SKScene {
         guard waypoints.count >= 2 else { return }
         let thickness: CGFloat = 24
 
-        // First pass: draw ground segments
+        // First pass: draw ground segments — dark slate corridor with cyan edge glow
         for i in 1..<waypoints.count {
             let from = waypoints[i-1]
             let to = waypoints[i]
@@ -289,25 +294,58 @@ final class GameScene: SKScene {
             let dx = to.x - from.x
             let dy = to.y - from.y
             let len = sqrt(dx*dx + dy*dy)
-            let seg = SKShapeNode(rectOf: CGSize(width: len, height: thickness), cornerRadius: 5)
-            seg.fillColor = SKColor(red: 0.28, green: 0.22, blue: 0.12, alpha: 0.95)
-            seg.strokeColor = SKColor(red: 0.5, green: 0.38, blue: 0.18, alpha: 0.7)
-            seg.lineWidth = 1.5
+            let angle = atan2(dy, dx)
+
+            // Main filled corridor (path.fill dark slate)
+            let seg = SKShapeNode(rectOf: CGSize(width: len, height: thickness), cornerRadius: 4)
+            seg.fillColor = SKColor(red: 0.10, green: 0.10, blue: 0.16, alpha: 1.0)
+            seg.strokeColor = SKColor.clear
             seg.position = CGPoint(x: (from.x+to.x)/2, y: (from.y+to.y)/2)
-            seg.zRotation = atan2(dy, dx)
+            seg.zRotation = angle
             seg.zPosition = 1.0
             pathLayer.addChild(seg)
+
+            // Left edge glow line
+            let perpX = -sin(angle)
+            let perpY =  cos(angle)
+            let halfW = thickness / 2 - 0.5
+            let midX = (from.x + to.x) / 2
+            let midY = (from.y + to.y) / 2
+
+            let leftEdge = SKShapeNode(rectOf: CGSize(width: len, height: 1.0))
+            leftEdge.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.30)
+            leftEdge.strokeColor = SKColor.clear
+            leftEdge.position = CGPoint(x: midX + perpX * halfW, y: midY + perpY * halfW)
+            leftEdge.zRotation = angle
+            leftEdge.zPosition = 1.1
+            pathLayer.addChild(leftEdge)
+
+            let rightEdge = SKShapeNode(rectOf: CGSize(width: len, height: 1.0))
+            rightEdge.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.30)
+            rightEdge.strokeColor = SKColor.clear
+            rightEdge.position = CGPoint(x: midX - perpX * halfW, y: midY - perpY * halfW)
+            rightEdge.zRotation = angle
+            rightEdge.zPosition = 1.1
+            pathLayer.addChild(rightEdge)
         }
 
-        // Joints at corners (ground only)
+        // Joints at corners (ground only) — circular cap + accent dot
         for (i, point) in waypoints.enumerated() {
             guard PathSystem.layer(at: i) == .ground else { continue }
-            let dot = SKShapeNode(circleOfRadius: thickness/2)
-            dot.fillColor = SKColor(red: 0.28, green: 0.22, blue: 0.12, alpha: 0.95)
-            dot.strokeColor = SKColor.clear
-            dot.position = point
-            dot.zPosition = 1.0
-            pathLayer.addChild(dot)
+            let cap = SKShapeNode(circleOfRadius: thickness/2)
+            cap.fillColor = SKColor(red: 0.10, green: 0.10, blue: 0.16, alpha: 1.0)
+            cap.strokeColor = SKColor.clear
+            cap.position = point
+            cap.zPosition = 1.0
+            pathLayer.addChild(cap)
+            // Accent circle at joint
+            let joint = SKShapeNode(circleOfRadius: 4)
+            joint.fillColor = .clear
+            joint.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.40)
+            joint.lineWidth = 1.0
+            joint.position = point
+            joint.zPosition = 1.15
+            pathLayer.addChild(joint)
         }
 
         // Second pass: draw bridge segments ON TOP (higher zPosition)
@@ -324,26 +362,26 @@ final class GameScene: SKScene {
 
             // Shadow under bridge
             let shadow = SKShapeNode(rectOf: CGSize(width: len, height: thickness + 6), cornerRadius: 5)
-            shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.3)
+            shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.40)
             shadow.strokeColor = .clear
             shadow.position = CGPoint(x: (from.x+to.x)/2, y: (from.y+to.y)/2 - 3)
             shadow.zRotation = angle
             shadow.zPosition = 1.2
             pathLayer.addChild(shadow)
 
-            // Bridge surface
+            // Bridge surface — slightly lighter than ground path
             let seg = SKShapeNode(rectOf: CGSize(width: len, height: thickness), cornerRadius: 5)
-            seg.fillColor = SKColor(red: 0.35, green: 0.30, blue: 0.20, alpha: 0.98)
+            seg.fillColor = SKColor(red: 0.14, green: 0.14, blue: 0.22, alpha: 1.0)
             seg.strokeColor = SKColor.clear
             seg.position = CGPoint(x: (from.x+to.x)/2, y: (from.y+to.y)/2)
             seg.zRotation = angle
             seg.zPosition = 1.5  // ABOVE ground path
             pathLayer.addChild(seg)
 
-            // Bridge rails (thin lines on each side)
+            // Bridge edge lines (stronger cyan than ground path)
             for railSide: CGFloat in [-1, 1] {
-                let rail = SKShapeNode(rectOf: CGSize(width: len, height: 2.5), cornerRadius: 1)
-                rail.fillColor = SKColor(red: 0.6, green: 0.5, blue: 0.3, alpha: 0.7)
+                let rail = SKShapeNode(rectOf: CGSize(width: len, height: 2.0), cornerRadius: 1)
+                rail.fillColor = SKColor(red: 0.30, green: 0.30, blue: 0.45, alpha: 1.0)
                 rail.strokeColor = .clear
                 let perpX = -sin(angle) * (thickness/2 - 2) * railSide
                 let perpY = cos(angle) * (thickness/2 - 2) * railSide
@@ -353,15 +391,36 @@ final class GameScene: SKScene {
                 pathLayer.addChild(rail)
             }
 
+            // Bridge edge glow lines
+            for railSide: CGFloat in [-1, 1] {
+                let edgeGlow = SKShapeNode(rectOf: CGSize(width: len, height: 1.0))
+                edgeGlow.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.55)
+                edgeGlow.strokeColor = .clear
+                let perpX = -sin(angle) * (thickness/2 - 0.5) * railSide
+                let perpY = cos(angle) * (thickness/2 - 0.5) * railSide
+                edgeGlow.position = CGPoint(x: (from.x+to.x)/2 + perpX, y: (from.y+to.y)/2 + perpY)
+                edgeGlow.zRotation = angle
+                edgeGlow.zPosition = 1.65
+                pathLayer.addChild(edgeGlow)
+            }
+
             // Bridge joints
             for pt in [from, to] {
                 guard PathSystem.layer(at: waypoints.firstIndex(where: { $0 == pt }) ?? -1) == .bridge else { continue }
-                let dot = SKShapeNode(circleOfRadius: thickness/2)
-                dot.fillColor = SKColor(red: 0.35, green: 0.30, blue: 0.20, alpha: 0.98)
-                dot.strokeColor = SKColor.clear
-                dot.position = pt
-                dot.zPosition = 1.5
-                pathLayer.addChild(dot)
+                let cap = SKShapeNode(circleOfRadius: thickness/2)
+                cap.fillColor = SKColor(red: 0.14, green: 0.14, blue: 0.22, alpha: 1.0)
+                cap.strokeColor = SKColor.clear
+                cap.position = pt
+                cap.zPosition = 1.5
+                pathLayer.addChild(cap)
+                // Accent dot at bridge joint
+                let joint = SKShapeNode(circleOfRadius: 4)
+                joint.fillColor = .clear
+                joint.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.55)
+                joint.lineWidth = 1.0
+                joint.position = pt
+                joint.zPosition = 1.7
+                pathLayer.addChild(joint)
             }
         }
         // Entry indicator — neon portal beacon (pulsing rings + right-pointing arrow)
@@ -473,29 +532,55 @@ final class GameScene: SKScene {
             container.position = slot.position
             container.name = "slot_\(slot.id)"
 
-            // Background with glow
-            let bg = SKShapeNode(rectOf: CGSize(width: 46, height: 46), cornerRadius: 8)
-            bg.fillColor = SKColor(red: 0.05, green: 0.15, blue: 0.25, alpha: 0.85)
-            bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.6)
+            // Octagon shape (8-sided polygon, flat top/bottom, outer radius 24)
+            let octPath = CGMutablePath()
+            for i in 0..<8 {
+                let angle = CGFloat(i) * (.pi / 4) + (.pi / 8)  // 22.5° offset
+                let pt = CGPoint(x: cos(angle) * 24, y: sin(angle) * 24)
+                i == 0 ? octPath.move(to: pt) : octPath.addLine(to: pt)
+            }
+            octPath.closeSubpath()
+
+            let bg = SKShapeNode(path: octPath)
+            bg.fillColor = SKColor(red: 0.05, green: 0.09, blue: 0.14, alpha: 1.0)
+            bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.55)
             bg.lineWidth = 1.5
             bg.name = "slot_\(slot.id)"
             container.addChild(bg)
 
-            // Inner cross
-            let vLine = SKShapeNode(rectOf: CGSize(width: 2, height: 18), cornerRadius: 1)
-            vLine.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.7)
-            vLine.strokeColor = .clear
-            container.addChild(vLine)
+            // Inner ring (faint)
+            let innerRing = SKShapeNode(circleOfRadius: 8)
+            innerRing.fillColor = .clear
+            innerRing.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.20)
+            innerRing.lineWidth = 0.75
+            container.addChild(innerRing)
 
-            let hLine = SKShapeNode(rectOf: CGSize(width: 18, height: 2), cornerRadius: 1)
-            hLine.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.7)
-            hLine.strokeColor = .clear
-            container.addChild(hLine)
+            // Corner accent dots at N/S/E/W cardinal flat-edge midpoints
+            // For octagon with 22.5° offset, cardinal flat edges are at 90° intervals: 90°, 180°, 270°, 0°
+            let dotAngles: [CGFloat] = [0, .pi/2, .pi, 3 * .pi / 2]
+            for angle in dotAngles {
+                let dot = SKShapeNode(circleOfRadius: 2)
+                dot.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.80)
+                dot.strokeColor = .clear
+                // Position at octagon edge midpoint (at radius 24 in the cardinal direction)
+                dot.position = CGPoint(x: cos(angle) * 22, y: sin(angle) * 22)
+                container.addChild(dot)
+            }
 
-            // Subtle breathing animation
+            // Idle pulse animation: stroke alpha 0.40 → 0.65
             let breathe = SKAction.repeatForever(SKAction.sequence([
-                SKAction.fadeAlpha(to: 0.6, duration: 1.5),
-                SKAction.fadeAlpha(to: 1.0, duration: 1.5)
+                SKAction.run { bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.40) },
+                SKAction.customAction(withDuration: 1.2) { _, elapsed in
+                    let t = elapsed / 1.2
+                    let alpha = 0.40 + 0.25 * sin(t * .pi)
+                    bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: alpha)
+                },
+                SKAction.run { bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.40) },
+                SKAction.customAction(withDuration: 1.2) { _, elapsed in
+                    let t = elapsed / 1.2
+                    let alpha = 0.40 + 0.25 * (1 - sin(t * .pi))
+                    bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: alpha)
+                }
             ]))
             bg.run(breathe)
 
@@ -682,10 +767,7 @@ final class GameScene: SKScene {
     // MARK: - Enemy Spawning
 
     private func spawnNextEnemy() {
-        guard currentBatchIndex < currentSpawnBatches.count else {
-            isWaveActive = activeEnemies.contains { $0.isAlive }
-            return
-        }
+        guard currentBatchIndex < currentSpawnBatches.count else { return }
 
         let batch = currentSpawnBatches[currentBatchIndex]
         if remainingInCurrentBatch <= 0 {
@@ -716,6 +798,10 @@ final class GameScene: SKScene {
             enemy = SplitterEnemy(hpMultiplier: hpMult)
         case .jumper:
             enemy = JumperEnemy(hpMultiplier: hpMult)
+        case .healer:
+            enemy = HealerEnemy(hpMultiplier: hpMult)
+        case .phantom:
+            enemy = PhantomEnemy(hpMultiplier: hpMult)
         }
 
         activeEnemies.append(enemy)
@@ -764,9 +850,21 @@ final class GameScene: SKScene {
             enemy.updateSlowEffect(currentTime: currentTime)
             enemy.updateMovement(deltaTime: deltaTime)
 
+            // Boss special abilities
+            if let boss = enemy as? BossEnemy {
+                boss.tickAbility(currentTime: currentTime, scene: self)
+            }
+            // Healer aura
+            if let healer = enemy as? HealerEnemy {
+                healer.tickHeal(currentTime: currentTime, allEnemies: activeEnemies)
+            }
+
             if enemy.isDead {
                 deadIndices.append(idx)
-                goldManager.earn(enemy.goldReward)
+                let cycle = waveSystem.cycleNumber(for: currentWaveNumber)
+                let cycleScale = EconomyConstants.killGoldMultiplier(forCycle: cycle)
+                let scaledGold = max(1, Int(Double(enemy.goldReward) * cycleScale))
+                goldManager.earn(scaledGold)
                 enemyKills += 1
                 waveEnemiesCleared += 1
                 onKillsChanged?(enemyKills)
@@ -1553,5 +1651,121 @@ final class GameScene: SKScene {
                 SKAction.removeFromParent()
             ]))
         }
+    }
+
+    // MARK: - Boss Ability Helpers
+
+    /// Rift Guardian: slows all tower attack rates by 60% for `duration` seconds
+    func triggerRiftPulse(duration: TimeInterval) {
+        towerAttackSpeedDebuffActive = true
+        // Tint towers purple during debuff
+        for tower in activeTowers {
+            tower.node.run(SKAction.colorize(with: SKColor(red: 0.55, green: 0.0, blue: 1.0, alpha: 1), colorBlendFactor: 0.5, duration: 0.2))
+        }
+        // Apply debuff by extending lastFiredTime for all towers
+        for tower in activeTowers {
+            tower.lastFiredTime += duration
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration) { [weak self] in
+            guard let self = self else { return }
+            self.towerAttackSpeedDebuffActive = false
+            for tower in self.activeTowers {
+                tower.node.run(SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.3))
+            }
+        }
+    }
+
+    /// Swarm Queen: spawns `count` Swarm enemies at the given path progress position
+    func spawnBroodBurst(at progress: CGFloat, count: Int) {
+        let hpMult = waveSystem.hpScaleMultiplier(for: currentWaveNumber)
+        let spawnPos = PathSystem.position(at: progress)
+        for i in 0..<count {
+            let swarm = SwarmEnemy(hpMultiplier: hpMult)
+            swarm.pathProgress = progress
+            // Slight stagger so they don't all sit on exactly the same point
+            let offset = CGFloat(i) * 0.002
+            swarm.pathProgress = min(1.0, progress + offset)
+            swarm.node.position = spawnPos
+            // Brief burst animation
+            swarm.node.setScale(0.1)
+            swarm.node.run(SKAction.sequence([
+                SKAction.group([
+                    SKAction.scale(to: 1.0, duration: 0.2),
+                    SKAction.moveBy(x: CGFloat.random(in: -15...15), y: CGFloat.random(in: -15...15), duration: 0.2)
+                ])
+            ]))
+            activeEnemies.append(swarm)
+            enemyLayer.addChild(swarm.node)
+            waveEnemyTotal += 1
+            onWaveProgress?(waveEnemiesCleared, waveEnemyTotal)
+        }
+    }
+
+    /// Phase Runner: resets boss speed to baseSpeed after `delay` seconds
+    func scheduleReset(for boss: BossEnemy, after delay: TimeInterval) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) { [weak boss] in
+            guard let boss = boss else { return }
+            boss.currentSpeed = boss.baseSpeed
+        }
+    }
+
+    /// Void Titan: destroys all in-flight projectiles + disables nearby towers for `duration`
+    func triggerGravityWell(duration: TimeInterval) {
+        // Remove all projectile-like nodes from effectLayer (they are short-lived SKShapeNode children)
+        effectLayer.children
+            .filter { $0.name == "projectile" }
+            .forEach { $0.removeFromParent() }
+        // Disable all towers briefly via lastFiredTime extension
+        for tower in activeTowers {
+            tower.lastFiredTime = max(tower.lastFiredTime, CACurrentMediaTime() + duration)
+            tower.node.run(SKAction.sequence([
+                SKAction.colorize(with: SKColor(red: 0.3, green: 0.0, blue: 0.5, alpha: 1), colorBlendFactor: 0.6, duration: 0.1),
+                SKAction.wait(forDuration: duration - 0.2),
+                SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.2)
+            ]))
+        }
+        // Visual: expanding dark purple ring
+        let ring = SKShapeNode(circleOfRadius: 10)
+        ring.strokeColor = SKColor(red: 0.4, green: 0.0, blue: 0.7, alpha: 0.8)
+        ring.fillColor = SKColor(red: 0.2, green: 0.0, blue: 0.4, alpha: 0.2)
+        ring.lineWidth = 2
+        // Position at void titan if alive
+        if let titan = activeEnemies.first(where: { ($0 as? BossEnemy)?.bossVariant == 4 }) {
+            ring.position = titan.node.position
+        } else {
+            ring.position = CGPoint(x: size.width / 2, y: size.height / 2)
+        }
+        ring.zPosition = 6
+        effectLayer.addChild(ring)
+        ring.run(SKAction.sequence([
+            SKAction.group([
+                SKAction.scale(to: 25.0, duration: 0.4),
+                SKAction.fadeOut(withDuration: 0.4)
+            ]),
+            SKAction.removeFromParent()
+        ]))
+    }
+
+    // MARK: - Tower-Path Overlap Prevention
+
+    private func isSlotOverlappingPath(_ position: CGPoint) -> Bool {
+        let waypoints = PathSystem.waypoints
+        guard waypoints.count >= 2 else { return false }
+        let minDistance: CGFloat = 36  // slot radius 23 + path halfwidth 13
+        for i in 0..<(waypoints.count - 1) {
+            let dist = distanceFromPoint(position, toSegment: waypoints[i], waypoints[i+1])
+            if dist < minDistance { return true }
+        }
+        return false
+    }
+
+    private func distanceFromPoint(_ p: CGPoint, toSegment a: CGPoint, _ b: CGPoint) -> CGFloat {
+        let ab = CGPoint(x: b.x - a.x, y: b.y - a.y)
+        let ap = CGPoint(x: p.x - a.x, y: p.y - a.y)
+        let lenSq = ab.x * ab.x + ab.y * ab.y
+        if lenSq == 0 { return hypot(p.x - a.x, p.y - a.y) }
+        let t = max(0, min(1, (ap.x * ab.x + ap.y * ab.y) / lenSq))
+        let closest = CGPoint(x: a.x + t * ab.x, y: a.y + t * ab.y)
+        return hypot(p.x - closest.x, p.y - closest.y)
     }
 }

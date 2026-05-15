@@ -22,53 +22,56 @@ final class TeslaTower: Tower {
         let container = SKNode()
         container.position = position
 
-        // Base
-        let base = SKShapeNode(rectOf: CGSize(width: 36, height: 8), cornerRadius: 3)
-        base.fillColor = SKColor(red: 0.06, green: 0.14, blue: 0.22, alpha: 1)
-        base.strokeColor = SKColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 0.6)
-        base.lineWidth = 1.5
-        base.position = CGPoint(x: 0, y: -12)
-        container.addChild(base)
+        // Floor shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -14)
+        container.addChild(shadow)
 
-        // Body
-        let body = SKShapeNode(circleOfRadius: 14)
-        body.fillColor = SKColor(red: 0.06, green: 0.14, blue: 0.24, alpha: 1)
-        body.strokeColor = SKColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1)
-        body.lineWidth = 2
+        // Circle body radius 13
+        let body = SKShapeNode(circleOfRadius: 13)
+        body.fillColor = SKColor(red: 0.02, green: 0.08, blue: 0.18, alpha: 1.0)
+        body.strokeColor = SKColor(red: 0.20, green: 0.65, blue: 1.00, alpha: 1.0)
+        body.lineWidth = 1.5
         container.addChild(body)
 
-        // Tesla coil center
-        let coil = SKShapeNode(circleOfRadius: 5)
-        coil.fillColor = SKColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 1)
-        coil.strokeColor = SKColor.white
-        coil.lineWidth = 1
-        container.addChild(coil)
+        // Outer arc ring (capacitor coil: top semicircle 30°–150°)
+        let arcPath1 = CGMutablePath()
+        arcPath1.addArc(center: .zero, radius: 19, startAngle: .pi * 30 / 180, endAngle: .pi * 150 / 180, clockwise: false)
+        let arc1 = SKShapeNode(path: arcPath1)
+        arc1.strokeColor = SKColor(red: 0.20, green: 0.65, blue: 1.00, alpha: 0.70)
+        arc1.lineWidth = 2.0
+        arc1.fillColor = .clear
+        arc1.name = "arc1"
+        container.addChild(arc1)
 
-        // Tesla prongs
-        for angle: CGFloat in [-.pi/4, .pi/4] {
-            let prong = SKShapeNode(rectOf: CGSize(width: 3, height: 18), cornerRadius: 1)
-            prong.fillColor = SKColor(red: 0.5, green: 0.9, blue: 1.0, alpha: 1)
-            prong.strokeColor = SKColor.clear
-            prong.position = CGPoint(x: sin(angle) * 6, y: 14)
-            prong.zRotation = angle
-            container.addChild(prong)
-        }
+        // Inner arc ring (60°–120°)
+        let arcPath2 = CGMutablePath()
+        arcPath2.addArc(center: .zero, radius: 16, startAngle: .pi * 60 / 180, endAngle: .pi * 120 / 180, clockwise: false)
+        let arc2 = SKShapeNode(path: arcPath2)
+        arc2.strokeColor = SKColor(red: 0.20, green: 0.65, blue: 1.00, alpha: 0.40)
+        arc2.lineWidth = 1.0
+        arc2.fillColor = .clear
+        arc2.name = "arc2"
+        container.addChild(arc2)
 
-        // Outer glow
-        let glow = SKShapeNode(circleOfRadius: 17)
-        glow.fillColor = SKColor.clear
-        glow.strokeColor = SKColor(red: 0.4, green: 0.8, blue: 1.0, alpha: 0.25)
-        glow.lineWidth = 2
-        container.addChild(glow)
+        // Arc oscillation ±8°
+        arc1.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.rotate(byAngle: .pi * 8 / 180, duration: 0.7),
+            SKAction.rotate(byAngle: -.pi * 8 / 180, duration: 0.7)
+        ])))
+        arc2.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.rotate(byAngle: -.pi * 8 / 180, duration: 0.7),
+            SKAction.rotate(byAngle: .pi * 8 / 180, duration: 0.7)
+        ])))
 
-        // Electric pulse
-        let pulse = SKAction.repeatForever(SKAction.sequence([
-            SKAction.fadeAlpha(to: 0.1, duration: 0.3),
-            SKAction.fadeAlpha(to: 0.6, duration: 0.15),
-            SKAction.fadeAlpha(to: 0.2, duration: 0.25),
-            SKAction.fadeAlpha(to: 0.5, duration: 0.15)
-        ]))
-        glow.run(pulse)
+        // Barrel
+        let barrel = SKShapeNode(rectOf: CGSize(width: 5, height: 10), cornerRadius: 1)
+        barrel.fillColor = SKColor(red: 0.20, green: 0.65, blue: 1.00, alpha: 1.0)
+        barrel.strokeColor = .clear
+        barrel.position = CGPoint(x: 0, y: 16)
+        container.addChild(barrel)
 
         return container
     }

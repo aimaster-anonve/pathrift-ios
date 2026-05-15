@@ -4,6 +4,7 @@ struct CombatHUDView: View {
     @ObservedObject var viewModel: GameViewModel
     let onStartWave: () -> Void
     let onPause: () -> Void
+    var onShowNextWaveInfo: (() -> Void)? = nil
 
     private var isLandscape: Bool {
         UIScreen.main.bounds.width > UIScreen.main.bounds.height
@@ -180,13 +181,22 @@ struct CombatHUDView: View {
     }
 
     private var waveStat: some View {
-        VStack(spacing: 2) {
-            Text(viewModel.currentWave == 0 ? "READY" : "WAVE")
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
-                .foregroundColor(.pathriftTextSecondary).kerning(2)
-            Text(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")
-                .font(.system(size: 24, weight: .black, design: .rounded))
-                .foregroundColor(.pathriftNeonBlue).monospacedDigit()
+        HStack(spacing: 4) {
+            VStack(spacing: 2) {
+                Text(viewModel.currentWave == 0 ? "READY" : "WAVE")
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .foregroundColor(.pathriftTextSecondary).kerning(2)
+                Text(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")
+                    .font(.system(size: 24, weight: .black, design: .rounded))
+                    .foregroundColor(.pathriftNeonBlue).monospacedDigit()
+            }
+            // Next wave info button
+            Button(action: { onShowNextWaveInfo?() }) {
+                Image(systemName: "info.circle")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundColor(Color(red: 0, green: 0.78, blue: 1).opacity(0.75))
+            }
+            .buttonStyle(ScaleButtonStyle())
         }
     }
 

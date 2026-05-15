@@ -29,41 +29,42 @@ final class RunnerEnemy: EnemyNode {
         let container = SKNode()
         container.zPosition = 4
 
-        // Body — diamond/angular shape for speed feel
-        let body = SKShapeNode(rectOf: CGSize(width: 16, height: 20), cornerRadius: 4)
-        body.fillColor = SKColor(red: 0.1, green: 0.8, blue: 0.25, alpha: 1)
-        body.strokeColor = SKColor(red: 0.0, green: 1.0, blue: 0.3, alpha: 0.8)
-        body.lineWidth = 1.5
+        // Shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 16, height: 6))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.30)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -12)
+        container.addChild(shadow)
+
+        // Elongated oval capsule (teardrop, front-pointed)
+        let capsulePath = CGMutablePath()
+        capsulePath.addEllipse(in: CGRect(x: -5, y: -8, width: 10, height: 16))
+        let body = SKShapeNode(path: capsulePath)
+        body.fillColor = SKColor(red: 0.00, green: 0.25, blue: 0.70, alpha: 1.0)
+        body.strokeColor = SKColor(red: 0.20, green: 0.60, blue: 1.00, alpha: 1.0)
+        body.lineWidth = 1.25
         container.addChild(body)
 
-        // Speed stripes
-        for yOff: CGFloat in [3, -3] {
-            let stripe = SKShapeNode(rectOf: CGSize(width: 10, height: 2), cornerRadius: 1)
-            stripe.fillColor = SKColor(red: 0.0, green: 1.0, blue: 0.4, alpha: 0.5)
-            stripe.strokeColor = SKColor.clear
-            stripe.position = CGPoint(x: 0, y: yOff)
-            container.addChild(stripe)
+        // 3 horizontal motion lines trailing behind (pointing backward from travel direction)
+        let lineWidths: [CGFloat] = [6, 10, 12]
+        for (i, lw) in lineWidths.enumerated() {
+            let line = SKShapeNode(rectOf: CGSize(width: lw, height: 0.75))
+            line.fillColor = SKColor(red: 0.30, green: 0.70, blue: 1.00, alpha: 0.60)
+            line.strokeColor = .clear
+            line.position = CGPoint(x: 0, y: CGFloat(-10 - i * 3))
+            container.addChild(line)
         }
-
-        // Eyes
-        let eye = SKShapeNode(circleOfRadius: 3)
-        eye.fillColor = SKColor.red
-        eye.strokeColor = SKColor.white
-        eye.lineWidth = 1
-        eye.position = CGPoint(x: 0, y: 5)
-        container.addChild(eye)
 
         // Health bar
         let (bg, bar) = RunnerEnemy.makeHealthBarNodes()
         container.addChild(bg)
         container.addChild(bar)
 
-        // Run animation (subtle bounce)
-        let bounce = SKAction.repeatForever(SKAction.sequence([
-            SKAction.moveBy(x: 0, y: 2, duration: 0.15),
-            SKAction.moveBy(x: 0, y: -2, duration: 0.15)
-        ]))
-        body.run(bounce)
+        // Running pulse animation (body compression/extension on X)
+        body.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.scaleX(to: 0.92, y: 1.0, duration: 0.15),
+            SKAction.scaleX(to: 1.0, y: 1.0, duration: 0.15)
+        ])))
 
         return container
     }

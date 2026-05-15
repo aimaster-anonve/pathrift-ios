@@ -74,19 +74,26 @@ final class ShieldEnemy: EnemyNode {
     }
 
     private func setupNode() {
-        // Body
-        let body = SKShapeNode(circleOfRadius: 12)
-        body.fillColor = SKColor(red: 0.2, green: 0.5, blue: 0.9, alpha: 1)
-        body.strokeColor = SKColor(red: 0.4, green: 0.7, blue: 1.0, alpha: 1)
-        body.lineWidth = 2
+        // Shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 18, height: 6))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.30)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -14)
+        node.addChild(shadow)
+
+        // Circle body (dark green)
+        let body = SKShapeNode(circleOfRadius: 9)
+        body.fillColor = SKColor(red: 0.04, green: 0.24, blue: 0.12, alpha: 1.0)
+        body.strokeColor = SKColor(red: 0.20, green: 0.85, blue: 0.40, alpha: 1.0)
+        body.lineWidth = 1.5
         body.name = "core"
         node.addChild(body)
 
-        // Shield ring
-        let shield = SKShapeNode(circleOfRadius: 17)
-        shield.fillColor = SKColor(red: 0.5, green: 0.8, blue: 1.0, alpha: 0.2)
-        shield.strokeColor = SKColor(red: 0.5, green: 0.9, blue: 1.0, alpha: 0.9)
-        shield.lineWidth = 3
+        // Shield aura (D-shape — semi-transparent hexagon approximated by full hex at low alpha)
+        let shield = SKShapeNode(circleOfRadius: 14)
+        shield.fillColor = SKColor(red: 0.15, green: 0.90, blue: 0.40, alpha: 0.15)
+        shield.strokeColor = SKColor(red: 0.20, green: 0.85, blue: 0.40, alpha: 0.50)
+        shield.lineWidth = 1.0
         shield.name = "shieldRing"
         node.addChild(shield)
         shieldNode = shield

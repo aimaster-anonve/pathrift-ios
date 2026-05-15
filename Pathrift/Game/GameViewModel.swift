@@ -29,6 +29,10 @@ final class GameViewModel: ObservableObject {
         return min(1.0, Double(waveEnemiesCleared) / Double(waveEnemyTotal))
     }
 
+    var nextWaveDefinition: WaveDefinition {
+        scene.waveSystem.waveDefinition(for: scene.currentWaveNumber + 1)
+    }
+
     struct TowerInfo {
         let slotId: Int
         let towerType: TowerType

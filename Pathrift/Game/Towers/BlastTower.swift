@@ -25,51 +25,53 @@ final class BlastTower: Tower {
         let container = SKNode()
         container.position = position
 
-        // Base
-        let base = SKShapeNode(rectOf: CGSize(width: 36, height: 8), cornerRadius: 3)
-        base.fillColor = SKColor(red: 0.20, green: 0.10, blue: 0.05, alpha: 1)
-        base.strokeColor = SKColor(red: 1.0, green: 0.42, blue: 0.0, alpha: 0.7)
-        base.lineWidth = 1.5
-        base.position = CGPoint(x: 0, y: -12)
-        container.addChild(base)
+        // Floor shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -14)
+        container.addChild(shadow)
 
-        // Heavy square body
-        let body = SKShapeNode(rectOf: CGSize(width: 28, height: 28), cornerRadius: 5)
-        body.fillColor = SKColor(red: 0.22, green: 0.10, blue: 0.04, alpha: 1)
-        body.strokeColor = SKColor(red: 1.0, green: 0.42, blue: 0.0, alpha: 1)
-        body.lineWidth = 2
+        // Circle body
+        let body = SKShapeNode(circleOfRadius: 14)
+        body.fillColor = SKColor(red: 0.20, green: 0.08, blue: 0.00, alpha: 1.0)
+        body.strokeColor = SKColor(red: 1.00, green: 0.45, blue: 0.00, alpha: 1.0)
+        body.lineWidth = 2.0
         container.addChild(body)
 
-        // Orange core ember
-        let ember = SKShapeNode(circleOfRadius: 6)
-        ember.fillColor = SKColor(red: 1.0, green: 0.55, blue: 0.0, alpha: 1)
-        ember.strokeColor = SKColor.clear
-        container.addChild(ember)
-
-        // Vents left/right
-        for xOff: CGFloat in [-10, 10] {
-            let vent = SKShapeNode(rectOf: CGSize(width: 5, height: 12), cornerRadius: 2)
-            vent.fillColor = SKColor(red: 0.8, green: 0.3, blue: 0.0, alpha: 0.9)
-            vent.strokeColor = SKColor.clear
-            vent.position = CGPoint(x: xOff, y: 2)
-            container.addChild(vent)
+        // 3 exhaust pipe stubs at 120° intervals (excluding up/barrel direction)
+        // Barrel points up (90°), so exhaust at 210°, 330°, and 90° excluded — use 210°, 330°, 30° (offset -30 from barrel)
+        let exhaustAngles: [CGFloat] = [CGFloat.pi * 7 / 6, CGFloat.pi * 11 / 6, CGFloat.pi / 6]
+        for angle in exhaustAngles {
+            let px = cos(angle) * 14
+            let py = sin(angle) * 14
+            let pipe = SKShapeNode(rectOf: CGSize(width: 5, height: 7), cornerRadius: 1)
+            pipe.fillColor = SKColor(red: 0.15, green: 0.06, blue: 0.00, alpha: 1.0)
+            pipe.strokeColor = SKColor(red: 1.00, green: 0.45, blue: 0.00, alpha: 1.0)
+            pipe.lineWidth = 1.0
+            pipe.position = CGPoint(x: px, y: py)
+            pipe.zRotation = angle
+            container.addChild(pipe)
+            // Pulse outward animation
+            pipe.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.moveBy(x: cos(angle) * 0.5, y: sin(angle) * 0.5, duration: 0.6),
+                SKAction.moveBy(x: -cos(angle) * 0.5, y: -sin(angle) * 0.5, duration: 0.6)
+            ])))
         }
 
-        // Mortar tube at top
-        let tube = SKShapeNode(rectOf: CGSize(width: 8, height: 14), cornerRadius: 3)
-        tube.fillColor = SKColor(red: 0.5, green: 0.25, blue: 0.0, alpha: 1)
-        tube.strokeColor = SKColor(red: 1.0, green: 0.42, blue: 0.0, alpha: 0.6)
-        tube.lineWidth = 1
-        tube.position = CGPoint(x: 0, y: 18)
-        container.addChild(tube)
+        // Barrel (flared tip trapezoid approximated as wider rect + tip)
+        let barrel = SKShapeNode(rectOf: CGSize(width: 6, height: 12), cornerRadius: 1)
+        barrel.fillColor = SKColor(red: 1.00, green: 0.45, blue: 0.00, alpha: 1.0)
+        barrel.strokeColor = .clear
+        barrel.position = CGPoint(x: 0, y: 17)
+        container.addChild(barrel)
 
-        // Flicker effect on ember
-        let flicker = SKAction.repeatForever(SKAction.sequence([
-            SKAction.scale(to: 1.2, duration: 0.15),
-            SKAction.scale(to: 0.85, duration: 0.15),
-            SKAction.scale(to: 1.0, duration: 0.1)
-        ]))
-        ember.run(flicker)
+        // Flared tip
+        let tip = SKShapeNode(rectOf: CGSize(width: 10, height: 3))
+        tip.fillColor = SKColor(red: 1.00, green: 0.45, blue: 0.00, alpha: 0.80)
+        tip.strokeColor = .clear
+        tip.position = CGPoint(x: 0, y: 23)
+        container.addChild(tip)
 
         return container
     }

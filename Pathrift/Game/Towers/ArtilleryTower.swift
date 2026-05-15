@@ -25,61 +25,60 @@ final class ArtilleryTower: Tower {
         let container = SKNode()
         container.position = position
 
-        let brass = SKColor(red: 0.8, green: 0.53, blue: 0.0, alpha: 1)
-        let darkBrass = SKColor(red: 0.45, green: 0.28, blue: 0.0, alpha: 1)
+        let brass = SKColor(red: 0.75, green: 0.58, blue: 0.12, alpha: 1.0)
 
-        // Heavy base
-        let base = SKShapeNode(rectOf: CGSize(width: 40, height: 8), cornerRadius: 3)
-        base.fillColor = darkBrass
-        base.strokeColor = brass.withAlphaComponent(0.6)
-        base.lineWidth = 1.5
-        base.position = CGPoint(x: 0, y: -14)
-        container.addChild(base)
+        // Floor shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 30, height: 10))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -14)
+        container.addChild(shadow)
 
-        // Thick square body
-        let body = SKShapeNode(rectOf: CGSize(width: 30, height: 26), cornerRadius: 5)
-        body.fillColor = SKColor(red: 0.25, green: 0.15, blue: 0.0, alpha: 1)
+        // Wide squat hexagon body (30pt wide × 22pt tall, flat-top)
+        let hexPath = CGMutablePath()
+        // Wide flat-top hex: width 30, height 22
+        let hw: CGFloat = 15, hh: CGFloat = 11
+        hexPath.move(to: CGPoint(x: -hw + 5, y: hh))
+        hexPath.addLine(to: CGPoint(x: hw - 5, y: hh))
+        hexPath.addLine(to: CGPoint(x: hw, y: 0))
+        hexPath.addLine(to: CGPoint(x: hw - 5, y: -hh))
+        hexPath.addLine(to: CGPoint(x: -hw + 5, y: -hh))
+        hexPath.addLine(to: CGPoint(x: -hw, y: 0))
+        hexPath.closeSubpath()
+        let body = SKShapeNode(path: hexPath)
+        body.fillColor = SKColor(red: 0.14, green: 0.10, blue: 0.01, alpha: 1.0)
         body.strokeColor = brass
-        body.lineWidth = 2
+        body.lineWidth = 2.0
         container.addChild(body)
 
-        // Brass core
-        let core = SKShapeNode(circleOfRadius: 7)
-        core.fillColor = brass
-        core.strokeColor = SKColor.clear
-        container.addChild(core)
-
-        // Wide artillery barrel (angled top)
-        let barrel = SKShapeNode(rectOf: CGSize(width: 10, height: 18), cornerRadius: 3)
-        barrel.fillColor = darkBrass
-        barrel.strokeColor = brass.withAlphaComponent(0.7)
-        barrel.lineWidth = 1.5
-        barrel.position = CGPoint(x: 0, y: 18)
-        container.addChild(barrel)
-
-        // Barrel opening
-        let muzzle = SKShapeNode(rectOf: CGSize(width: 12, height: 4), cornerRadius: 2)
-        muzzle.fillColor = brass
-        muzzle.strokeColor = SKColor.clear
-        muzzle.position = CGPoint(x: 0, y: 27)
-        container.addChild(muzzle)
-
-        // Side wheels
-        for xOff: CGFloat in [-12, 12] {
-            let wheel = SKShapeNode(circleOfRadius: 5)
-            wheel.fillColor = darkBrass
-            wheel.strokeColor = brass.withAlphaComponent(0.5)
-            wheel.lineWidth = 1
-            wheel.position = CGPoint(x: xOff, y: -10)
-            container.addChild(wheel)
+        // 2 horizontal band stripes (armor bands)
+        for yOff: CGFloat in [-2.0, 2.0] {
+            let band = SKShapeNode(rectOf: CGSize(width: 26, height: 2))
+            band.fillColor = SKColor(red: 0.75, green: 0.58, blue: 0.12, alpha: 0.40)
+            band.strokeColor = .clear
+            band.position = CGPoint(x: 0, y: yOff)
+            container.addChild(band)
         }
 
-        // Slow ember glow on core
-        let glow = SKAction.repeatForever(SKAction.sequence([
-            SKAction.colorize(with: SKColor(red: 1.0, green: 0.7, blue: 0.0, alpha: 1), colorBlendFactor: 0.6, duration: 0.8),
-            SKAction.colorize(with: brass, colorBlendFactor: 0, duration: 0.8)
-        ]))
-        core.run(glow)
+        // Wide barrel (widest of all towers) with flat end plate
+        let barrel = SKShapeNode(rectOf: CGSize(width: 8, height: 13), cornerRadius: 1)
+        barrel.fillColor = brass
+        barrel.strokeColor = .clear
+        barrel.position = CGPoint(x: 0, y: hh + 6)
+        container.addChild(barrel)
+
+        // Flat end plate on tip
+        let endPlate = SKShapeNode(rectOf: CGSize(width: 10, height: 3))
+        endPlate.fillColor = brass
+        endPlate.strokeColor = .clear
+        endPlate.position = CGPoint(x: 0, y: hh + 12)
+        container.addChild(endPlate)
+
+        // Subtle barrel sway ±3°
+        container.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.rotate(byAngle: .pi * 3 / 180, duration: 1.0),
+            SKAction.rotate(byAngle: -.pi * 3 / 180, duration: 1.0)
+        ])))
 
         return container
     }

@@ -54,16 +54,25 @@ struct TowerInfoPanel: View {
             .padding(.leading, 10)
             .frame(width: 96, alignment: .leading)
 
-            // Stats
-            HStack(spacing: 0) {
-                miniStat(value: String(format: "%.0f", info.damage), label: "DMG", color: .pathriftOrange)
-                Color.pathriftTextSecondary.opacity(0.2).frame(width: 1, height: 24)
-                miniStat(value: String(format: "%.0ft", info.range / 64 * 3), label: "RNG", color: .pathriftNeonBlue)
-                Color.pathriftTextSecondary.opacity(0.2).frame(width: 1, height: 24)
-                miniStat(value: String(format: "%.1f/s", 1.0 / info.attackSpeed), label: "SPD", color: .pathriftPurple)
+            // Stats + advantage hint
+            VStack(spacing: 2) {
+                HStack(spacing: 0) {
+                    miniStat(value: String(format: "%.0f", info.damage), label: "DMG", color: .pathriftOrange)
+                    Color.pathriftTextSecondary.opacity(0.2).frame(width: 1, height: 20)
+                    miniStat(value: String(format: "%.0ft", info.range / 64 * 3), label: "RNG", color: .pathriftNeonBlue)
+                    Color.pathriftTextSecondary.opacity(0.2).frame(width: 1, height: 20)
+                    miniStat(value: String(format: "%.1f/s", 1.0 / info.attackSpeed), label: "SPD", color: .pathriftPurple)
+                }
+                if let hint = info.towerType.typeAdvantageHint {
+                    Text(hint)
+                        .font(.system(size: 7, weight: .semibold, design: .monospaced))
+                        .foregroundColor(info.towerType.swiftUIColor)
+                        .lineLimit(1)
+                        .kerning(0.3)
+                }
             }
             .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.vertical, 4)
             .background(Color.black.opacity(0.25))
             .cornerRadius(8)
             .frame(maxWidth: .infinity)

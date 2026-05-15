@@ -22,56 +22,67 @@ final class SniperTower: Tower {
         let container = SKNode()
         container.position = position
 
-        let cyanWhite = SKColor(red: 0.4, green: 1.0, blue: 1.0, alpha: 1)
+        let cyanWhite = SKColor(red: 0.85, green: 1.00, blue: 1.00, alpha: 1.0)
 
-        // Base platform
-        let base = SKShapeNode(rectOf: CGSize(width: 32, height: 6), cornerRadius: 2)
-        base.fillColor = SKColor(red: 0.05, green: 0.15, blue: 0.20, alpha: 1)
-        base.strokeColor = cyanWhite.withAlphaComponent(0.5)
-        base.lineWidth = 1
-        base.position = CGPoint(x: 0, y: -13)
-        container.addChild(base)
+        // Floor shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -14)
+        container.addChild(shadow)
 
-        // Hexagonal-ish body (circle with outer glow ring)
-        let body = SKShapeNode(circleOfRadius: 14)
-        body.fillColor = SKColor(red: 0.05, green: 0.20, blue: 0.22, alpha: 1)
+        // Narrow tall rectangle body (10pt wide × 32pt tall, clipped corners 2pt)
+        let bodyPath = CGMutablePath()
+        let w: CGFloat = 5, h: CGFloat = 16, clip: CGFloat = 2
+        bodyPath.move(to: CGPoint(x: -w + clip, y: h))
+        bodyPath.addLine(to: CGPoint(x: w - clip, y: h))
+        bodyPath.addLine(to: CGPoint(x: w, y: h - clip))
+        bodyPath.addLine(to: CGPoint(x: w, y: -h + clip))
+        bodyPath.addLine(to: CGPoint(x: w - clip, y: -h))
+        bodyPath.addLine(to: CGPoint(x: -w + clip, y: -h))
+        bodyPath.addLine(to: CGPoint(x: -w, y: -h + clip))
+        bodyPath.addLine(to: CGPoint(x: -w, y: h - clip))
+        bodyPath.closeSubpath()
+        let body = SKShapeNode(path: bodyPath)
+        body.fillColor = SKColor(red: 0.06, green: 0.10, blue: 0.12, alpha: 1.0)
         body.strokeColor = cyanWhite
-        body.lineWidth = 2.0
+        body.lineWidth = 1.25
         container.addChild(body)
 
-        // Inner core
-        let core = SKShapeNode(circleOfRadius: 5)
-        core.fillColor = cyanWhite
-        core.strokeColor = SKColor.clear
-        container.addChild(core)
+        // Scope circle (centered on body at 30% from top — at y = h*0.4)
+        let scopeY: CGFloat = h * 0.4
+        let scope = SKShapeNode(circleOfRadius: 3.5)
+        scope.fillColor = SKColor(red: 0.60, green: 0.90, blue: 1.00, alpha: 0.25)
+        scope.strokeColor = cyanWhite
+        scope.lineWidth = 1.0
+        scope.position = CGPoint(x: 0, y: scopeY)
+        scope.name = "scope"
+        container.addChild(scope)
 
-        // Tall barrel (pointing up)
-        let barrel = SKShapeNode(rectOf: CGSize(width: 3, height: 20), cornerRadius: 1)
-        barrel.fillColor = SKColor(red: 0.3, green: 0.8, blue: 0.85, alpha: 1)
-        barrel.strokeColor = SKColor.clear
-        barrel.position = CGPoint(x: 0, y: 18)
+        // Scope crosshair
+        let crossH = SKShapeNode(rectOf: CGSize(width: 7, height: 0.5))
+        crossH.fillColor = cyanWhite
+        crossH.strokeColor = .clear
+        crossH.position = CGPoint(x: 0, y: scopeY)
+        container.addChild(crossH)
+
+        // Slow scope rotation
+        scope.run(SKAction.repeatForever(SKAction.rotate(byAngle: .pi * 2, duration: 12.0)))
+
+        // Stroke alpha breathe
+        body.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.run { body.strokeColor = cyanWhite.withAlphaComponent(0.70) },
+            SKAction.wait(forDuration: 1.5),
+            SKAction.run { body.strokeColor = cyanWhite.withAlphaComponent(1.00) },
+            SKAction.wait(forDuration: 1.5)
+        ])))
+
+        // Long barrel (longest of all towers)
+        let barrel = SKShapeNode(rectOf: CGSize(width: 3, height: 16), cornerRadius: 1)
+        barrel.fillColor = cyanWhite
+        barrel.strokeColor = .clear
+        barrel.position = CGPoint(x: 0, y: h + 8)
         container.addChild(barrel)
-
-        // Barrel tip
-        let tip = SKShapeNode(circleOfRadius: 2.5)
-        tip.fillColor = cyanWhite
-        tip.strokeColor = SKColor.clear
-        tip.position = CGPoint(x: 0, y: 28)
-        container.addChild(tip)
-
-        // Outer glow ring
-        let ring = SKShapeNode(circleOfRadius: 17)
-        ring.fillColor = SKColor.clear
-        ring.strokeColor = cyanWhite.withAlphaComponent(0.25)
-        ring.lineWidth = 1.5
-        container.addChild(ring)
-
-        // Pulse animation on core
-        let pulse = SKAction.repeatForever(SKAction.sequence([
-            SKAction.scale(to: 1.3, duration: 0.6),
-            SKAction.scale(to: 0.8, duration: 0.6)
-        ]))
-        core.run(pulse)
 
         return container
     }

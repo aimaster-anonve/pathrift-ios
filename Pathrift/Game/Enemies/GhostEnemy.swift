@@ -43,28 +43,36 @@ final class GhostEnemy: EnemyNode {
     private static func makeNode() -> SKNode {
         let container = SKNode()
         container.zPosition = 4
-        container.alpha = 0.75  // semi-transparent
+        container.alpha = 0.70  // semi-transparent by default
 
-        let body = SKShapeNode(circleOfRadius: 13)
-        body.fillColor = SKColor(red: 0.7, green: 0.9, blue: 0.7, alpha: 0.8)
-        body.strokeColor = SKColor(red: 0.6, green: 1.0, blue: 0.6, alpha: 0.9)
-        body.lineWidth = 1.5
+        // Soft circle body (purple)
+        let body = SKShapeNode(circleOfRadius: 10)
+        body.fillColor = SKColor(red: 0.55, green: 0.35, blue: 0.80, alpha: 0.65)
+        body.strokeColor = SKColor(red: 0.75, green: 0.55, blue: 1.00, alpha: 0.80)
+        body.lineWidth = 1.0
         container.addChild(body)
 
-        // Inner glow
-        let glow = SKShapeNode(circleOfRadius: 7)
-        glow.fillColor = SKColor(red: 0.8, green: 1.0, blue: 0.8, alpha: 0.6)
-        glow.strokeColor = SKColor.clear
-        container.addChild(glow)
+        // Wispy trailing ellipses (behind movement direction = below in +Y up world)
+        let trailSizes: [(CGFloat, CGFloat, CGFloat)] = [(10, 6, 0.50), (8, 4, 0.30), (6, 3, 0.15)]
+        for (i, (tw, th, ta)) in trailSizes.enumerated() {
+            let trail = SKShapeNode(ellipseOf: CGSize(width: tw, height: th))
+            trail.fillColor = SKColor(red: 0.55, green: 0.35, blue: 0.80, alpha: ta)
+            trail.strokeColor = .clear
+            trail.position = CGPoint(x: 0, y: CGFloat(-12 - i * 8))
+            container.addChild(trail)
+        }
 
-        // Eerie flicker animation
-        let flicker = SKAction.repeatForever(SKAction.sequence([
-            SKAction.fadeAlpha(to: 0.4, duration: 0.3),
-            SKAction.fadeAlpha(to: 0.85, duration: 0.4),
-            SKAction.fadeAlpha(to: 0.6, duration: 0.2),
-            SKAction.fadeAlpha(to: 0.85, duration: 0.3)
-        ]))
-        container.run(flicker)
+        // Ghost float: Y ±3 over 1.5s
+        container.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.moveBy(x: 0, y: 3, duration: 0.75),
+            SKAction.moveBy(x: 0, y: -3, duration: 0.75)
+        ])))
+
+        // Phase animation: alpha breathes 0.55 → 0.85
+        container.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.55, duration: 1.0),
+            SKAction.fadeAlpha(to: 0.85, duration: 1.0)
+        ])))
 
         let (bg, bar) = GhostEnemy.makeHealthBarNodes()
         container.addChild(bg)

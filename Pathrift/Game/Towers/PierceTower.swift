@@ -22,51 +22,53 @@ final class PierceTower: Tower {
         let container = SKNode()
         container.position = position
 
-        // Base
-        let base = SKShapeNode(rectOf: CGSize(width: 36, height: 8), cornerRadius: 3)
-        base.fillColor = SKColor(red: 0.08, green: 0.18, blue: 0.06, alpha: 1)
-        base.strokeColor = SKColor(red: 0.6, green: 1.0, blue: 0.2, alpha: 0.6)
-        base.lineWidth = 1.5
-        base.position = CGPoint(x: 0, y: -12)
-        container.addChild(base)
+        // Floor shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -14)
+        container.addChild(shadow)
 
-        // Body
-        let body = SKShapeNode(rectOf: CGSize(width: 24, height: 24), cornerRadius: 4)
-        body.fillColor = SKColor(red: 0.08, green: 0.18, blue: 0.04, alpha: 1)
-        body.strokeColor = SKColor(red: 0.6, green: 1.0, blue: 0.2, alpha: 1)
-        body.lineWidth = 2
+        // Elongated octagon body (16×28pt)
+        let cut: CGFloat = 5
+        let octPath = CGMutablePath()
+        octPath.move(to: CGPoint(x: -8 + cut, y: 14))
+        octPath.addLine(to: CGPoint(x: 8 - cut, y: 14))
+        octPath.addLine(to: CGPoint(x: 8, y: 14 - cut))
+        octPath.addLine(to: CGPoint(x: 8, y: -14 + cut))
+        octPath.addLine(to: CGPoint(x: 8 - cut, y: -14))
+        octPath.addLine(to: CGPoint(x: -8 + cut, y: -14))
+        octPath.addLine(to: CGPoint(x: -8, y: -14 + cut))
+        octPath.addLine(to: CGPoint(x: -8, y: 14 - cut))
+        octPath.closeSubpath()
+        let body = SKShapeNode(path: octPath)
+        body.fillColor = SKColor(red: 0.04, green: 0.14, blue: 0.02, alpha: 1.0)
+        body.strokeColor = SKColor(red: 0.40, green: 1.00, blue: 0.10, alpha: 1.0)
+        body.lineWidth = 1.5
         container.addChild(body)
 
-        // Core
-        let core = SKShapeNode(circleOfRadius: 5)
-        core.fillColor = SKColor(red: 0.6, green: 1.0, blue: 0.2, alpha: 1)
-        core.strokeColor = SKColor.clear
-        container.addChild(core)
+        // Reticle lines (2 horizontal parallel lines across mid-section)
+        for yOff: CGFloat in [-2, 2] {
+            let reticle = SKShapeNode(rectOf: CGSize(width: 12, height: 0.75))
+            reticle.fillColor = SKColor(red: 0.40, green: 1.00, blue: 0.10, alpha: 0.50)
+            reticle.strokeColor = .clear
+            reticle.position = CGPoint(x: 0, y: yOff)
+            reticle.name = "reticle"
+            container.addChild(reticle)
+        }
 
-        // Arrow barrel (long thin spike)
-        let barrel = SKShapeNode(rectOf: CGSize(width: 3, height: 20), cornerRadius: 1)
-        barrel.fillColor = SKColor(red: 0.7, green: 1.0, blue: 0.4, alpha: 1)
-        barrel.strokeColor = SKColor.clear
-        barrel.position = CGPoint(x: 0, y: 16)
+        // Barrel (notably longer)
+        let barrel = SKShapeNode(rectOf: CGSize(width: 4, height: 14), cornerRadius: 1)
+        barrel.fillColor = SKColor(red: 0.40, green: 1.00, blue: 0.10, alpha: 1.0)
+        barrel.strokeColor = .clear
+        barrel.position = CGPoint(x: 0, y: 19)
         container.addChild(barrel)
 
-        // Tip arrowhead
-        let path = CGMutablePath()
-        path.move(to: CGPoint(x: 0, y: 6))
-        path.addLine(to: CGPoint(x: -4, y: 0))
-        path.addLine(to: CGPoint(x: 4, y: 0))
-        path.closeSubpath()
-        let tip = SKShapeNode(path: path)
-        tip.fillColor = SKColor(red: 0.6, green: 1.0, blue: 0.2, alpha: 1)
-        tip.strokeColor = SKColor.clear
-        tip.position = CGPoint(x: 0, y: 26)
-        container.addChild(tip)
-
-        // Glow ring
+        // Glow ring (unused placeholder kept for parity with old code path)
         let glow = SKShapeNode(circleOfRadius: 14)
         glow.fillColor = SKColor.clear
-        glow.strokeColor = SKColor(red: 0.6, green: 1.0, blue: 0.2, alpha: 0.25)
-        glow.lineWidth = 2
+        glow.strokeColor = SKColor(red: 0.6, green: 1.0, blue: 0.2, alpha: 0.0)
+        glow.lineWidth = 0
         container.addChild(glow)
 
         let pulse = SKAction.repeatForever(SKAction.sequence([

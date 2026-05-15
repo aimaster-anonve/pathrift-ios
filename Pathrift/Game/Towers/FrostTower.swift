@@ -22,48 +22,56 @@ final class FrostTower: Tower {
         let container = SKNode()
         container.position = position
 
-        // Base
-        let base = SKShapeNode(rectOf: CGSize(width: 36, height: 8), cornerRadius: 3)
-        base.fillColor = SKColor(red: 0.06, green: 0.10, blue: 0.20, alpha: 1)
-        base.strokeColor = SKColor(red: 0.55, green: 0.78, blue: 1.0, alpha: 0.6)
-        base.lineWidth = 1.5
-        base.position = CGPoint(x: 0, y: -12)
-        container.addChild(base)
+        // Floor shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -14)
+        container.addChild(shadow)
 
-        // Circular body
-        let body = SKShapeNode(circleOfRadius: 13)
-        body.fillColor = SKColor(red: 0.06, green: 0.12, blue: 0.28, alpha: 1)
-        body.strokeColor = SKColor(red: 0.55, green: 0.85, blue: 1.0, alpha: 1)
-        body.lineWidth = 2
+        // Diamond body (rotated square 28×28)
+        let diamPath = CGMutablePath()
+        diamPath.move(to: CGPoint(x: 0, y: 14))
+        diamPath.addLine(to: CGPoint(x: 14, y: 0))
+        diamPath.addLine(to: CGPoint(x: 0, y: -14))
+        diamPath.addLine(to: CGPoint(x: -14, y: 0))
+        diamPath.closeSubpath()
+        let body = SKShapeNode(path: diamPath)
+        body.fillColor = SKColor(red: 0.06, green: 0.02, blue: 0.14, alpha: 1.0)
+        body.strokeColor = SKColor(red: 0.56, green: 0.18, blue: 1.00, alpha: 1.0)
+        body.lineWidth = 1.5
         container.addChild(body)
 
-        // Ice crystal center
-        let crystal = SKShapeNode(circleOfRadius: 5)
-        crystal.fillColor = SKColor(red: 0.7, green: 0.9, blue: 1.0, alpha: 1)
-        crystal.strokeColor = SKColor.white
-        crystal.lineWidth = 1
-        container.addChild(crystal)
-
-        // Crystal spikes (4 directions)
-        for angle in [CGFloat(0.0), CGFloat.pi / 2, CGFloat.pi, 3 * CGFloat.pi / 2] {
-            let spike = SKShapeNode(rectOf: CGSize(width: 3, height: 12), cornerRadius: 1)
-            spike.fillColor = SKColor(red: 0.7, green: 0.9, blue: 1.0, alpha: 0.9)
-            spike.strokeColor = SKColor.clear
-            spike.position = CGPoint(x: cos(angle) * 9, y: sin(angle) * 9)
-            spike.zRotation = angle
-            container.addChild(spike)
+        // 4 ice crystal spikes at diamond corners
+        let tipCorners: [(CGFloat, CGFloat)] = [(0, 14), (14, 0), (0, -14), (-14, 0)]
+        let tipAngles: [CGFloat] = [.pi/2, 0, -.pi/2, .pi]
+        for (i, (cx, cy)) in tipCorners.enumerated() {
+            let tipPath = CGMutablePath()
+            tipPath.move(to: CGPoint(x: 0, y: 6))
+            tipPath.addLine(to: CGPoint(x: -2, y: 0))
+            tipPath.addLine(to: CGPoint(x: 2, y: 0))
+            tipPath.closeSubpath()
+            let tip = SKShapeNode(path: tipPath)
+            tip.fillColor = SKColor(red: 0.70, green: 0.85, blue: 1.00, alpha: 0.70)
+            tip.strokeColor = .clear
+            tip.position = CGPoint(x: cx, y: cy)
+            tip.zRotation = tipAngles[i]
+            container.addChild(tip)
+            // Staggered scale pulse
+            let delay = Double(i) * 0.45
+            tip.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.wait(forDuration: delay),
+                SKAction.scale(to: 1.2, duration: 0.45),
+                SKAction.scale(to: 1.0, duration: 0.45)
+            ])))
         }
 
-        // Outer freeze ring
-        let ring = SKShapeNode(circleOfRadius: 15)
-        ring.fillColor = SKColor.clear
-        ring.strokeColor = SKColor(red: 0.6, green: 0.88, blue: 1.0, alpha: 0.3)
-        ring.lineWidth = 1.5
-        container.addChild(ring)
-
-        // Slow rotation
-        let rotate = SKAction.repeatForever(SKAction.rotate(byAngle: .pi * 2, duration: 4.0))
-        crystal.run(rotate)
+        // Barrel (pointing up)
+        let barrel = SKShapeNode(rectOf: CGSize(width: 4, height: 10), cornerRadius: 1)
+        barrel.fillColor = SKColor(red: 0.56, green: 0.18, blue: 1.00, alpha: 1.0)
+        barrel.strokeColor = .clear
+        barrel.position = CGPoint(x: 0, y: 15)
+        container.addChild(barrel)
 
         return container
     }

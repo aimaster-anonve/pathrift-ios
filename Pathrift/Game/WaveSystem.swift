@@ -9,7 +9,9 @@ enum EnemyType: String, CaseIterable {
     case swarm    = "Swarm"    // intro cycle 3 (wave 19+): fast packs, low HP
     case ghost    = "Ghost"    // intro cycle 4 (wave 28+): 90% frost immune
     case splitter = "Splitter" // cycle 2+: splits into 2 Swarm on death
-    case jumper   = "Jumper"   // cycle 2+: jumps forward 20% path every 3s
+    case jumper   = "Jumper"   // cycle 2+: jumps forward path every 5s
+    case healer   = "Healer"   // cycle 4+ (wave 32+): aura heals nearby enemies every 2.5s
+    case phantom  = "Phantom"  // cycle 4+ (wave 38+): 40% dodge vs single-target projectiles
 }
 
 struct EnemySpawnEntry {
@@ -139,6 +141,16 @@ final class WaveSystem {
             scaledSpawns.append(EnemySpawnEntry(type: .jumper, count: 1 + cycleNumber))
         }
 
+        // Cycle 4+ (wave 32+): Healer every 4th pattern slot (offset 3)
+        if cycleNumber >= 4 && patternIndex % 4 == 3 {
+            scaledSpawns.append(EnemySpawnEntry(type: .healer, count: 1 + cycleNumber - 3))
+        }
+
+        // Cycle 4+ (wave 38+): Phantom every 3rd pattern slot (offset 2, avoid jumper conflict)
+        if cycleNumber >= 4 && patternIndex % 3 == 2 && patternIndex != 2 {
+            scaledSpawns.append(EnemySpawnEntry(type: .phantom, count: 1 + cycleNumber - 3))
+        }
+
         let adjustedInterval = max(0.8, base.spawnInterval - Double(cycleNumber) * 0.08)
         return WaveDefinition(waveNumber: waveNumber, spawns: scaledSpawns, spawnInterval: adjustedInterval)
     }
@@ -149,6 +161,17 @@ final class WaveSystem {
         if waveNumber <= 10 { return 1.0 + CGFloat(waveNumber - 5) * 0.15 }
         if waveNumber <= 20 { return 1.75 + CGFloat(waveNumber - 10) * 0.20 }
         return 3.75 + CGFloat(waveNumber - 20) * 0.30
+    }
+
+    func syncWave(_ waveNumber: Int) {
+        currentWave = waveNumber
+    }
+
+    /// Returns the 0-based cycle number for a given wave (for gold scaling, enemy intro)
+    func cycleNumber(for waveNumber: Int) -> Int {
+        let bossesBeforeThisWave = waveNumber / 10
+        let positionInNonBoss = waveNumber - bossesBeforeThisWave
+        return (positionInNonBoss - 1) / cycleSize
     }
 
     func reset() { currentWave = 0 }

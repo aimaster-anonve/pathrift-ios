@@ -6,7 +6,7 @@ final class SplitterEnemy: EnemyNode {
     let type: EnemyType = .splitter
     let maxHP: CGFloat
     var currentHP: CGFloat
-    let baseSpeed: CGFloat = 90
+    let baseSpeed: CGFloat = 55
     var currentSpeed: CGFloat
     let armor: CGFloat = 0.0
     let goldReward: Int = 8
@@ -17,10 +17,10 @@ final class SplitterEnemy: EnemyNode {
     let node: SKNode
 
     init(hpMultiplier: CGFloat = 1.0) {
-        let hp = 80 * hpMultiplier
+        let hp = 110 * hpMultiplier
         self.maxHP = hp
         self.currentHP = hp
-        self.currentSpeed = 90
+        self.currentSpeed = 55
         self.node = SplitterEnemy.makeNode()
         self.node.position = PathSystem.waypoints.first ?? .zero
     }
@@ -29,41 +29,40 @@ final class SplitterEnemy: EnemyNode {
         let container = SKNode()
         container.zPosition = 4
 
-        // Amber diamond body
-        let body = SKShapeNode(rectOf: CGSize(width: 18, height: 18), cornerRadius: 3)
-        body.fillColor = SKColor(red: 1.0, green: 0.7, blue: 0.0, alpha: 1)
-        body.strokeColor = SKColor(red: 1.0, green: 0.9, blue: 0.2, alpha: 0.9)
-        body.lineWidth = 2
-        body.zRotation = .pi / 4  // diamond orientation
+        // Diamond body (rhombus 18×18)
+        let diamPath = CGMutablePath()
+        diamPath.move(to: CGPoint(x: 0, y: 9))
+        diamPath.addLine(to: CGPoint(x: 9, y: 0))
+        diamPath.addLine(to: CGPoint(x: 0, y: -9))
+        diamPath.addLine(to: CGPoint(x: -9, y: 0))
+        diamPath.closeSubpath()
+        let body = SKShapeNode(path: diamPath)
+        body.fillColor = SKColor(red: 0.30, green: 0.14, blue: 0.00, alpha: 1.0)
+        body.strokeColor = SKColor(red: 1.00, green: 0.60, blue: 0.10, alpha: 1.0)
+        body.lineWidth = 1.5
         container.addChild(body)
 
-        // Split indicator — two small dots showing it will split
-        for xOff: CGFloat in [-6, 6] {
-            let dot = SKShapeNode(circleOfRadius: 3)
-            dot.fillColor = SKColor(red: 1.0, green: 0.9, blue: 0.0, alpha: 0.8)
-            dot.strokeColor = SKColor.clear
-            dot.position = CGPoint(x: xOff, y: 0)
-            container.addChild(dot)
-        }
-
-        // Eyes
-        let eye = SKShapeNode(circleOfRadius: 2.5)
-        eye.fillColor = SKColor.red
-        eye.strokeColor = SKColor.clear
-        eye.position = CGPoint(x: 0, y: 4)
-        container.addChild(eye)
+        // Glowing split seam (vertical line through center)
+        let seamPath = CGMutablePath()
+        seamPath.move(to: CGPoint(x: 0, y: 9))
+        seamPath.addLine(to: CGPoint(x: 0, y: -9))
+        let seam = SKShapeNode(path: seamPath)
+        seam.strokeColor = SKColor(red: 1.00, green: 0.80, blue: 0.20, alpha: 0.90)
+        seam.lineWidth = 1.5
+        seam.lineCap = .round
+        seam.name = "seam"
+        container.addChild(seam)
 
         // Health bar
         let (bg, bar) = SplitterEnemy.makeHealthBarNodes()
         container.addChild(bg)
         container.addChild(bar)
 
-        // Pulsing split animation
-        let pulse = SKAction.repeatForever(SKAction.sequence([
-            SKAction.scale(to: 1.1, duration: 0.4),
-            SKAction.scale(to: 0.95, duration: 0.4)
-        ]))
-        body.run(pulse)
+        // Seam glow pulse (alpha 0.60 → 1.00)
+        seam.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.60, duration: 0.4),
+            SKAction.fadeAlpha(to: 1.00, duration: 0.4)
+        ])))
 
         return container
     }

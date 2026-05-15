@@ -25,65 +25,48 @@ final class NovaTower: Tower {
         let container = SKNode()
         container.position = position
 
-        // Base
-        let base = SKShapeNode(rectOf: CGSize(width: 40, height: 8), cornerRadius: 3)
-        base.fillColor = SKColor(red: 0.18, green: 0.16, blue: 0.06, alpha: 1)
-        base.strokeColor = SKColor(red: 1.0, green: 0.95, blue: 0.5, alpha: 0.6)
-        base.lineWidth = 1.5
-        base.position = CGPoint(x: 0, y: -12)
-        container.addChild(base)
+        // Floor shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -14)
+        container.addChild(shadow)
 
-        // Body — wide stellar shape
-        let body = SKShapeNode(circleOfRadius: 15)
-        body.fillColor = SKColor(red: 0.15, green: 0.13, blue: 0.04, alpha: 1)
-        body.strokeColor = SKColor(red: 1.0, green: 0.95, blue: 0.5, alpha: 1)
-        body.lineWidth = 2.5
+        // 6-pointed star body (Star of David geometry, outer radius 14, inner radius 7)
+        let starPath = CGMutablePath()
+        for i in 0..<12 {
+            let angle = CGFloat(i) * (.pi / 6) - (.pi / 2)
+            let r: CGFloat = i.isMultiple(of: 2) ? 14 : 7
+            let pt = CGPoint(x: cos(angle) * r, y: sin(angle) * r)
+            i == 0 ? starPath.move(to: pt) : starPath.addLine(to: pt)
+        }
+        starPath.closeSubpath()
+        let body = SKShapeNode(path: starPath)
+        body.fillColor = SKColor(red: 0.18, green: 0.14, blue: 0.00, alpha: 1.0)
+        body.strokeColor = SKColor(red: 1.00, green: 0.82, blue: 0.10, alpha: 1.0)
+        body.lineWidth = 1.5
         container.addChild(body)
 
-        // Stellar core
-        let core = SKShapeNode(circleOfRadius: 7)
-        core.fillColor = SKColor(red: 1.0, green: 0.95, blue: 0.5, alpha: 1)
-        core.strokeColor = SKColor.white
-        core.lineWidth = 1
-        container.addChild(core)
+        // Center core lens
+        let coreLens = SKShapeNode(circleOfRadius: 4)
+        coreLens.fillColor = SKColor(red: 1.00, green: 0.82, blue: 0.10, alpha: 0.60)
+        coreLens.strokeColor = SKColor(red: 1.00, green: 0.82, blue: 0.10, alpha: 1.0)
+        coreLens.lineWidth = 1.0
+        container.addChild(coreLens)
 
-        // Star rays (8 directions)
-        let rayAngles: [CGFloat] = [
-            0,
-            CGFloat.pi / 4,
-            CGFloat.pi / 2,
-            3 * CGFloat.pi / 4,
-            CGFloat.pi,
-            5 * CGFloat.pi / 4,
-            3 * CGFloat.pi / 2,
-            7 * CGFloat.pi / 4
-        ]
-        for angle in rayAngles {
-            let ray = SKShapeNode(rectOf: CGSize(width: 2, height: 10), cornerRadius: 1)
-            ray.fillColor = SKColor(red: 1.0, green: 0.95, blue: 0.5, alpha: 0.7)
-            ray.strokeColor = SKColor.clear
-            ray.position = CGPoint(x: cos(angle) * 13, y: sin(angle) * 13)
-            ray.zRotation = angle
-            container.addChild(ray)
-        }
+        // Star slow rotation + core lens pulse
+        body.run(SKAction.repeatForever(SKAction.rotate(byAngle: .pi * 2, duration: 8.0)))
+        coreLens.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.scale(to: 1.1, duration: 0.5),
+            SKAction.scale(to: 0.9, duration: 0.5)
+        ])))
 
-        // Outer corona
-        let corona = SKShapeNode(circleOfRadius: 20)
-        corona.fillColor = SKColor.clear
-        corona.strokeColor = SKColor(red: 1.0, green: 0.95, blue: 0.5, alpha: 0.2)
-        corona.lineWidth = 3
-        container.addChild(corona)
-
-        // Slow pulse (charging up)
-        let slowPulse = SKAction.repeatForever(SKAction.sequence([
-            SKAction.fadeAlpha(to: 0.1, duration: 1.2),
-            SKAction.fadeAlpha(to: 0.6, duration: 1.2)
-        ]))
-        corona.run(slowPulse)
-
-        // Core rotation
-        let rotate = SKAction.repeatForever(SKAction.rotate(byAngle: .pi * 2, duration: 3.0))
-        core.run(rotate)
+        // Barrel (pointing up, slightly tapered)
+        let barrel = SKShapeNode(rectOf: CGSize(width: 5, height: 10), cornerRadius: 1)
+        barrel.fillColor = SKColor(red: 1.00, green: 0.82, blue: 0.10, alpha: 1.0)
+        barrel.strokeColor = .clear
+        barrel.position = CGPoint(x: 0, y: 16)
+        container.addChild(barrel)
 
         return container
     }

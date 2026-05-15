@@ -29,11 +29,33 @@ final class SwarmEnemy: EnemyNode {
         let container = SKNode()
         container.zPosition = 4
 
-        let body = SKShapeNode(circleOfRadius: 7)
-        body.fillColor = SKColor(red: 1.0, green: 0.75, blue: 0.0, alpha: 1)
-        body.strokeColor = SKColor(red: 1.0, green: 0.5, blue: 0.0, alpha: 1)
-        body.lineWidth = 1.5
+        // Small irregular hexagon (bug-body: 8×10)
+        let hexPath = CGMutablePath()
+        let hw: CGFloat = 4, hh: CGFloat = 5
+        hexPath.move(to: CGPoint(x: 0, y: hh))
+        hexPath.addLine(to: CGPoint(x: hw, y: hh/2))
+        hexPath.addLine(to: CGPoint(x: hw, y: -hh/2))
+        hexPath.addLine(to: CGPoint(x: 0, y: -hh))
+        hexPath.addLine(to: CGPoint(x: -hw, y: -hh/2))
+        hexPath.addLine(to: CGPoint(x: -hw, y: hh/2))
+        hexPath.closeSubpath()
+        let body = SKShapeNode(path: hexPath)
+        body.fillColor = SKColor(red: 0.25, green: 0.22, blue: 0.00, alpha: 1.0)
+        body.strokeColor = SKColor(red: 1.00, green: 0.88, blue: 0.10, alpha: 1.0)
+        body.lineWidth = 1.0
         container.addChild(body)
+
+        // 2 antennae
+        for side: CGFloat in [-1, 1] {
+            let antPath = CGMutablePath()
+            antPath.move(to: CGPoint(x: side * 2, y: hh))
+            antPath.addLine(to: CGPoint(x: side * 4, y: hh + 5))
+            let ant = SKShapeNode(path: antPath)
+            ant.strokeColor = SKColor(red: 1.00, green: 0.88, blue: 0.10, alpha: 0.70)
+            ant.lineWidth = 0.75
+            ant.lineCap = .round
+            container.addChild(ant)
+        }
 
         // Tiny health bar
         let bgPath = CGMutablePath()
@@ -54,17 +76,12 @@ final class SwarmEnemy: EnemyNode {
         bar.position = CGPoint(x: 0, y: 14)
         container.addChild(bar)
 
-        // Override refreshHealthBar for narrower bar — handled generically by protocol extension
-        // (uses "healthBar" node name, scales to 20pt instead of 32pt via direct path manipulation)
-
-        // Erratic dash animation on body
-        let randomDx1 = CGFloat.random(in: -3...3)
-        let randomDy1 = CGFloat.random(in: -3...3)
-        let randomDx2 = CGFloat.random(in: -3...3)
-        let randomDy2 = CGFloat.random(in: -3...3)
+        // Chaotic wobble animation
+        let wobbleDuration = Double.random(in: 0.2...0.3)
+        let wobbleDeg = CGFloat.random(in: 4...6) * .pi / 180
         let dash = SKAction.repeatForever(SKAction.sequence([
-            SKAction.moveBy(x: randomDx1, y: randomDy1, duration: 0.1),
-            SKAction.moveBy(x: randomDx2, y: randomDy2, duration: 0.1)
+            SKAction.rotate(byAngle: wobbleDeg, duration: wobbleDuration),
+            SKAction.rotate(byAngle: -wobbleDeg, duration: wobbleDuration)
         ]))
         body.run(dash)
 

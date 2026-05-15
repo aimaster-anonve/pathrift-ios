@@ -22,50 +22,59 @@ final class CoreTower: Tower {
         let container = SKNode()
         container.position = position
 
-        // Base
-        let base = SKShapeNode(rectOf: CGSize(width: 36, height: 8), cornerRadius: 3)
-        base.fillColor = SKColor(red: 0.20, green: 0.08, blue: 0.04, alpha: 1)
-        base.strokeColor = SKColor(red: 1.0, green: 0.27, blue: 0.0, alpha: 0.6)
-        base.lineWidth = 1.5
-        base.position = CGPoint(x: 0, y: -12)
-        container.addChild(base)
+        // Floor shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -14)
+        container.addChild(shadow)
 
-        // Heavy hex body
-        let body = SKShapeNode(rectOf: CGSize(width: 28, height: 28), cornerRadius: 6)
-        body.fillColor = SKColor(red: 0.18, green: 0.07, blue: 0.02, alpha: 1)
-        body.strokeColor = SKColor(red: 1.0, green: 0.27, blue: 0.0, alpha: 1)
-        body.lineWidth = 2.5
+        // Square body 26×26, sharp corners
+        let body = SKShapeNode(rectOf: CGSize(width: 26, height: 26))
+        body.fillColor = SKColor(red: 0.18, green: 0.05, blue: 0.00, alpha: 1.0)
+        body.strokeColor = SKColor(red: 1.00, green: 0.35, blue: 0.05, alpha: 1.0)
+        body.lineWidth = 2.0
         container.addChild(body)
 
-        // Core ember
-        let ember = SKShapeNode(circleOfRadius: 7)
-        ember.fillColor = SKColor(red: 1.0, green: 0.27, blue: 0.0, alpha: 1)
-        ember.strokeColor = SKColor.clear
-        container.addChild(ember)
+        // Thin diagonal cross (inner detail)
+        for angle in [CGFloat.pi / 4, -CGFloat.pi / 4] {
+            let cross = SKShapeNode()
+            let crossPath = CGMutablePath()
+            crossPath.move(to: CGPoint(x: cos(angle) * -11, y: sin(angle) * -11))
+            crossPath.addLine(to: CGPoint(x: cos(angle) * 11, y: sin(angle) * 11))
+            cross.path = crossPath
+            cross.strokeColor = SKColor(red: 1.00, green: 0.35, blue: 0.05, alpha: 0.30)
+            cross.lineWidth = 0.75
+            container.addChild(cross)
+        }
 
-        // Ring
-        let ring = SKShapeNode(circleOfRadius: 16)
-        ring.fillColor = SKColor.clear
-        ring.strokeColor = SKColor(red: 1.0, green: 0.27, blue: 0.0, alpha: 0.3)
-        ring.lineWidth = 2
-        container.addChild(ring)
+        // 4 corner rivet circles (4pt inset from corners)
+        let rivetPositions: [CGPoint] = [
+            CGPoint(x: -9, y: 9), CGPoint(x: 9, y: 9),
+            CGPoint(x: -9, y: -9), CGPoint(x: 9, y: -9)
+        ]
+        for (i, rPos) in rivetPositions.enumerated() {
+            let rivet = SKShapeNode(circleOfRadius: 2.5)
+            rivet.fillColor = SKColor(red: 0.90, green: 0.28, blue: 0.04, alpha: 1.0)
+            rivet.strokeColor = SKColor(red: 1.00, green: 0.35, blue: 0.05, alpha: 1.0)
+            rivet.lineWidth = 1.0
+            rivet.position = rPos
+            container.addChild(rivet)
+            // Staggered pulse
+            let delay = Double(i) * 0.3
+            rivet.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.wait(forDuration: delay),
+                SKAction.fadeAlpha(to: 0.70, duration: 0.4),
+                SKAction.fadeAlpha(to: 1.00, duration: 0.4)
+            ])))
+        }
 
-        // Armor-piercing drill tip
-        let drill = SKShapeNode(rectOf: CGSize(width: 6, height: 16), cornerRadius: 3)
-        drill.fillColor = SKColor(red: 1.0, green: 0.5, blue: 0.2, alpha: 1)
-        drill.strokeColor = SKColor.clear
-        drill.position = CGPoint(x: 0, y: 18)
-        container.addChild(drill)
-
-        // Spin animation on ember
-        let spin = SKAction.repeatForever(SKAction.rotate(byAngle: .pi * 2, duration: 2.0))
-        ember.run(spin)
-
-        let pulse = SKAction.repeatForever(SKAction.sequence([
-            SKAction.fadeAlpha(to: 0.15, duration: 0.6),
-            SKAction.fadeAlpha(to: 0.5, duration: 0.6)
-        ]))
-        ring.run(pulse)
+        // Wide barrel
+        let barrel = SKShapeNode(rectOf: CGSize(width: 7, height: 10), cornerRadius: 1)
+        barrel.fillColor = SKColor(red: 1.00, green: 0.35, blue: 0.05, alpha: 1.0)
+        barrel.strokeColor = .clear
+        barrel.position = CGPoint(x: 0, y: 16)
+        container.addChild(barrel)
 
         return container
     }

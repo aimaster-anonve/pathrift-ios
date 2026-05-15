@@ -5,10 +5,19 @@ enum EconomyConstants {
     static let startingLives: Int = 5         // more forgiving for new players
 
     static func goldRewardForWave(_ wave: Int) -> Int {
-        // Less passive income at higher waves — spending more keeps engagement up
+        // Tighter income curve — cap reduced from 135 to 115 to restore economic tension
         let base = 55
-        let waveBonus = min(wave * 4, 80)    // capped so gold doesn't balloon endlessly
+        let waveBonus = min(wave * 3, 60)   // was min(wave*4, 80); new cap: 115 at wave 20+
         return base + waveBonus
+    }
+
+    static func killGoldMultiplier(forCycle cycle: Int) -> Double {
+        switch cycle {
+        case 0, 1: return 1.00   // Cycle 1: full reward
+        case 2:    return 0.85   // Cycle 2 (wave 19+): -15%
+        case 3:    return 0.75   // Cycle 3 (wave 28+): -25%
+        default:   return 0.65   // Cycle 4+ (wave 37+): -35%
+        }
     }
 
     enum TowerCost {
@@ -23,8 +32,10 @@ enum EconomyConstants {
     }
 
     enum EnemyGoldReward {
-        static let runner: Int = 6
-        static let tank: Int   = 18
+        static let runner: Int  = 6
+        static let tank: Int    = 18
+        static let healer: Int  = 14
+        static let phantom: Int = 10
     }
 
     enum TowerSellRefund {

@@ -22,66 +22,61 @@ final class InfernoTower: Tower {
         let container = SKNode()
         container.position = position
 
-        // Base
-        let base = SKShapeNode(rectOf: CGSize(width: 36, height: 8), cornerRadius: 3)
-        base.fillColor = SKColor(red: 0.22, green: 0.04, blue: 0.02, alpha: 1)
-        base.strokeColor = SKColor(red: 1.0, green: 0.15, blue: 0.0, alpha: 0.7)
-        base.lineWidth = 1.5
-        base.position = CGPoint(x: 0, y: -12)
-        container.addChild(base)
+        // Floor shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -14)
+        container.addChild(shadow)
 
-        // Body — angular fire shape
-        let body = SKShapeNode(circleOfRadius: 13)
-        body.fillColor = SKColor(red: 0.20, green: 0.04, blue: 0.02, alpha: 1)
-        body.strokeColor = SKColor(red: 1.0, green: 0.15, blue: 0.0, alpha: 1)
-        body.lineWidth = 2
+        // Irregular pentagon body (asymmetric, left-lean flame silhouette)
+        let pentPath = CGMutablePath()
+        pentPath.move(to: CGPoint(x: 0, y: 14))
+        pentPath.addLine(to: CGPoint(x: 12, y: 4))
+        pentPath.addLine(to: CGPoint(x: 10, y: -14))
+        pentPath.addLine(to: CGPoint(x: -11, y: -14))
+        pentPath.addLine(to: CGPoint(x: -13, y: 5))
+        pentPath.closeSubpath()
+        let body = SKShapeNode(path: pentPath)
+        body.fillColor = SKColor(red: 0.20, green: 0.03, blue: 0.00, alpha: 1.0)
+        body.strokeColor = SKColor(red: 1.00, green: 0.18, blue: 0.08, alpha: 1.0)
+        body.lineWidth = 1.75
         container.addChild(body)
 
-        // Inferno core
-        let core = SKShapeNode(circleOfRadius: 6)
-        core.fillColor = SKColor(red: 1.0, green: 0.15, blue: 0.0, alpha: 1)
-        core.strokeColor = SKColor.clear
-        container.addChild(core)
-
-        // Flame spikes
-        let spikeParams: [(CGFloat, CGFloat)] = [
-            (0, 14),
-            (CGFloat.pi / 3, 10),
-            (2 * CGFloat.pi / 3, 12),
-            (CGFloat.pi, 14),
-            (4 * CGFloat.pi / 3, 10),
-            (5 * CGFloat.pi / 3, 12)
-        ]
-        for (angle, height) in spikeParams {
-            let spike = SKShapeNode(rectOf: CGSize(width: 2.5, height: height), cornerRadius: 1)
-            spike.fillColor = SKColor(red: 1.0, green: 0.35, blue: 0.0, alpha: 0.85)
-            spike.strokeColor = SKColor.clear
-            spike.position = CGPoint(x: cos(angle) * 10, y: sin(angle) * 10)
-            spike.zRotation = angle
-            container.addChild(spike)
+        // 3 upward flame tip triangles on top edge
+        let flameTips: [(CGFloat, CGFloat, CGFloat)] = [(-6, 14, 6), (0, 18, 5), (6, 14, 6)]
+        for (i, (fx, fy, fh)) in flameTips.enumerated() {
+            let flamePath = CGMutablePath()
+            flamePath.move(to: CGPoint(x: fx, y: fy + fh))
+            flamePath.addLine(to: CGPoint(x: fx - 2, y: fy))
+            flamePath.addLine(to: CGPoint(x: fx + 2, y: fy))
+            flamePath.closeSubpath()
+            let flame = SKShapeNode(path: flamePath)
+            flame.fillColor = SKColor(red: 1.00, green: 0.55, blue: 0.10, alpha: 0.80)
+            flame.strokeColor = .clear
+            container.addChild(flame)
+            // Flicker animation per flame
+            let dur = Double.random(in: 0.2...0.5)
+            let offset = Double(i) * 0.15
+            flame.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.wait(forDuration: offset),
+                SKAction.group([
+                    SKAction.scale(to: 1.15, duration: dur),
+                    SKAction.fadeAlpha(to: 0.6, duration: dur)
+                ]),
+                SKAction.group([
+                    SKAction.scale(to: 0.9, duration: dur),
+                    SKAction.fadeAlpha(to: 1.0, duration: dur)
+                ])
+            ])))
         }
 
-        // Flicker
-        let flicker = SKAction.repeatForever(SKAction.sequence([
-            SKAction.scale(to: 1.15, duration: 0.08),
-            SKAction.scale(to: 0.9, duration: 0.08),
-            SKAction.scale(to: 1.05, duration: 0.06),
-            SKAction.scale(to: 1.0, duration: 0.08)
-        ]))
-        core.run(flicker)
-
-        // Glow
-        let glow = SKShapeNode(circleOfRadius: 16)
-        glow.fillColor = SKColor.clear
-        glow.strokeColor = SKColor(red: 1.0, green: 0.15, blue: 0.0, alpha: 0.3)
-        glow.lineWidth = 2
-        container.addChild(glow)
-
-        let pulseGlow = SKAction.repeatForever(SKAction.sequence([
-            SKAction.fadeAlpha(to: 0.1, duration: 0.2),
-            SKAction.fadeAlpha(to: 0.55, duration: 0.2)
-        ]))
-        glow.run(pulseGlow)
+        // Barrel (pointing up)
+        let barrel = SKShapeNode(rectOf: CGSize(width: 5, height: 11), cornerRadius: 1)
+        barrel.fillColor = SKColor(red: 1.00, green: 0.18, blue: 0.08, alpha: 1.0)
+        barrel.strokeColor = .clear
+        barrel.position = CGPoint(x: 0, y: 16)
+        container.addChild(barrel)
 
         return container
     }

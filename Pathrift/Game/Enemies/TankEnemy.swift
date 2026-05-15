@@ -29,60 +29,65 @@ final class TankEnemy: EnemyNode {
         let container = SKNode()
         container.zPosition = 4
 
-        // Treads (bottom rectangles)
-        for xOff: CGFloat in [-14, 14] {
-            let tread = SKShapeNode(rectOf: CGSize(width: 8, height: 24), cornerRadius: 3)
-            tread.fillColor = SKColor(red: 0.3, green: 0.15, blue: 0.1, alpha: 1)
-            tread.strokeColor = SKColor(red: 0.5, green: 0.25, blue: 0.15, alpha: 0.8)
-            tread.lineWidth = 1
-            tread.position = CGPoint(x: xOff, y: 0)
-            container.addChild(tread)
+        // Shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 22, height: 8))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.30)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -12)
+        container.addChild(shadow)
+
+        // Heavy chamfered square body (20×20, corner cut 3)
+        let chamPath = CGMutablePath()
+        let s: CGFloat = 10, c: CGFloat = 3
+        chamPath.move(to: CGPoint(x: -s + c, y: s))
+        chamPath.addLine(to: CGPoint(x: s - c, y: s))
+        chamPath.addLine(to: CGPoint(x: s, y: s - c))
+        chamPath.addLine(to: CGPoint(x: s, y: -s + c))
+        chamPath.addLine(to: CGPoint(x: s - c, y: -s))
+        chamPath.addLine(to: CGPoint(x: -s + c, y: -s))
+        chamPath.addLine(to: CGPoint(x: -s, y: -s + c))
+        chamPath.addLine(to: CGPoint(x: -s, y: s - c))
+        chamPath.closeSubpath()
+        let body = SKShapeNode(path: chamPath)
+        body.fillColor = SKColor(red: 0.20, green: 0.18, blue: 0.14, alpha: 1.0)
+        body.strokeColor = SKColor(red: 0.50, green: 0.45, blue: 0.35, alpha: 1.0)
+        body.lineWidth = 2.0
+        container.addChild(body)
+
+        // 2 armor plate seam lines (horizontal)
+        for yOff: CGFloat in [3, -3] {
+            let seam = SKShapeNode(rectOf: CGSize(width: 16, height: 0.75))
+            seam.fillColor = SKColor(red: 0.55, green: 0.50, blue: 0.40, alpha: 0.60)
+            seam.strokeColor = .clear
+            seam.position = CGPoint(x: 0, y: yOff)
+            container.addChild(seam)
         }
 
-        // Hull
-        let hull = SKShapeNode(rectOf: CGSize(width: 24, height: 20), cornerRadius: 3)
-        hull.fillColor = SKColor(red: 0.55, green: 0.1, blue: 0.08, alpha: 1)
-        hull.strokeColor = SKColor(red: 0.9, green: 0.2, blue: 0.15, alpha: 1)
-        hull.lineWidth = 2
-        hull.position = CGPoint(x: 0, y: 2)
-        container.addChild(hull)
+        // 4 rivet dots at corners
+        let rivetPos: [CGPoint] = [
+            CGPoint(x: -7, y: 7), CGPoint(x: 7, y: 7),
+            CGPoint(x: -7, y: -7), CGPoint(x: 7, y: -7)
+        ]
+        for rp in rivetPos {
+            let rivet = SKShapeNode(circleOfRadius: 1.5)
+            rivet.fillColor = SKColor(red: 0.50, green: 0.45, blue: 0.35, alpha: 1.0)
+            rivet.strokeColor = .clear
+            rivet.position = rp
+            container.addChild(rivet)
+        }
 
-        // Turret dome
-        let turret = SKShapeNode(circleOfRadius: 9)
-        turret.fillColor = SKColor(red: 0.45, green: 0.08, blue: 0.06, alpha: 1)
-        turret.strokeColor = SKColor(red: 1.0, green: 0.25, blue: 0.2, alpha: 0.9)
-        turret.lineWidth = 1.5
-        turret.position = CGPoint(x: 0, y: 6)
-        container.addChild(turret)
-
-        // Cannon barrel
-        let cannon = SKShapeNode(rectOf: CGSize(width: 5, height: 14), cornerRadius: 2)
-        cannon.fillColor = SKColor(red: 0.35, green: 0.35, blue: 0.35, alpha: 1)
-        cannon.strokeColor = SKColor.clear
-        cannon.position = CGPoint(x: 0, y: 18)
-        container.addChild(cannon)
-
-        // Armor glow
-        let armorGlow = SKShapeNode(rectOf: CGSize(width: 28, height: 22), cornerRadius: 4)
-        armorGlow.fillColor = SKColor.clear
-        armorGlow.strokeColor = SKColor(red: 1.0, green: 0.3, blue: 0.2, alpha: 0.3)
-        armorGlow.lineWidth = 1.5
-        armorGlow.position = CGPoint(x: 0, y: 2)
-        container.addChild(armorGlow)
-
-        // Health bar (positioned higher for tall tank)
+        // Health bar (positioned higher)
         let (bg, bar) = TankEnemy.makeHealthBarNodes()
-        bg.position = CGPoint(x: 0, y: 32)
-        bar.position = CGPoint(x: 0, y: 32)
+        bg.position = CGPoint(x: 0, y: 24)
+        bar.position = CGPoint(x: 0, y: 24)
         container.addChild(bg)
         container.addChild(bar)
 
-        // Slow rumble
-        let rumble = SKAction.repeatForever(SKAction.sequence([
-            SKAction.moveBy(x: 1.5, y: 0, duration: 0.12),
-            SKAction.moveBy(x: -1.5, y: 0, duration: 0.12)
-        ]))
-        container.run(rumble)
+        // Heavy footstep Y offset ±1
+        container.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.moveBy(x: 0, y: 1, duration: 0.5),
+            SKAction.moveBy(x: 0, y: -1, duration: 0.5)
+        ])))
 
         return container
     }

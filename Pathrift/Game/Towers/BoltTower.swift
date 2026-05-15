@@ -22,47 +22,55 @@ final class BoltTower: Tower {
         let container = SKNode()
         container.position = position
 
-        // Base platform
-        let base = SKShapeNode(rectOf: CGSize(width: 36, height: 8), cornerRadius: 3)
-        base.fillColor = SKColor(red: 0.15, green: 0.15, blue: 0.25, alpha: 1)
-        base.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.6)
-        base.lineWidth = 1.5
-        base.position = CGPoint(x: 0, y: -12)
-        container.addChild(base)
+        // Floor shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -14)
+        container.addChild(shadow)
 
-        // Tower body (hexagon-ish using circle)
-        let body = SKShapeNode(circleOfRadius: 14)
-        body.fillColor = SKColor(red: 0.06, green: 0.18, blue: 0.35, alpha: 1)
-        body.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 1)
-        body.lineWidth = 2
+        // Hexagon body (flat-top, radius 14)
+        let hexPath = CGMutablePath()
+        for i in 0..<6 {
+            let a = CGFloat(i) * (.pi / 3)
+            let pt = CGPoint(x: cos(a) * 14, y: sin(a) * 14)
+            i == 0 ? hexPath.move(to: pt) : hexPath.addLine(to: pt)
+        }
+        hexPath.closeSubpath()
+        let body = SKShapeNode(path: hexPath)
+        body.fillColor = SKColor(red: 0.00, green: 0.12, blue: 0.22, alpha: 1.0)
+        body.strokeColor = SKColor(red: 0.00, green: 0.78, blue: 1.00, alpha: 1.0)
+        body.lineWidth = 1.5
         container.addChild(body)
 
-        // Glowing core
-        let core = SKShapeNode(circleOfRadius: 5)
-        core.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 1)
-        core.strokeColor = SKColor.clear
-        container.addChild(core)
+        // Circuit trace lines on hex faces (3 diagonals)
+        let traceAngles: [CGFloat] = [.pi/6, .pi/2, 5 * .pi/6]
+        for angle in traceAngles {
+            let trace = SKShapeNode()
+            let tracePath = CGMutablePath()
+            tracePath.move(to: CGPoint(x: cos(angle) * -10, y: sin(angle) * -10))
+            tracePath.addLine(to: CGPoint(x: cos(angle) * 10, y: sin(angle) * 10))
+            trace.path = tracePath
+            trace.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.6)
+            trace.lineWidth = 0.75
+            trace.lineCap = .round
+            container.addChild(trace)
+            // Flicker animation
+            let delay = Double.random(in: 0...0.5)
+            let duration = Double.random(in: 0.3...0.7)
+            trace.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.wait(forDuration: delay),
+                SKAction.fadeAlpha(to: 0.4, duration: duration),
+                SKAction.fadeAlpha(to: 0.9, duration: duration)
+            ])))
+        }
 
-        // Outer glow ring
-        let glow = SKShapeNode(circleOfRadius: 16)
-        glow.fillColor = SKColor.clear
-        glow.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.3)
-        glow.lineWidth = 2
-        container.addChild(glow)
-
-        // Barrel
-        let barrel = SKShapeNode(rectOf: CGSize(width: 4, height: 16), cornerRadius: 2)
-        barrel.fillColor = SKColor(red: 0.7, green: 0.9, blue: 1.0, alpha: 1)
-        barrel.strokeColor = SKColor.clear
-        barrel.position = CGPoint(x: 0, y: 14)
+        // Barrel (pointing up, +Y)
+        let barrel = SKShapeNode(rectOf: CGSize(width: 5, height: 11), cornerRadius: 2)
+        barrel.fillColor = SKColor(red: 0.00, green: 0.78, blue: 1.00, alpha: 1.0)
+        barrel.strokeColor = .clear
+        barrel.position = CGPoint(x: 0, y: 16)
         container.addChild(barrel)
-
-        // Pulse animation on glow
-        let pulse = SKAction.repeatForever(SKAction.sequence([
-            SKAction.fadeAlpha(to: 0.15, duration: 0.8),
-            SKAction.fadeAlpha(to: 0.5, duration: 0.8)
-        ]))
-        glow.run(pulse)
 
         return container
     }

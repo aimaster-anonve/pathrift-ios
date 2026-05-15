@@ -17,6 +17,12 @@ final class BossEnemy: EnemyNode {
     let node: SKNode
     let bossVariant: Int  // 0-4, cycles through 5 distinct bosses
 
+    // MARK: - Boss Special Ability State
+    var abilityTriggered: Bool = false
+    var shellActive: Bool = false
+    var shellTimer: TimeInterval = 0
+    var gravityWellTimer: TimeInterval = 0
+
     init(waveNumber: Int) {
         let bossIndex = (waveNumber / 10 - 1) % 5   // cycles through 5 variants
         let cycle = waveNumber / 50                   // HP boost every 50 waves
@@ -248,5 +254,86 @@ final class BossEnemy: EnemyNode {
         }
 
         return container
+    }
+
+    // MARK: - Shell Mode Damage Override (variant 1 — Iron Colossus)
+    func applyDamage(_ rawAmount: CGFloat) {
+        guard !shellActive else { return }   // no damage during shell
+        let reducedDamage = rawAmount * (1.0 - armor)
+        currentHP = max(0, currentHP - reducedDamage)
+        refreshHealthBar()
+        if isDead {
+            spawnDeathParticles()
+            node.removeFromParent()
+        }
+    }
+
+    // MARK: - Boss Special Ability Tick
+    func tickAbility(currentTime: TimeInterval, scene: GameScene) {
+        let hpRatio = currentHP / maxHP
+        switch bossVariant {
+        case 0: // Rift Guardian — Rift Pulse: 60% attack speed debuff for 4s at 50% HP
+            if !abilityTriggered && hpRatio <= 0.5 {
+                abilityTriggered = true
+                // Telegraph: flash all towers purple
+                for tower in scene.activeTowers {
+                    let flash = SKAction.sequence([
+                        SKAction.colorize(with: SKColor(red: 0.55, green: 0.0, blue: 1.0, alpha: 1), colorBlendFactor: 0.8, duration: 0.1),
+                        SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.1),
+                        SKAction.colorize(with: SKColor(red: 0.55, green: 0.0, blue: 1.0, alpha: 1), colorBlendFactor: 0.8, duration: 0.1),
+                        SKAction.colorize(withColorBlendFactor: 0.0, duration: 0.1)
+                    ])
+                    tower.node.run(flash)
+                }
+                scene.triggerRiftPulse(duration: 4.0)
+            }
+        case 1: // Iron Colossus — Shell Mode: 2s immunity every 8s cycle after 50% HP
+            if !abilityTriggered && hpRatio <= 0.5 {
+                abilityTriggered = true
+                shellTimer = currentTime
+            }
+            if abilityTriggered {
+                let elapsed = currentTime - shellTimer
+                let cyclePos = elapsed.truncatingRemainder(dividingBy: 8.0)
+                let wasShellActive = shellActive
+                shellActive = cyclePos < 2.0
+                // Update visual when shell state changes
+                if shellActive != wasShellActive {
+                    if let shape = node.children.first(where: { $0 is SKShapeNode }) as? SKShapeNode {
+                        shape.alpha = shellActive ? 0.5 : 1.0
+                    }
+                    node.alpha = shellActive ? 0.5 : 1.0
+                }
+            }
+        case 2: // Swarm Queen — Brood Burst: spawn 6 Swarms at 50% HP
+            if !abilityTriggered && hpRatio <= 0.5 {
+                abilityTriggered = true
+                // Telegraph: pulse egg sacs
+                let sacPulse = SKAction.repeat(SKAction.sequence([
+                    SKAction.scale(to: 1.4, duration: 0.1),
+                    SKAction.scale(to: 1.0, duration: 0.1)
+                ]), count: 3)
+                node.run(SKAction.sequence([
+                    sacPulse,
+                    SKAction.run { [weak self] in
+                        guard let self = self else { return }
+                        scene.spawnBroodBurst(at: self.pathProgress, count: 6)
+                    }
+                ]))
+            }
+        case 3: // Phase Runner — Overdrive: 2x speed + frost immunity for 5s at 50% HP
+            if !abilityTriggered && hpRatio <= 0.5 {
+                abilityTriggered = true
+                currentSpeed = baseSpeed * 2.0
+                scene.scheduleReset(for: self, after: 5.0)
+            }
+        case 4: // Void Titan — Gravity Well every 10s
+            if gravityWellTimer == 0 { gravityWellTimer = currentTime }
+            if currentTime - gravityWellTimer >= 10.0 {
+                gravityWellTimer = currentTime
+                scene.triggerGravityWell(duration: 2.0)
+            }
+        default: break
+        }
     }
 }

@@ -31,48 +31,54 @@ final class JumperEnemy: EnemyNode {
         let container = SKNode()
         container.zPosition = 4
 
-        // Teal body
-        let body = SKShapeNode(circleOfRadius: 14)
-        body.fillColor = SKColor(red: 0.0, green: 0.7, blue: 0.5, alpha: 1)
-        body.strokeColor = SKColor(red: 0.0, green: 0.9, blue: 0.6, alpha: 1)
-        body.lineWidth = 2
-        container.addChild(body)
+        // Shadow
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 18, height: 6))
+        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.30)
+        shadow.strokeColor = .clear
+        shadow.position = CGPoint(x: 0, y: -14)
+        container.addChild(shadow)
 
-        // Jump coil springs
-        for xOff: CGFloat in [-5, 5] {
-            let spring = SKShapeNode(rectOf: CGSize(width: 3, height: 10), cornerRadius: 1)
-            spring.fillColor = SKColor(red: 0.0, green: 0.9, blue: 0.6, alpha: 0.7)
-            spring.strokeColor = SKColor.clear
-            spring.position = CGPoint(x: xOff, y: -10)
+        // Coil spring legs (zigzag lines beneath circle)
+        for xOff: CGFloat in [-3, 3] {
+            let springPath = CGMutablePath()
+            springPath.move(to: CGPoint(x: xOff, y: -9))
+            springPath.addLine(to: CGPoint(x: xOff + 1.5, y: -11))
+            springPath.addLine(to: CGPoint(x: xOff - 1.5, y: -12.5))
+            springPath.addLine(to: CGPoint(x: xOff + 1.5, y: -14))
+            let spring = SKShapeNode(path: springPath)
+            spring.strokeColor = SKColor(red: 0.10, green: 0.80, blue: 0.85, alpha: 0.80)
+            spring.lineWidth = 1.0
+            spring.lineCap = .round
+            spring.name = "spring"
             container.addChild(spring)
         }
 
-        // Eyes — alert look
-        for xOff: CGFloat in [-4, 4] {
-            let eye = SKShapeNode(circleOfRadius: 3)
-            eye.fillColor = SKColor.white
-            eye.strokeColor = SKColor.clear
-            eye.position = CGPoint(x: xOff, y: 4)
-            container.addChild(eye)
+        // Teal circle body
+        let body = SKShapeNode(circleOfRadius: 9)
+        body.fillColor = SKColor(red: 0.00, green: 0.35, blue: 0.38, alpha: 1.0)
+        body.strokeColor = SKColor(red: 0.10, green: 0.80, blue: 0.85, alpha: 1.0)
+        body.lineWidth = 1.5
+        container.addChild(body)
 
-            let pupil = SKShapeNode(circleOfRadius: 1.5)
-            pupil.fillColor = SKColor(red: 0.0, green: 0.3, blue: 0.2, alpha: 1)
-            pupil.strokeColor = SKColor.clear
-            pupil.position = CGPoint(x: xOff, y: 4)
-            container.addChild(pupil)
-        }
+        // Jump charge ring
+        let chargeRing = SKShapeNode(circleOfRadius: 13)
+        chargeRing.fillColor = .clear
+        chargeRing.strokeColor = SKColor(red: 0.10, green: 0.80, blue: 0.85, alpha: 0.30)
+        chargeRing.lineWidth = 1.0
+        container.addChild(chargeRing)
 
         // Health bar
         let (bg, bar) = JumperEnemy.makeHealthBarNodes()
         container.addChild(bg)
         container.addChild(bar)
 
-        // Ready-to-jump subtle bounce
-        let bounce = SKAction.repeatForever(SKAction.sequence([
-            SKAction.moveBy(x: 0, y: 3, duration: 0.5),
-            SKAction.moveBy(x: 0, y: -3, duration: 0.5)
-        ]))
-        body.run(bounce)
+        // Spring compress/extend coiling animation
+        container.children.filter { $0.name == "spring" }.forEach { spring in
+            spring.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.scaleY(to: 0.7, duration: 0.3),
+                SKAction.scaleY(to: 1.3, duration: 0.2)
+            ])))
+        }
 
         return container
     }
@@ -85,9 +91,9 @@ final class JumperEnemy: EnemyNode {
 
         // Jump check
         let now = CACurrentMediaTime()
-        if now - lastJumpTime >= 3.0 {
+        if now - lastJumpTime >= 5.0 {
             lastJumpTime = now
-            pathProgress = min(1.0, pathProgress + 0.20)
+            pathProgress = min(1.0, pathProgress + 0.10)
 
             // Visual jump flash
             let flash = SKAction.sequence([

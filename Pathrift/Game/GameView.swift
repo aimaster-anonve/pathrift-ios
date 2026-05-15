@@ -13,6 +13,7 @@ struct GameView: View {
     @State private var selectedSlotId: Int? = nil
     @State private var showTowerMenu: Bool = false
     @State private var isPaused: Bool = false
+    @State private var showNextWaveInfo: Bool = false
 
     var body: some View {
         ZStack {
@@ -31,6 +32,9 @@ struct GameView: View {
                 onPause: {
                     isPaused = true
                     viewModel.scene.isPaused = true
+                },
+                onShowNextWaveInfo: {
+                    showNextWaveInfo = true
                 }
             )
 
@@ -73,6 +77,12 @@ struct GameView: View {
                     }
                 )
             }
+
+            // Next wave info panel overlay
+            NextWaveInfoPanel(
+                waveDef: viewModel.nextWaveDefinition,
+                isVisible: $showNextWaveInfo
+            )
 
             // Pause overlay
             if isPaused {
