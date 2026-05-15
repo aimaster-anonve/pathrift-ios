@@ -22,25 +22,33 @@ final class BoltTower: Tower {
         let container = SKNode()
         container.position = position
 
+        // Wide base platform (tabanlık — 40pt wide ellipse)
+        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 40, height: 12))
+        basePlat.fillColor = SKColor(red: 0.04, green: 0.08, blue: 0.14, alpha: 1.0)
+        basePlat.strokeColor = SKColor(red: 0.00, green: 0.78, blue: 1.00, alpha: 0.45)
+        basePlat.lineWidth = 1.5
+        basePlat.position = CGPoint(x: 0, y: -12)
+        container.addChild(basePlat)
+
         // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 40, height: 10))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -14)
+        shadow.position = CGPoint(x: 0, y: -17)
         container.addChild(shadow)
 
-        // Hexagon body (flat-top, radius 14)
+        // Hexagon body (flat-top, radius 16 — wider than before)
         let hexPath = CGMutablePath()
         for i in 0..<6 {
             let a = CGFloat(i) * (.pi / 3)
-            let pt = CGPoint(x: cos(a) * 14, y: sin(a) * 14)
+            let pt = CGPoint(x: cos(a) * 16, y: sin(a) * 16)
             i == 0 ? hexPath.move(to: pt) : hexPath.addLine(to: pt)
         }
         hexPath.closeSubpath()
         let body = SKShapeNode(path: hexPath)
         body.fillColor = SKColor(red: 0.00, green: 0.12, blue: 0.22, alpha: 1.0)
         body.strokeColor = SKColor(red: 0.00, green: 0.78, blue: 1.00, alpha: 1.0)
-        body.lineWidth = 1.5
+        body.lineWidth = 2.0
         container.addChild(body)
 
         // Circuit trace lines on hex faces (3 diagonals)
@@ -65,11 +73,22 @@ final class BoltTower: Tower {
             ])))
         }
 
-        // Barrel (pointing up, +Y)
+        // Glow ring (visible outer ring)
+        let glowRing = SKShapeNode(circleOfRadius: 18)
+        glowRing.fillColor = .clear
+        glowRing.strokeColor = SKColor(red: 0.00, green: 0.78, blue: 1.00, alpha: 0.30)
+        glowRing.lineWidth = 2.0
+        container.addChild(glowRing)
+        glowRing.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.12, duration: 1.0),
+            SKAction.fadeAlpha(to: 0.40, duration: 1.0)
+        ])))
+
+        // Barrel (pointing up, +Y) — adjusted for new body radius
         let barrel = SKShapeNode(rectOf: CGSize(width: 5, height: 11), cornerRadius: 2)
         barrel.fillColor = SKColor(red: 0.00, green: 0.78, blue: 1.00, alpha: 1.0)
         barrel.strokeColor = .clear
-        barrel.position = CGPoint(x: 0, y: 16)
+        barrel.position = CGPoint(x: 0, y: 18)
         container.addChild(barrel)
 
         return container

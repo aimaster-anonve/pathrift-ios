@@ -1,22 +1,21 @@
 import Foundation
 
 enum EconomyConstants {
-    static let startingGold: Int = 250       // 2 towers at game start
-    static let startingLives: Int = 5         // more forgiving for new players
+    static let startingGold: Int = 300        // was 250 — better early placement options
+    static let startingLives: Int = 8          // was 5 — more forgiving for new players
 
     static func goldRewardForWave(_ wave: Int) -> Int {
-        // Tighter income curve — cap reduced from 135 to 115 to restore economic tension
         let base = 55
-        let waveBonus = min(wave * 3, 60)   // was min(wave*4, 80); new cap: 115 at wave 20+
+        let waveBonus = min(wave * 3, 75)   // cap raised: 130 at wave 25+ (was 115 at wave 20+)
         return base + waveBonus
     }
 
     static func killGoldMultiplier(forCycle cycle: Int) -> Double {
         switch cycle {
-        case 0, 1: return 1.00   // Cycle 1: full reward
-        case 2:    return 0.85   // Cycle 2 (wave 19+): -15%
-        case 3:    return 0.75   // Cycle 3 (wave 28+): -25%
-        default:   return 0.65   // Cycle 4+ (wave 37+): -35%
+        case 0, 1: return 1.00
+        case 2:    return 0.90   // was 0.85
+        case 3:    return 0.82   // was 0.75
+        default:   return 0.72   // was 0.65
         }
     }
 

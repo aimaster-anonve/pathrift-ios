@@ -22,11 +22,19 @@ final class CoreTower: Tower {
         let container = SKNode()
         container.position = position
 
+        // Wide base platform (tabanlık — 40pt wide)
+        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 40, height: 12))
+        basePlat.fillColor = SKColor(red: 0.12, green: 0.03, blue: 0.00, alpha: 1.0)
+        basePlat.strokeColor = SKColor(red: 1.00, green: 0.35, blue: 0.05, alpha: 0.50)
+        basePlat.lineWidth = 1.5
+        basePlat.position = CGPoint(x: 0, y: -14)
+        container.addChild(basePlat)
+
         // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 40, height: 10))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -14)
+        shadow.position = CGPoint(x: 0, y: -18)
         container.addChild(shadow)
 
         // Square body 26×26, sharp corners

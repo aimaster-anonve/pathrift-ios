@@ -22,11 +22,19 @@ final class TeslaTower: Tower {
         let container = SKNode()
         container.position = position
 
+        // Wide base platform (tabanlık — 42pt wide, coil mounting plate)
+        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 42, height: 12))
+        basePlat.fillColor = SKColor(red: 0.01, green: 0.06, blue: 0.12, alpha: 1.0)
+        basePlat.strokeColor = SKColor(red: 0.20, green: 0.65, blue: 1.00, alpha: 0.50)
+        basePlat.lineWidth = 1.5
+        basePlat.position = CGPoint(x: 0, y: -14)
+        container.addChild(basePlat)
+
         // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 42, height: 10))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -14)
+        shadow.position = CGPoint(x: 0, y: -18)
         container.addChild(shadow)
 
         // Circle body radius 13

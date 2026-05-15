@@ -25,15 +25,23 @@ final class BlastTower: Tower {
         let container = SKNode()
         container.position = position
 
+        // Wide base platform (tabanlık — 40pt wide)
+        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 40, height: 12))
+        basePlat.fillColor = SKColor(red: 0.14, green: 0.05, blue: 0.00, alpha: 1.0)
+        basePlat.strokeColor = SKColor(red: 1.00, green: 0.45, blue: 0.00, alpha: 0.50)
+        basePlat.lineWidth = 1.5
+        basePlat.position = CGPoint(x: 0, y: -12)
+        container.addChild(basePlat)
+
         // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 40, height: 10))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -14)
+        shadow.position = CGPoint(x: 0, y: -17)
         container.addChild(shadow)
 
-        // Circle body
-        let body = SKShapeNode(circleOfRadius: 14)
+        // Circle body — radius 16 (was 14)
+        let body = SKShapeNode(circleOfRadius: 16)
         body.fillColor = SKColor(red: 0.20, green: 0.08, blue: 0.00, alpha: 1.0)
         body.strokeColor = SKColor(red: 1.00, green: 0.45, blue: 0.00, alpha: 1.0)
         body.lineWidth = 2.0
@@ -43,9 +51,9 @@ final class BlastTower: Tower {
         // Barrel points up (90°), so exhaust at 210°, 330°, and 90° excluded — use 210°, 330°, 30° (offset -30 from barrel)
         let exhaustAngles: [CGFloat] = [CGFloat.pi * 7 / 6, CGFloat.pi * 11 / 6, CGFloat.pi / 6]
         for angle in exhaustAngles {
-            let px = cos(angle) * 14
-            let py = sin(angle) * 14
-            let pipe = SKShapeNode(rectOf: CGSize(width: 5, height: 7), cornerRadius: 1)
+            let px = cos(angle) * 16
+            let py = sin(angle) * 16
+            let pipe = SKShapeNode(rectOf: CGSize(width: 6, height: 8), cornerRadius: 1)  // thicker pipes
             pipe.fillColor = SKColor(red: 0.15, green: 0.06, blue: 0.00, alpha: 1.0)
             pipe.strokeColor = SKColor(red: 1.00, green: 0.45, blue: 0.00, alpha: 1.0)
             pipe.lineWidth = 1.0
@@ -59,18 +67,18 @@ final class BlastTower: Tower {
             ])))
         }
 
-        // Barrel (flared tip trapezoid approximated as wider rect + tip)
+        // Barrel (flared tip trapezoid approximated as wider rect + tip) — adjusted for r=16
         let barrel = SKShapeNode(rectOf: CGSize(width: 6, height: 12), cornerRadius: 1)
         barrel.fillColor = SKColor(red: 1.00, green: 0.45, blue: 0.00, alpha: 1.0)
         barrel.strokeColor = .clear
-        barrel.position = CGPoint(x: 0, y: 17)
+        barrel.position = CGPoint(x: 0, y: 19)
         container.addChild(barrel)
 
         // Flared tip
         let tip = SKShapeNode(rectOf: CGSize(width: 10, height: 3))
         tip.fillColor = SKColor(red: 1.00, green: 0.45, blue: 0.00, alpha: 0.80)
         tip.strokeColor = .clear
-        tip.position = CGPoint(x: 0, y: 23)
+        tip.position = CGPoint(x: 0, y: 25)
         container.addChild(tip)
 
         return container

@@ -22,14 +22,22 @@ final class FrostTower: Tower {
         let container = SKNode()
         container.position = position
 
+        // Wide base platform (tabanlık — 40pt wide)
+        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 40, height: 12))
+        basePlat.fillColor = SKColor(red: 0.04, green: 0.01, blue: 0.10, alpha: 1.0)
+        basePlat.strokeColor = SKColor(red: 0.56, green: 0.18, blue: 1.00, alpha: 0.45)
+        basePlat.lineWidth = 1.5
+        basePlat.position = CGPoint(x: 0, y: -12)
+        container.addChild(basePlat)
+
         // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 40, height: 10))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -14)
+        shadow.position = CGPoint(x: 0, y: -17)
         container.addChild(shadow)
 
-        // Diamond body (rotated square 28×28)
+        // Diamond body (rotated square 28×28 — already 28pt wide, meets 20pt minimum)
         let diamPath = CGMutablePath()
         diamPath.move(to: CGPoint(x: 0, y: 14))
         diamPath.addLine(to: CGPoint(x: 14, y: 0))
@@ -42,14 +50,14 @@ final class FrostTower: Tower {
         body.lineWidth = 1.5
         container.addChild(body)
 
-        // 4 ice crystal spikes at diamond corners
+        // 4 ice crystal spikes at diamond corners (slightly larger for visibility)
         let tipCorners: [(CGFloat, CGFloat)] = [(0, 14), (14, 0), (0, -14), (-14, 0)]
         let tipAngles: [CGFloat] = [.pi/2, 0, -.pi/2, .pi]
         for (i, (cx, cy)) in tipCorners.enumerated() {
             let tipPath = CGMutablePath()
-            tipPath.move(to: CGPoint(x: 0, y: 6))
-            tipPath.addLine(to: CGPoint(x: -2, y: 0))
-            tipPath.addLine(to: CGPoint(x: 2, y: 0))
+            tipPath.move(to: CGPoint(x: 0, y: 8))
+            tipPath.addLine(to: CGPoint(x: -3, y: 0))
+            tipPath.addLine(to: CGPoint(x: 3, y: 0))
             tipPath.closeSubpath()
             let tip = SKShapeNode(path: tipPath)
             tip.fillColor = SKColor(red: 0.70, green: 0.85, blue: 1.00, alpha: 0.70)

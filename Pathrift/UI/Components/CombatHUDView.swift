@@ -190,13 +190,15 @@ struct CombatHUDView: View {
                     .font(.system(size: 24, weight: .black, design: .rounded))
                     .foregroundColor(.pathriftNeonBlue).monospacedDigit()
             }
-            // Next wave info button
+            // Next wave info button — filled icon, brighter color, larger tap target
             Button(action: { onShowNextWaveInfo?() }) {
-                Image(systemName: "info.circle")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(Color(red: 0, green: 0.78, blue: 1).opacity(0.75))
+                Image(systemName: "info.circle.fill")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(Color(red: 0, green: 0.78, blue: 1))
+                    .frame(width: 22, height: 22)
             }
             .buttonStyle(ScaleButtonStyle())
+            .padding(.leading, 6)
         }
     }
 

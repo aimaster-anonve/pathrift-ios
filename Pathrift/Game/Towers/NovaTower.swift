@@ -25,11 +25,19 @@ final class NovaTower: Tower {
         let container = SKNode()
         container.position = position
 
+        // Wide base platform (tabanlık — 42pt wide)
+        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 42, height: 12))
+        basePlat.fillColor = SKColor(red: 0.12, green: 0.10, blue: 0.00, alpha: 1.0)
+        basePlat.strokeColor = SKColor(red: 1.00, green: 0.82, blue: 0.10, alpha: 0.50)
+        basePlat.lineWidth = 1.5
+        basePlat.position = CGPoint(x: 0, y: -14)
+        container.addChild(basePlat)
+
         // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 42, height: 10))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -14)
+        shadow.position = CGPoint(x: 0, y: -18)
         container.addChild(shadow)
 
         // 6-pointed star body (Star of David geometry, outer radius 14, inner radius 7)

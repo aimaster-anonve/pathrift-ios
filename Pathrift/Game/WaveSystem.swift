@@ -155,12 +155,13 @@ final class WaveSystem {
         return WaveDefinition(waveNumber: waveNumber, spawns: scaledSpawns, spawnInterval: adjustedInterval)
     }
 
-    // Aggressive exponential HP scaling
+    // HP scaling — smoother early ramp, meaningful late-game challenge
     func hpScaleMultiplier(for waveNumber: Int) -> CGFloat {
         if waveNumber <= 5  { return 1.0 }
-        if waveNumber <= 10 { return 1.0 + CGFloat(waveNumber - 5) * 0.15 }
-        if waveNumber <= 20 { return 1.75 + CGFloat(waveNumber - 10) * 0.20 }
-        return 3.75 + CGFloat(waveNumber - 20) * 0.30
+        if waveNumber <= 10 { return 1.0 + CGFloat(waveNumber - 5) * 0.10 }  // 1.0→1.5 (was 0.15)
+        if waveNumber <= 20 { return 1.5 + CGFloat(waveNumber - 10) * 0.15 } // 1.5→3.0 (was 1.75+0.20)
+        if waveNumber <= 30 { return 3.0 + CGFloat(waveNumber - 20) * 0.20 } // 3.0→5.0 (new breakpoint)
+        return 5.0 + CGFloat(waveNumber - 30) * 0.25                          // 5.0+ (was 3.75+0.30 from 20)
     }
 
     func syncWave(_ waveNumber: Int) {

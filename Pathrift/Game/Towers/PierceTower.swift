@@ -22,24 +22,32 @@ final class PierceTower: Tower {
         let container = SKNode()
         container.position = position
 
+        // Wide base platform (tabanlık — 36pt wide)
+        let basePlat = SKShapeNode(ellipseOf: CGSize(width: 36, height: 12))
+        basePlat.fillColor = SKColor(red: 0.02, green: 0.10, blue: 0.01, alpha: 1.0)
+        basePlat.strokeColor = SKColor(red: 0.40, green: 1.00, blue: 0.10, alpha: 0.45)
+        basePlat.lineWidth = 1.5
+        basePlat.position = CGPoint(x: 0, y: -12)
+        container.addChild(basePlat)
+
         // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 36, height: 10))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -14)
+        shadow.position = CGPoint(x: 0, y: -16)
         container.addChild(shadow)
 
-        // Elongated octagon body (16×28pt)
+        // Elongated octagon body (16×26pt — height trimmed from 28 to 26 per spec)
         let cut: CGFloat = 5
         let octPath = CGMutablePath()
-        octPath.move(to: CGPoint(x: -8 + cut, y: 14))
-        octPath.addLine(to: CGPoint(x: 8 - cut, y: 14))
-        octPath.addLine(to: CGPoint(x: 8, y: 14 - cut))
-        octPath.addLine(to: CGPoint(x: 8, y: -14 + cut))
-        octPath.addLine(to: CGPoint(x: 8 - cut, y: -14))
-        octPath.addLine(to: CGPoint(x: -8 + cut, y: -14))
-        octPath.addLine(to: CGPoint(x: -8, y: -14 + cut))
-        octPath.addLine(to: CGPoint(x: -8, y: 14 - cut))
+        octPath.move(to: CGPoint(x: -8 + cut, y: 13))
+        octPath.addLine(to: CGPoint(x: 8 - cut, y: 13))
+        octPath.addLine(to: CGPoint(x: 8, y: 13 - cut))
+        octPath.addLine(to: CGPoint(x: 8, y: -13 + cut))
+        octPath.addLine(to: CGPoint(x: 8 - cut, y: -13))
+        octPath.addLine(to: CGPoint(x: -8 + cut, y: -13))
+        octPath.addLine(to: CGPoint(x: -8, y: -13 + cut))
+        octPath.addLine(to: CGPoint(x: -8, y: 13 - cut))
         octPath.closeSubpath()
         let body = SKShapeNode(path: octPath)
         body.fillColor = SKColor(red: 0.04, green: 0.14, blue: 0.02, alpha: 1.0)
@@ -57,11 +65,11 @@ final class PierceTower: Tower {
             container.addChild(reticle)
         }
 
-        // Barrel (notably longer)
+        // Barrel (notably longer) — adjusted for new body height
         let barrel = SKShapeNode(rectOf: CGSize(width: 4, height: 14), cornerRadius: 1)
         barrel.fillColor = SKColor(red: 0.40, green: 1.00, blue: 0.10, alpha: 1.0)
         barrel.strokeColor = .clear
-        barrel.position = CGPoint(x: 0, y: 19)
+        barrel.position = CGPoint(x: 0, y: 18)
         container.addChild(barrel)
 
         // Glow ring (unused placeholder kept for parity with old code path)

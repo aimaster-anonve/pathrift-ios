@@ -28,7 +28,7 @@ final class ArtilleryTower: Tower {
         let brass = SKColor(red: 0.75, green: 0.58, blue: 0.12, alpha: 1.0)
 
         // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 30, height: 10))
+        let shadow = SKShapeNode(ellipseOf: CGSize(width: 40, height: 10))
         shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
         shadow.strokeColor = .clear
         shadow.position = CGPoint(x: 0, y: -14)

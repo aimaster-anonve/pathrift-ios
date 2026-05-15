@@ -348,7 +348,7 @@ final class GameScene: SKScene {
             pathLayer.addChild(joint)
         }
 
-        // Second pass: draw bridge segments ON TOP (higher zPosition)
+        // Second pass: draw bridge segments — VERY DISTINCT from ground
         for i in 1..<waypoints.count {
             let from = waypoints[i-1]
             let to = waypoints[i]
@@ -359,69 +359,109 @@ final class GameScene: SKScene {
             let dy = to.y - from.y
             let len = sqrt(dx*dx + dy*dy)
             let angle = atan2(dy, dx)
+            let mid = CGPoint(x: (from.x+to.x)/2, y: (from.y+to.y)/2)
+            let perpX = -sin(angle)
+            let perpY =  cos(angle)
 
-            // Shadow under bridge
-            let shadow = SKShapeNode(rectOf: CGSize(width: len, height: thickness + 6), cornerRadius: 5)
-            shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.40)
+            // 1. Drop shadow (elevation illusion)
+            let shadow = SKShapeNode(rectOf: CGSize(width: len + 4, height: thickness + 8), cornerRadius: 6)
+            shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.55)
             shadow.strokeColor = .clear
-            shadow.position = CGPoint(x: (from.x+to.x)/2, y: (from.y+to.y)/2 - 3)
+            shadow.position = CGPoint(x: mid.x + 3, y: mid.y - 4)
             shadow.zRotation = angle
-            shadow.zPosition = 1.2
+            shadow.zPosition = 1.3
             pathLayer.addChild(shadow)
 
-            // Bridge surface — slightly lighter than ground path
-            let seg = SKShapeNode(rectOf: CGSize(width: len, height: thickness), cornerRadius: 5)
-            seg.fillColor = SKColor(red: 0.14, green: 0.14, blue: 0.22, alpha: 1.0)
-            seg.strokeColor = SKColor.clear
-            seg.position = CGPoint(x: (from.x+to.x)/2, y: (from.y+to.y)/2)
-            seg.zRotation = angle
-            seg.zPosition = 1.5  // ABOVE ground path
-            pathLayer.addChild(seg)
+            // 2. Bridge deck — WARM STONE color (clearly different from blue-black ground)
+            let deck = SKShapeNode(rectOf: CGSize(width: len, height: thickness), cornerRadius: 4)
+            deck.fillColor = SKColor(red: 0.22, green: 0.19, blue: 0.15, alpha: 1.0)  // warm stone/concrete
+            deck.strokeColor = .clear
+            deck.position = mid
+            deck.zRotation = angle
+            deck.zPosition = 1.6
+            pathLayer.addChild(deck)
 
-            // Bridge edge lines (stronger cyan than ground path)
+            // 3. Deck surface texture — parallel lines (plank effect)
+            for t: CGFloat in stride(from: -thickness/2 + 4, through: thickness/2 - 4, by: 5) {
+                let plankLine = SKShapeNode(rectOf: CGSize(width: len - 4, height: 1.0))
+                plankLine.fillColor = SKColor(red: 0.30, green: 0.26, blue: 0.20, alpha: 0.60)
+                plankLine.strokeColor = .clear
+                plankLine.position = CGPoint(x: mid.x + perpX * t, y: mid.y + perpY * t)
+                plankLine.zRotation = angle
+                plankLine.zPosition = 1.65
+                pathLayer.addChild(plankLine)
+            }
+
+            // 4. Orange/amber guard rails (HIGHLY VISIBLE)
+            let railColor = SKColor(red: 1.0, green: 0.55, blue: 0.0, alpha: 0.90)
             for railSide: CGFloat in [-1, 1] {
-                let rail = SKShapeNode(rectOf: CGSize(width: len, height: 2.0), cornerRadius: 1)
-                rail.fillColor = SKColor(red: 0.30, green: 0.30, blue: 0.45, alpha: 1.0)
+                let railOffset = (thickness / 2 - 1.5) * railSide
+                let rail = SKShapeNode(rectOf: CGSize(width: len, height: 3.0), cornerRadius: 1.5)
+                rail.fillColor = railColor
                 rail.strokeColor = .clear
-                let perpX = -sin(angle) * (thickness/2 - 2) * railSide
-                let perpY = cos(angle) * (thickness/2 - 2) * railSide
-                rail.position = CGPoint(x: (from.x+to.x)/2 + perpX, y: (from.y+to.y)/2 + perpY)
+                rail.position = CGPoint(x: mid.x + perpX * railOffset, y: mid.y + perpY * railOffset)
                 rail.zRotation = angle
-                rail.zPosition = 1.6
+                rail.zPosition = 1.7
                 pathLayer.addChild(rail)
             }
 
-            // Bridge edge glow lines
-            for railSide: CGFloat in [-1, 1] {
-                let edgeGlow = SKShapeNode(rectOf: CGSize(width: len, height: 1.0))
-                edgeGlow.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.55)
-                edgeGlow.strokeColor = .clear
-                let perpX = -sin(angle) * (thickness/2 - 0.5) * railSide
-                let perpY = cos(angle) * (thickness/2 - 0.5) * railSide
-                edgeGlow.position = CGPoint(x: (from.x+to.x)/2 + perpX, y: (from.y+to.y)/2 + perpY)
-                edgeGlow.zRotation = angle
-                edgeGlow.zPosition = 1.65
-                pathLayer.addChild(edgeGlow)
+            // 5. Support struts — vertical pillars every ~40pt along bridge
+            let struts = max(2, Int(len / 40))
+            for s in 0...struts {
+                let t = CGFloat(s) / CGFloat(struts)
+                let strutX = from.x + (to.x - from.x) * t
+                let strutY = from.y + (to.y - from.y) * t
+                // Left strut
+                let strutL = SKShapeNode(rectOf: CGSize(width: 2.5, height: 8), cornerRadius: 1)
+                strutL.fillColor = SKColor(red: 0.80, green: 0.45, blue: 0.0, alpha: 0.70)
+                strutL.strokeColor = .clear
+                strutL.position = CGPoint(x: strutX + perpX * (thickness/2 - 1.5), y: strutY + perpY * (thickness/2 - 1.5) - 4)
+                strutL.zPosition = 1.75
+                pathLayer.addChild(strutL)
+                // Right strut
+                let strutR = SKShapeNode(rectOf: CGSize(width: 2.5, height: 8), cornerRadius: 1)
+                strutR.fillColor = SKColor(red: 0.80, green: 0.45, blue: 0.0, alpha: 0.70)
+                strutR.strokeColor = .clear
+                strutR.position = CGPoint(x: strutX - perpX * (thickness/2 - 1.5), y: strutY - perpY * (thickness/2 - 1.5) - 4)
+                strutR.zPosition = 1.75
+                pathLayer.addChild(strutR)
             }
 
-            // Bridge joints
-            for pt in [from, to] {
-                guard PathSystem.layer(at: waypoints.firstIndex(where: { $0 == pt }) ?? -1) == .bridge else { continue }
-                let cap = SKShapeNode(circleOfRadius: thickness/2)
-                cap.fillColor = SKColor(red: 0.14, green: 0.14, blue: 0.22, alpha: 1.0)
-                cap.strokeColor = SKColor.clear
-                cap.position = pt
-                cap.zPosition = 1.5
-                pathLayer.addChild(cap)
-                // Accent dot at bridge joint
-                let joint = SKShapeNode(circleOfRadius: 4)
-                joint.fillColor = .clear
-                joint.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.55)
-                joint.lineWidth = 1.0
-                joint.position = pt
-                joint.zPosition = 1.7
-                pathLayer.addChild(joint)
+            // 6. Bridge entry/exit accent — BRIDGE label at transition point from ground
+            let prevLayer = PathSystem.layer(at: i - 1)
+            if prevLayer == .ground {
+                let bridgeLabel = SKLabelNode(text: "▲ BRIDGE")
+                bridgeLabel.fontSize = 7
+                bridgeLabel.fontName = "AvenirNext-Bold"
+                bridgeLabel.fontColor = SKColor(red: 1.0, green: 0.55, blue: 0.0, alpha: 0.90)
+                bridgeLabel.verticalAlignmentMode = .center
+                bridgeLabel.horizontalAlignmentMode = .center
+                bridgeLabel.position = CGPoint(x: from.x, y: from.y - 18)
+                bridgeLabel.zPosition = 1.8
+                pathLayer.addChild(bridgeLabel)
             }
+        }
+
+        // Bridge start/end junction markers — orange ring at ground↔bridge transitions
+        for (i, point) in waypoints.enumerated() {
+            let layer = PathSystem.layer(at: i)
+            let prevLayer = i > 0 ? PathSystem.layer(at: i-1) : layer
+            guard layer != prevLayer else { continue }  // transition point
+
+            // Orange ring at ground→bridge or bridge→ground transition
+            let marker = SKShapeNode(circleOfRadius: 8)
+            marker.fillColor = .clear
+            marker.strokeColor = SKColor(red: 1.0, green: 0.55, blue: 0.0, alpha: 0.85)
+            marker.lineWidth = 2.5
+            marker.position = point
+            marker.zPosition = 1.9
+            pathLayer.addChild(marker)
+
+            // Pulse animation
+            marker.run(SKAction.repeatForever(SKAction.sequence([
+                SKAction.scale(to: 1.3, duration: 0.8),
+                SKAction.scale(to: 1.0, duration: 0.8)
+            ])))
         }
         // Entry indicator — neon portal beacon (pulsing rings + right-pointing arrow)
         if let first = PathSystem.waypoints.first {

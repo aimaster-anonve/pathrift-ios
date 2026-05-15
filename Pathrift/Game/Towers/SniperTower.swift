@@ -21,68 +21,72 @@ final class SniperTower: Tower {
     static func makeNode(at position: CGPoint) -> SKNode {
         let container = SKNode()
         container.position = position
-
         let cyanWhite = SKColor(red: 0.85, green: 1.00, blue: 1.00, alpha: 1.0)
 
-        // Floor shadow
-        let shadow = SKShapeNode(ellipseOf: CGSize(width: 28, height: 10))
-        shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.35)
-        shadow.strokeColor = .clear
-        shadow.position = CGPoint(x: 0, y: -14)
-        container.addChild(shadow)
+        // Geniş hexagonal platform base (tabanlık)
+        let basePath = CGMutablePath()
+        let baseR: CGFloat = 14
+        for i in 0..<6 {
+            let angle = CGFloat(i) * (.pi / 3) + (.pi / 6)
+            let pt = CGPoint(x: cos(angle) * baseR, y: sin(angle) * baseR - 10)
+            i == 0 ? basePath.move(to: pt) : basePath.addLine(to: pt)
+        }
+        basePath.closeSubpath()
+        let base = SKShapeNode(path: basePath)
+        base.fillColor = SKColor(red: 0.08, green: 0.12, blue: 0.16, alpha: 1.0)
+        base.strokeColor = cyanWhite.withAlphaComponent(0.5)
+        base.lineWidth = 1.5
+        container.addChild(base)
 
-        // Narrow tall rectangle body (10pt wide × 32pt tall, clipped corners 2pt)
-        let bodyPath = CGMutablePath()
-        let w: CGFloat = 5, h: CGFloat = 16, clip: CGFloat = 2
-        bodyPath.move(to: CGPoint(x: -w + clip, y: h))
-        bodyPath.addLine(to: CGPoint(x: w - clip, y: h))
-        bodyPath.addLine(to: CGPoint(x: w, y: h - clip))
-        bodyPath.addLine(to: CGPoint(x: w, y: -h + clip))
-        bodyPath.addLine(to: CGPoint(x: w - clip, y: -h))
-        bodyPath.addLine(to: CGPoint(x: -w + clip, y: -h))
-        bodyPath.addLine(to: CGPoint(x: -w, y: -h + clip))
-        bodyPath.addLine(to: CGPoint(x: -w, y: h - clip))
-        bodyPath.closeSubpath()
-        let body = SKShapeNode(path: bodyPath)
-        body.fillColor = SKColor(red: 0.06, green: 0.10, blue: 0.12, alpha: 1.0)
-        body.strokeColor = cyanWhite
-        body.lineWidth = 1.25
-        container.addChild(body)
+        // Turret body (geniş octagon, rotation platform)
+        let turretPath = CGMutablePath()
+        let tr: CGFloat = 10
+        for i in 0..<8 {
+            let angle = CGFloat(i) * (.pi / 4) + (.pi / 8)
+            let pt = CGPoint(x: cos(angle) * tr, y: sin(angle) * tr)
+            i == 0 ? turretPath.move(to: pt) : turretPath.addLine(to: pt)
+        }
+        turretPath.closeSubpath()
+        let turret = SKShapeNode(path: turretPath)
+        turret.fillColor = SKColor(red: 0.06, green: 0.10, blue: 0.14, alpha: 1.0)
+        turret.strokeColor = cyanWhite
+        turret.lineWidth = 1.5
+        container.addChild(turret)
 
-        // Scope circle (centered on body at 30% from top — at y = h*0.4)
-        let scopeY: CGFloat = h * 0.4
-        let scope = SKShapeNode(circleOfRadius: 3.5)
-        scope.fillColor = SKColor(red: 0.60, green: 0.90, blue: 1.00, alpha: 0.25)
-        scope.strokeColor = cyanWhite
-        scope.lineWidth = 1.0
-        scope.position = CGPoint(x: 0, y: scopeY)
-        scope.name = "scope"
-        container.addChild(scope)
+        // Scope housing (small rect on turret)
+        let scopeHousing = SKShapeNode(rectOf: CGSize(width: 8, height: 6), cornerRadius: 2)
+        scopeHousing.fillColor = SKColor(red: 0.10, green: 0.18, blue: 0.22, alpha: 1.0)
+        scopeHousing.strokeColor = cyanWhite.withAlphaComponent(0.6)
+        scopeHousing.lineWidth = 1.0
+        scopeHousing.position = CGPoint(x: 0, y: 4)
+        container.addChild(scopeHousing)
 
-        // Scope crosshair
-        let crossH = SKShapeNode(rectOf: CGSize(width: 7, height: 0.5))
-        crossH.fillColor = cyanWhite
-        crossH.strokeColor = .clear
-        crossH.position = CGPoint(x: 0, y: scopeY)
-        container.addChild(crossH)
-
-        // Slow scope rotation
-        scope.run(SKAction.repeatForever(SKAction.rotate(byAngle: .pi * 2, duration: 12.0)))
-
-        // Stroke alpha breathe
-        body.run(SKAction.repeatForever(SKAction.sequence([
-            SKAction.run { body.strokeColor = cyanWhite.withAlphaComponent(0.70) },
-            SKAction.wait(forDuration: 1.5),
-            SKAction.run { body.strokeColor = cyanWhite.withAlphaComponent(1.00) },
-            SKAction.wait(forDuration: 1.5)
+        // Lens circle
+        let lens = SKShapeNode(circleOfRadius: 3)
+        lens.fillColor = SKColor(red: 0.50, green: 0.85, blue: 1.00, alpha: 0.30)
+        lens.strokeColor = cyanWhite
+        lens.lineWidth = 0.8
+        lens.position = CGPoint(x: 0, y: 4)
+        container.addChild(lens)
+        lens.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.fadeAlpha(to: 0.15, duration: 1.2),
+            SKAction.fadeAlpha(to: 0.50, duration: 1.2)
         ])))
 
-        // Long barrel (longest of all towers)
-        let barrel = SKShapeNode(rectOf: CGSize(width: 3, height: 16), cornerRadius: 1)
+        // Long barrel — still long (sniper feel) but mounted on proper turret
+        let barrel = SKShapeNode(rectOf: CGSize(width: 4, height: 22), cornerRadius: 1.5)
         barrel.fillColor = cyanWhite
         barrel.strokeColor = .clear
-        barrel.position = CGPoint(x: 0, y: h + 8)
+        barrel.position = CGPoint(x: 0, y: 18)  // starts from turret top
         container.addChild(barrel)
+
+        // Pulse on turret
+        turret.run(SKAction.repeatForever(SKAction.sequence([
+            SKAction.run { turret.strokeColor = cyanWhite.withAlphaComponent(0.70) },
+            SKAction.wait(forDuration: 1.8),
+            SKAction.run { turret.strokeColor = cyanWhite },
+            SKAction.wait(forDuration: 1.8)
+        ])))
 
         return container
     }
