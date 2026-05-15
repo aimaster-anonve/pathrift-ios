@@ -6,17 +6,10 @@ struct CombatHUDView: View {
     let onPause: () -> Void
     var onShowNextWaveInfo: (() -> Void)? = nil
 
-    private var isLandscape: Bool {
-        UIScreen.main.bounds.width > UIScreen.main.bounds.height
-    }
-
     var body: some View {
         VStack(spacing: 0) {
-            if isLandscape {
-                landscapeTopBar
-            } else {
-                portraitTopBar
-            }
+            // Game is portrait-only — always use portraitTopBar
+            portraitTopBar
             if let msg = viewModel.waveCompleteMessage {
                 EventBannerView(message: msg, color: .pathriftSuccess)
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -183,34 +176,29 @@ struct CombatHUDView: View {
         }
     }
 
-    // Wave number IS the info button — whole card tappable, no separate icon to get clipped
+    // Wave number IS the info button — entire card tappable
     private var waveStat: some View {
-        Button(action: { onShowNextWaveInfo?() }) {
-            VStack(spacing: 0) {
+        let cyan = Color(red: 0, green: 0.78, blue: 1)
+        return Button(action: { onShowNextWaveInfo?() }) {
+            VStack(spacing: 1) {
                 Text(viewModel.currentWave == 0 ? "READY" : "WAVE")
                     .font(.system(size: 8, weight: .bold, design: .monospaced))
-                    .foregroundColor(.pathriftTextSecondary).kerning(2)
+                    .foregroundColor(cyan.opacity(0.6)).kerning(1.5)
                 Text(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")
                     .font(.system(size: 22, weight: .black, design: .rounded))
-                    .foregroundColor(Color(red: 0, green: 0.78, blue: 1)).monospacedDigit()
+                    .foregroundColor(cyan).monospacedDigit()
                 HStack(spacing: 3) {
                     Image(systemName: "info.circle.fill")
-                        .font(.system(size: 8))
+                        .font(.system(size: 9, weight: .bold))
                     Text("INFO")
-                        .font(.system(size: 7, weight: .bold, design: .monospaced))
-                        .kerning(0.5)
+                        .font(.system(size: 8, weight: .bold, design: .monospaced))
                 }
-                .foregroundColor(Color(red: 0, green: 0.78, blue: 1).opacity(0.7))
+                .foregroundColor(cyan.opacity(0.85))
             }
-            .padding(.horizontal, 10).padding(.vertical, 3)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill(Color(red: 0, green: 0.78, blue: 1).opacity(0.10))
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 8)
-                    .strokeBorder(Color(red: 0, green: 0.78, blue: 1).opacity(0.35), lineWidth: 1)
-            )
+            .padding(.horizontal, 12).padding(.vertical, 5)
+            .background(cyan.opacity(0.15))
+            .cornerRadius(9)
+            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(cyan.opacity(0.6), lineWidth: 1.5))
         }
         .buttonStyle(.plain)
     }
@@ -284,9 +272,7 @@ struct CombatHUDView: View {
     private var bottomBar: some View {
         VStack(spacing: 0) {
             HStack {
-                if !isLandscape {
-                    killsStat.padding(.leading, 16)
-                }
+                killsStat.padding(.leading, 16)
 
                 Spacer()
 
