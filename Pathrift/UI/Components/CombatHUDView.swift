@@ -6,10 +6,17 @@ struct CombatHUDView: View {
     let onPause: () -> Void
     var onShowNextWaveInfo: (() -> Void)? = nil
 
+    private var isLandscape: Bool {
+        UIScreen.main.bounds.width > UIScreen.main.bounds.height
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            // Game is portrait-only — always use portraitTopBar
-            portraitTopBar
+            if isLandscape {
+                landscapeTopBar
+            } else {
+                portraitTopBar
+            }
             if let msg = viewModel.waveCompleteMessage {
                 EventBannerView(message: msg, color: .pathriftSuccess)
                     .transition(.move(edge: .top).combined(with: .opacity))
@@ -51,12 +58,20 @@ struct CombatHUDView: View {
 
     private var landscapeTopBar: some View {
         HStack(spacing: 0) {
-            // LEFT: Wave number
-            Text("W\(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")")
-                .font(.system(size: 15, weight: .black, design: .monospaced))
-                .foregroundColor(.pathriftNeonBlue)
-                .frame(width: 60, alignment: .leading)
-                .padding(.leading, 16)
+            // LEFT: Wave number + info button
+            HStack(spacing: 6) {
+                Text("W\(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")")
+                    .font(.system(size: 15, weight: .black, design: .monospaced))
+                    .foregroundColor(.pathriftNeonBlue)
+                Button(action: { onShowNextWaveInfo?() }) {
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 16))
+                        .foregroundColor(Color(red: 0, green: 0.78, blue: 1))
+                }
+                .buttonStyle(.plain)
+            }
+            .frame(width: 90, alignment: .leading)
+            .padding(.leading, 16)
 
             Spacer()
 
@@ -135,23 +150,20 @@ struct CombatHUDView: View {
     // MARK: - Portrait Top Bar (original)
 
     private var portraitTopBar: some View {
-        HStack(spacing: 8) {
-            // LEFT: Gold
+        HStack(spacing: 0) {
             goldStat
-            Spacer(minLength: 4)
-            // CENTER: Wave + info button (guaranteed visible)
+            Spacer()
             waveStat
-            Spacer(minLength: 4)
-            // RIGHT: compact stats + controls
-            HStack(spacing: 8) {
+            Spacer()
+            HStack(spacing: 10) {
                 diamondStat
-                livesStat       // compact: ❤ 3
+                livesStat
                 speedBtn
                 pauseBtn
             }
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
         .background(
             LinearGradient(
                 colors: [Color.pathriftBackground.opacity(0.9), .clear],
@@ -176,31 +188,30 @@ struct CombatHUDView: View {
         }
     }
 
-    // Wave number IS the info button — entire card tappable
     private var waveStat: some View {
-        let cyan = Color(red: 0, green: 0.78, blue: 1)
-        return Button(action: { onShowNextWaveInfo?() }) {
-            VStack(spacing: 1) {
+        HStack(spacing: 4) {
+            VStack(spacing: 2) {
                 Text(viewModel.currentWave == 0 ? "READY" : "WAVE")
-                    .font(.system(size: 8, weight: .bold, design: .monospaced))
-                    .foregroundColor(cyan.opacity(0.6)).kerning(1.5)
+                    .font(.system(size: 9, weight: .bold, design: .monospaced))
+                    .foregroundColor(.pathriftTextSecondary).kerning(2)
                 Text(viewModel.currentWave == 0 ? "--" : "\(viewModel.currentWave)")
-                    .font(.system(size: 22, weight: .black, design: .rounded))
-                    .foregroundColor(cyan).monospacedDigit()
-                HStack(spacing: 3) {
-                    Image(systemName: "info.circle.fill")
-                        .font(.system(size: 9, weight: .bold))
-                    Text("INFO")
-                        .font(.system(size: 8, weight: .bold, design: .monospaced))
-                }
-                .foregroundColor(cyan.opacity(0.85))
+                    .font(.system(size: 24, weight: .black, design: .rounded))
+                    .foregroundColor(.pathriftNeonBlue).monospacedDigit()
             }
-            .padding(.horizontal, 12).padding(.vertical, 5)
-            .background(cyan.opacity(0.15))
-            .cornerRadius(9)
-            .overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(cyan.opacity(0.6), lineWidth: 1.5))
+            // Next wave info button — always visible, prominent circle background
+            Button(action: { onShowNextWaveInfo?() }) {
+                ZStack {
+                    Circle()
+                        .fill(Color(red: 0, green: 0.78, blue: 1).opacity(0.18))
+                        .frame(width: 26, height: 26)
+                    Image(systemName: "info.circle.fill")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(Color(red: 0, green: 0.78, blue: 1))
+                }
+            }
+            .buttonStyle(ScaleButtonStyle())
+            .padding(.leading, 4)
         }
-        .buttonStyle(.plain)
     }
 
     private var diamondStat: some View {
@@ -215,16 +226,14 @@ struct CombatHUDView: View {
         }
     }
 
-    // Compact lives: ❤ 3 (single icon + count) — saves ~60pt vs individual hearts
     private var livesStat: some View {
         HStack(spacing: 3) {
-            Image(systemName: viewModel.lives > 0 ? "heart.fill" : "heart")
-                .foregroundColor(viewModel.lives > 0 ? .pathriftDanger : .pathriftTextSecondary)
-                .font(.system(size: 13))
-            Text("\(viewModel.lives)")
-                .font(.system(size: 13, weight: .bold, design: .monospaced))
-                .foregroundColor(viewModel.lives > 0 ? .pathriftDanger : .pathriftTextSecondary)
-                .monospacedDigit()
+            ForEach(0..<EconomyConstants.startingLives, id: \.self) { idx in
+                Image(systemName: idx < viewModel.lives ? "heart.fill" : "heart")
+                    .foregroundColor(idx < viewModel.lives ? .pathriftDanger : .pathriftTextSecondary.opacity(0.3))
+                    .font(.system(size: 16))
+                    .scaleEffect(idx < viewModel.lives ? 1.0 : 0.8)
+            }
         }
     }
 
@@ -270,23 +279,23 @@ struct CombatHUDView: View {
     // MARK: - Bottom Bar
 
     private var bottomBar: some View {
-        VStack(spacing: 0) {
-            HStack {
+        HStack {
+            if !isLandscape {
                 killsStat.padding(.leading, 16)
-
-                Spacer()
-
-                Group {
-                    if viewModel.isWaveActive {
-                        waveProgressIndicator
-                    } else if !viewModel.isGameOver {
-                        sendWaveButton
-                    }
-                }
-                .padding(.trailing, 16)
             }
-            .frame(height: 44)
+
+            Spacer()
+
+            Group {
+                if viewModel.isWaveActive {
+                    waveProgressIndicator
+                } else if !viewModel.isGameOver {
+                    sendWaveButton
+                }
+            }
+            .padding(.trailing, 16)
         }
+        .frame(height: 44)
         .background(
             LinearGradient(
                 colors: [.clear, Color.pathriftBackground.opacity(0.85)],
