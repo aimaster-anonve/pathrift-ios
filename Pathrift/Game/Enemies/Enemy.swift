@@ -20,6 +20,8 @@ protocol EnemyNode: AnyObject {
     var pathLayer: PathLayer { get set }
 
     func applyDamage(_ amount: CGFloat)
+    /// AoE damage — always hits, no dodge mechanic. Default forwards to applyDamage.
+    func applyAoeDamage(_ amount: CGFloat)
     func applySlow(factor: CGFloat, duration: TimeInterval)
     func updateMovement(deltaTime: TimeInterval)
     func updateSlowEffect(currentTime: TimeInterval)
@@ -53,6 +55,10 @@ extension EnemyNode {
 extension EnemyNode {
     var isAlive: Bool { currentHP > 0 && !hasReachedEnd }
     var isDead: Bool { currentHP <= 0 }
+
+    func applyAoeDamage(_ amount: CGFloat) {
+        applyDamage(amount)
+    }
 
     func applyDamage(_ rawAmount: CGFloat) {
         let reducedDamage = rawAmount * (1.0 - armor)

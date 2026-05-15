@@ -31,6 +31,16 @@ final class PhantomEnemy: EnemyNode {
         self.node.position = PathSystem.waypoints.first ?? .zero
     }
 
+    /// AoE damage always hits — no dodge (Blast, Nova, Artillery bypass).
+    func applyAoeDamage(_ rawAmount: CGFloat) {
+        currentHP = max(0, currentHP - rawAmount)
+        refreshHealthBar()
+        if isDead {
+            spawnDeathParticles()
+            node.removeFromParent()
+        }
+    }
+
     /// Override applyDamage: 40% dodge chance vs single-target projectiles.
     func applyDamage(_ rawAmount: CGFloat) {
         if isDodgeable && Double.random(in: 0...1) < PhantomEnemy.dodgeChance {

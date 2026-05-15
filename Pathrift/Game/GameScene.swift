@@ -207,7 +207,7 @@ final class GameScene: SKScene {
             t.blastDamageCallback = { [weak self] center, radius, damage in
                 self?.activeEnemies.filter { $0.isAlive }.forEach { e in
                     let d = hypot(e.node.position.x - center.x, e.node.position.y - center.y)
-                    if d <= radius { e.applyDamage(damage) }
+                    if d <= radius { e.applyAoeDamage(damage) }
                 }
             }
             return t
@@ -216,7 +216,7 @@ final class GameScene: SKScene {
             t.novaDamageCallback = { [weak self] center, radius, damage in
                 self?.activeEnemies.filter { $0.isAlive }.forEach { e in
                     let d = hypot(e.node.position.x - center.x, e.node.position.y - center.y)
-                    if d <= radius { e.applyDamage(damage) }
+                    if d <= radius { e.applyAoeDamage(damage) }
                 }
             }
             return t
@@ -225,7 +225,7 @@ final class GameScene: SKScene {
             t.artilleryDamageCallback = { [weak self] center, radius, damage in
                 self?.activeEnemies.filter { $0.isAlive }.forEach { e in
                     let d = hypot(e.node.position.x - center.x, e.node.position.y - center.y)
-                    if d <= radius { e.applyDamage(damage) }
+                    if d <= radius { e.applyAoeDamage(damage) }
                 }
             }
             return t
@@ -644,7 +644,7 @@ final class GameScene: SKScene {
                     let dx = enemy.node.position.x - center.x
                     let dy = enemy.node.position.y - center.y
                     if sqrt(dx * dx + dy * dy) <= radius {
-                        enemy.applyDamage(damage)
+                        enemy.applyAoeDamage(damage)
                     }
                 }
             }
@@ -668,7 +668,7 @@ final class GameScene: SKScene {
                     let dx = enemy.node.position.x - center.x
                     let dy = enemy.node.position.y - center.y
                     if sqrt(dx * dx + dy * dy) <= radius {
-                        enemy.applyDamage(damage)
+                        enemy.applyAoeDamage(damage)
                     }
                 }
             }
@@ -684,7 +684,7 @@ final class GameScene: SKScene {
                     let dx = enemy.node.position.x - center.x
                     let dy = enemy.node.position.y - center.y
                     if sqrt(dx * dx + dy * dy) <= radius {
-                        enemy.applyDamage(damage)
+                        enemy.applyAoeDamage(damage)
                     }
                 }
             }

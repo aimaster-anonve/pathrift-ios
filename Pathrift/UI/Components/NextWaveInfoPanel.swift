@@ -22,7 +22,7 @@ struct NextWaveInfoPanel: View {
                             .font(.system(size: 12))
                     }
 
-                    if waveDef.spawns.isEmpty {
+                    if waveDef.spawns.first?.type == .boss {
                         Text("BOSS WAVE")
                             .font(.system(size: 13, weight: .bold))
                             .foregroundColor(Color(red: 1.0, green: 0.3, blue: 0.8))
