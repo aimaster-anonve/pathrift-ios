@@ -284,19 +284,17 @@ final class GameScene: SKScene {
         guard waypoints.count >= 2 else { return }
         let thickness: CGFloat = 24
 
-        // First pass: draw ground segments — dark slate corridor with cyan edge glow
+        // Single pass: draw all segments uniformly as dark slate corridor with cyan edge glow
         for i in 1..<waypoints.count {
             let from = waypoints[i-1]
             let to = waypoints[i]
-            let isBridge = PathSystem.isBridgeSegment(from: i - 1)
-            guard !isBridge else { continue }
 
             let dx = to.x - from.x
             let dy = to.y - from.y
             let len = sqrt(dx*dx + dy*dy)
             let angle = atan2(dy, dx)
 
-            // Main filled corridor (path.fill dark slate)
+            // Main filled corridor (dark slate)
             let seg = SKShapeNode(rectOf: CGSize(width: len, height: thickness), cornerRadius: 4)
             seg.fillColor = SKColor(red: 0.10, green: 0.10, blue: 0.16, alpha: 1.0)
             seg.strokeColor = SKColor.clear
@@ -329,9 +327,8 @@ final class GameScene: SKScene {
             pathLayer.addChild(rightEdge)
         }
 
-        // Joints at corners (ground only) — circular cap + accent dot
-        for (i, point) in waypoints.enumerated() {
-            guard PathSystem.layer(at: i) == .ground else { continue }
+        // Joints at all waypoints — circular cap + accent dot
+        for (_, point) in waypoints.enumerated() {
             let cap = SKShapeNode(circleOfRadius: thickness/2)
             cap.fillColor = SKColor(red: 0.10, green: 0.10, blue: 0.16, alpha: 1.0)
             cap.strokeColor = SKColor.clear
@@ -348,121 +345,6 @@ final class GameScene: SKScene {
             pathLayer.addChild(joint)
         }
 
-        // Second pass: draw bridge segments — VERY DISTINCT from ground
-        for i in 1..<waypoints.count {
-            let from = waypoints[i-1]
-            let to = waypoints[i]
-            let isBridge = PathSystem.isBridgeSegment(from: i - 1)
-            guard isBridge else { continue }
-
-            let dx = to.x - from.x
-            let dy = to.y - from.y
-            let len = sqrt(dx*dx + dy*dy)
-            let angle = atan2(dy, dx)
-            let mid = CGPoint(x: (from.x+to.x)/2, y: (from.y+to.y)/2)
-            let perpX = -sin(angle)
-            let perpY =  cos(angle)
-
-            // 1. Drop shadow (elevation illusion)
-            let shadow = SKShapeNode(rectOf: CGSize(width: len + 4, height: thickness + 8), cornerRadius: 6)
-            shadow.fillColor = SKColor(red: 0, green: 0, blue: 0, alpha: 0.55)
-            shadow.strokeColor = .clear
-            shadow.position = CGPoint(x: mid.x + 3, y: mid.y - 4)
-            shadow.zRotation = angle
-            shadow.zPosition = 1.3
-            pathLayer.addChild(shadow)
-
-            // 2. Bridge deck — WARM STONE color (clearly different from blue-black ground)
-            let deck = SKShapeNode(rectOf: CGSize(width: len, height: thickness), cornerRadius: 4)
-            deck.fillColor = SKColor(red: 0.22, green: 0.19, blue: 0.15, alpha: 1.0)  // warm stone/concrete
-            deck.strokeColor = .clear
-            deck.position = mid
-            deck.zRotation = angle
-            deck.zPosition = 1.6
-            pathLayer.addChild(deck)
-
-            // 3. Deck surface texture — parallel lines (plank effect)
-            for t: CGFloat in stride(from: -thickness/2 + 4, through: thickness/2 - 4, by: 5) {
-                let plankLine = SKShapeNode(rectOf: CGSize(width: len - 4, height: 1.0))
-                plankLine.fillColor = SKColor(red: 0.30, green: 0.26, blue: 0.20, alpha: 0.60)
-                plankLine.strokeColor = .clear
-                plankLine.position = CGPoint(x: mid.x + perpX * t, y: mid.y + perpY * t)
-                plankLine.zRotation = angle
-                plankLine.zPosition = 1.65
-                pathLayer.addChild(plankLine)
-            }
-
-            // 4. Orange/amber guard rails (HIGHLY VISIBLE)
-            let railColor = SKColor(red: 1.0, green: 0.55, blue: 0.0, alpha: 0.90)
-            for railSide: CGFloat in [-1, 1] {
-                let railOffset = (thickness / 2 - 1.5) * railSide
-                let rail = SKShapeNode(rectOf: CGSize(width: len, height: 3.0), cornerRadius: 1.5)
-                rail.fillColor = railColor
-                rail.strokeColor = .clear
-                rail.position = CGPoint(x: mid.x + perpX * railOffset, y: mid.y + perpY * railOffset)
-                rail.zRotation = angle
-                rail.zPosition = 1.7
-                pathLayer.addChild(rail)
-            }
-
-            // 5. Support struts — vertical pillars every ~40pt along bridge
-            let struts = max(2, Int(len / 40))
-            for s in 0...struts {
-                let t = CGFloat(s) / CGFloat(struts)
-                let strutX = from.x + (to.x - from.x) * t
-                let strutY = from.y + (to.y - from.y) * t
-                // Left strut
-                let strutL = SKShapeNode(rectOf: CGSize(width: 2.5, height: 8), cornerRadius: 1)
-                strutL.fillColor = SKColor(red: 0.80, green: 0.45, blue: 0.0, alpha: 0.70)
-                strutL.strokeColor = .clear
-                strutL.position = CGPoint(x: strutX + perpX * (thickness/2 - 1.5), y: strutY + perpY * (thickness/2 - 1.5) - 4)
-                strutL.zPosition = 1.75
-                pathLayer.addChild(strutL)
-                // Right strut
-                let strutR = SKShapeNode(rectOf: CGSize(width: 2.5, height: 8), cornerRadius: 1)
-                strutR.fillColor = SKColor(red: 0.80, green: 0.45, blue: 0.0, alpha: 0.70)
-                strutR.strokeColor = .clear
-                strutR.position = CGPoint(x: strutX - perpX * (thickness/2 - 1.5), y: strutY - perpY * (thickness/2 - 1.5) - 4)
-                strutR.zPosition = 1.75
-                pathLayer.addChild(strutR)
-            }
-
-            // 6. Bridge entry/exit accent — BRIDGE label at transition point from ground
-            let prevLayer = PathSystem.layer(at: i - 1)
-            if prevLayer == .ground {
-                let bridgeLabel = SKLabelNode(text: "▲ BRIDGE")
-                bridgeLabel.fontSize = 7
-                bridgeLabel.fontName = "AvenirNext-Bold"
-                bridgeLabel.fontColor = SKColor(red: 1.0, green: 0.55, blue: 0.0, alpha: 0.90)
-                bridgeLabel.verticalAlignmentMode = .center
-                bridgeLabel.horizontalAlignmentMode = .center
-                bridgeLabel.position = CGPoint(x: from.x, y: from.y - 18)
-                bridgeLabel.zPosition = 1.8
-                pathLayer.addChild(bridgeLabel)
-            }
-        }
-
-        // Bridge start/end junction markers — orange ring at ground↔bridge transitions
-        for (i, point) in waypoints.enumerated() {
-            let layer = PathSystem.layer(at: i)
-            let prevLayer = i > 0 ? PathSystem.layer(at: i-1) : layer
-            guard layer != prevLayer else { continue }  // transition point
-
-            // Orange ring at ground→bridge or bridge→ground transition
-            let marker = SKShapeNode(circleOfRadius: 8)
-            marker.fillColor = .clear
-            marker.strokeColor = SKColor(red: 1.0, green: 0.55, blue: 0.0, alpha: 0.85)
-            marker.lineWidth = 2.5
-            marker.position = point
-            marker.zPosition = 1.9
-            pathLayer.addChild(marker)
-
-            // Pulse animation
-            marker.run(SKAction.repeatForever(SKAction.sequence([
-                SKAction.scale(to: 1.3, duration: 0.8),
-                SKAction.scale(to: 1.0, duration: 0.8)
-            ])))
-        }
         // Entry indicator — neon portal beacon (pulsing rings + right-pointing arrow)
         if let first = PathSystem.waypoints.first {
             let entryX: CGFloat = 22
@@ -1355,7 +1237,7 @@ final class GameScene: SKScene {
         return true
     }
 
-    // 12 Z-layout parameter sets — (y1%, y2%, y3%, xL%, xR%) as fractions of H/W.
+    // 18 Z-layout parameter sets — (y1%, y2%, y3%, xL%, xR%) as fractions of H/W.
     private let layoutParams: [(CGFloat, CGFloat, CGFloat, CGFloat, CGFloat)] = [
         (0.20, 0.50, 0.78, 0.26, 0.74),   // 0: standard forward Z
         (0.78, 0.50, 0.22, 0.28, 0.72),   // 1: reverse Z
@@ -1369,9 +1251,16 @@ final class GameScene: SKScene {
         (0.20, 0.44, 0.80, 0.35, 0.65),   // 9: compressed mid
         (0.18, 0.58, 0.82, 0.24, 0.76),   // 10: lower compressed
         (0.75, 0.44, 0.17, 0.32, 0.68),   // 11: narrow reverse
+        // --- 6 new creative Z-variants ---
+        (0.10, 0.35, 0.60, 0.22, 0.78),   // 12: zigzag upper-bias
+        (0.40, 0.65, 0.90, 0.20, 0.80),   // 13: zigzag lower-bias
+        (0.85, 0.55, 0.25, 0.20, 0.80),   // 14: wide diagonal reverse
+        (0.22, 0.48, 0.74, 0.20, 0.55),   // 15: left-skewed forward
+        (0.76, 0.52, 0.28, 0.45, 0.80),   // 16: right-skewed reverse
+        (0.14, 0.42, 0.86, 0.30, 0.70),   // 17: tall narrow Z
     ]
 
-    /// Total layout count: 12 Z-layouts + 6 crossing layouts = 18.
+    /// Total layout count: 18 Z-layouts + 6 crossing layouts = 24.
     private var totalLayoutCount: Int { layoutParams.count + 6 }
 
     private func layoutConfig(index: Int) -> (waypoints: [CGPoint], layers: [PathLayer], slots: [CGPoint]) {
@@ -1410,7 +1299,7 @@ final class GameScene: SKScene {
         }
     }
 
-    // MARK: - Crossing Layouts (indices 12–17)
+    // MARK: - Crossing Layouts (indices 18–23)
 
     /// Generates slots for an arbitrary waypoint path using perpendicular offsets.
     private func computeSlotsForPath(waypoints: [CGPoint]) -> [CGPoint] {
@@ -1450,19 +1339,20 @@ final class GameScene: SKScene {
     }
 
     // Bridge waypoint layers for each crossing layout (same index as cross-0..5)
+    // Bridge distinction is visual-only in game logic — all ground visually since Build 5.2
     private let crossLayoutBridgeLayers: [[PathLayer]] = [
-        // cross-0 S-curve: waypoints [2,3] are bridge
-        [.ground, .ground, .bridge, .bridge, .ground, .ground, .ground],
-        // cross-1 X-Cross: waypoints [2,3,4] are bridge
-        [.ground, .ground, .bridge, .bridge, .bridge, .ground, .ground, .ground],
-        // cross-2 Double-Z: waypoints [2,3] elevated
-        [.ground, .ground, .bridge, .bridge, .ground, .ground, .ground, .ground],
-        // cross-3 Spiral: waypoints [2,3] are bridge
-        [.ground, .ground, .bridge, .bridge, .ground, .ground, .ground],
-        // cross-4 W-shape: waypoints [2,4] are bridges (peaks)
-        [.ground, .ground, .bridge, .ground, .bridge, .ground, .ground, .ground],
-        // cross-5 Diagonal: waypoints [2,3] are bridge
-        [.ground, .ground, .bridge, .bridge, .ground, .ground],
+        // cross-0 S-curve: all ground visually
+        [.ground, .ground, .ground, .ground, .ground, .ground, .ground],
+        // cross-1 X-Cross: all ground visually
+        [.ground, .ground, .ground, .ground, .ground, .ground, .ground, .ground],
+        // cross-2 Double-Z: all ground visually
+        [.ground, .ground, .ground, .ground, .ground, .ground, .ground, .ground],
+        // cross-3 Spiral: all ground visually
+        [.ground, .ground, .ground, .ground, .ground, .ground, .ground],
+        // cross-4 W-shape: all ground visually
+        [.ground, .ground, .ground, .ground, .ground, .ground, .ground, .ground],
+        // cross-5 Diagonal: all ground visually
+        [.ground, .ground, .ground, .ground, .ground, .ground],
     ]
 
     private func crossLayoutConfig(index: Int) -> (waypoints: [CGPoint], layers: [PathLayer], slots: [CGPoint]) {

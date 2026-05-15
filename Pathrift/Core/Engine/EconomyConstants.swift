@@ -2,7 +2,7 @@ import Foundation
 
 enum EconomyConstants {
     static let startingGold: Int = 300        // was 250 — better early placement options
-    static let startingLives: Int = 8          // was 5 — more forgiving for new players
+    static let startingLives: Int = 5          // was 8 — reverted to original
 
     static func goldRewardForWave(_ wave: Int) -> Int {
         let base = 55

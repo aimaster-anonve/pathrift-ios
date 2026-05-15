@@ -241,9 +241,7 @@ struct StoreScreen: View {
                     RoundedRectangle(cornerRadius: 10)
                         .fill(type.swiftUIColor.opacity(0.1))
                         .frame(height: 68)
-                    Circle()
-                        .fill(type.swiftUIColor)
-                        .frame(width: 34, height: 34)
+                    TowerShapeView(type: type, size: 38)
                         .shadow(color: type.swiftUIColor.opacity(0.5), radius: 6)
                 }
                 Text(type.displayName.uppercased())
@@ -429,9 +427,7 @@ struct TowerDetailSheet: View {
 
     private var portraitSheetBody: some View {
         VStack(spacing: 20) {
-            Circle()
-                .fill(type.swiftUIColor)
-                .frame(width: 64, height: 64)
+            TowerShapeView(type: type, size: 64)
                 .shadow(color: type.swiftUIColor.opacity(0.6), radius: 12)
                 .padding(.top, 24)
 
@@ -481,9 +477,7 @@ struct TowerDetailSheet: View {
         HStack(spacing: 0) {
             // Left: tower identity
             VStack(spacing: 12) {
-                Circle()
-                    .fill(type.swiftUIColor)
-                    .frame(width: 56, height: 56)
+                TowerShapeView(type: type, size: 56)
                     .shadow(color: type.swiftUIColor.opacity(0.6), radius: 10)
                     .padding(.top, 20)
 
