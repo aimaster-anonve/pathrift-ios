@@ -854,7 +854,10 @@ final class GameScene: SKScene {
         switch tower.type.targetingMode {
         case .allLayers:  return true
         case .groundOnly: return enemy.pathLayer == .ground
-        case .bridgeOnly: return enemy.pathLayer == .bridge
+        case .bridgeOnly:
+            // If current layout has no bridge segments, fall back to all layers
+            let hasBridges = PathSystem.waypointLayers.contains(.bridge)
+            return hasBridges ? enemy.pathLayer == .bridge : true
         }
     }
 
