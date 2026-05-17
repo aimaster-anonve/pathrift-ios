@@ -25,6 +25,10 @@ final class GameViewModel: ObservableObject {
     // MARK: - Inter-Wave Countdown (Build 7 — DEC-029)
     @Published var interWaveSecondsRemaining: Int = 0
 
+    // MARK: - Wave Flash Protection (Build 9 — Fix 6)
+    /// True from timer=0 until wave actually starts — prevents "NEXT WAVE" flash
+    @Published var isTransitioningToWave: Bool = false
+
     // MARK: - Drag-and-Drop Placement (Build 8 — DEC-032)
     @Published var isDraggingTower: Bool = false
     @Published var dragTowerType: TowerType? = nil
@@ -108,6 +112,7 @@ final class GameViewModel: ObservableObject {
             DispatchQueue.main.async {
                 guard let self else { return }
                 self.isWaveActive = false
+                self.isTransitioningToWave = false  // Fix 6: wave bitti, temizle
                 self.waveCompleteMessage = "Wave \(wave) cleared!"
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                     self.waveCompleteMessage = nil
@@ -180,7 +185,11 @@ final class GameViewModel: ObservableObject {
             }
         }
         scene.onInterWaveTimerChanged = { [weak self] seconds in
-            DispatchQueue.main.async { self?.interWaveSecondsRemaining = seconds }
+            DispatchQueue.main.async {
+                self?.interWaveSecondsRemaining = seconds
+                // Fix 6: timer 0'a gelince transition flag set et — "NEXT WAVE" flash önlenir
+                if seconds == 0 { self?.isTransitioningToWave = true }
+            }
         }
     }
 
@@ -225,6 +234,7 @@ final class GameViewModel: ObservableObject {
     func startNextWave() {
         scene.startNextWave()
         isWaveActive = true
+        isTransitioningToWave = false  // Fix 6: wave başladı, transition temizle
     }
 
     func placeTower(type: TowerType, at slotId: Int) {
@@ -267,6 +277,7 @@ final class GameViewModel: ObservableObject {
     // MARK: - Drag-and-Drop Placement (Build 8 — DEC-032)
 
     func startDragPlacement(type: TowerType) {
+        dragPosition = .zero          // reset so .onAppear places ghost at center (Fix 1)
         isDraggingTower = true
         dragTowerType = type
         selectedTowerSlotId = nil
@@ -308,7 +319,7 @@ final class GameViewModel: ObservableObject {
         movingFromSlotId = nil
     }
 
-    // MARK: - Tower Move Mode (Build 8 — DEC-032)
+    // MARK: - Tower Move Mode (Build 9 — Fix 5: ghost starts at tower's current screen position)
 
     func beginMoveMode(towerId: Int, moveCost: Int) {
         isMovingTower = true
@@ -320,5 +331,14 @@ final class GameViewModel: ObservableObject {
         isDragPositionValid = false
         lastValidScenePoint = nil
         scene.hideRangeRing()
+
+        // Ghost tower'ın mevcut ekran pozisyonundan başlasın (isMovingTower=true olduğu için .onAppear center'a atlamaz)
+        if let screenPos = scene.towerScreenPosition(for: towerId) {
+            dragPosition = screenPos
+            let scenePoint = CGPoint(x: screenPos.x, y: scene.size.height - screenPos.y)
+            let valid = scene.isValidPlacement(scenePoint, excludingTowerId: towerId)
+            isDragPositionValid = valid
+            if valid { lastValidScenePoint = scenePoint }
+        }
     }
 }

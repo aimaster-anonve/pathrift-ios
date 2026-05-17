@@ -120,16 +120,19 @@ struct TowerInfoPanel: View {
                 }
                 .buttonStyle(ScaleButtonStyle())
 
-                // MOVE button — only shown between waves (Build 7 — DEC-031)
+                // MOVE button — only shown between waves (Build 9 — Fix 4: MOVE text added)
                 if !isWaveActive {
                     Button(action: onMove) {
-                        VStack(spacing: 1) {
+                        VStack(spacing: 0) {
                             Image(systemName: "arrow.up.and.down.and.left.and.right")
-                                .font(.system(size: 12, weight: .bold))
+                                .font(.system(size: 9))
+                            Text("MOVE")
+                                .font(.system(size: 6, weight: .black, design: .monospaced))
+                                .kerning(0.3)
                             Text("\(moveCost)g")
-                                .font(.system(size: 8, design: .monospaced)).opacity(0.8)
+                                .font(.system(size: 7, weight: .bold, design: .monospaced))
                         }
-                        .foregroundColor(canAffordMove ? .pathriftGold : .pathriftTextSecondary)
+                        .foregroundColor(canAffordMove ? .pathriftGold : .white.opacity(0.3))
                         .frame(width: 52, height: 38)
                         .background(canAffordMove ? Color.pathriftGold.opacity(0.10) : Color.white.opacity(0.06))
                         .cornerRadius(10)

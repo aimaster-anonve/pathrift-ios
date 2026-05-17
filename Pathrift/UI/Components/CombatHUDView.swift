@@ -287,7 +287,8 @@ struct CombatHUDView: View {
             Spacer()
 
             Group {
-                if viewModel.isWaveActive {
+                // Fix 6: isTransitioningToWave flag ile timer=0→wave start arası flash önlenir
+                if viewModel.isWaveActive || viewModel.isTransitioningToWave {
                     waveProgressIndicator
                 } else if !viewModel.isGameOver {
                     sendWaveButton
@@ -458,13 +459,21 @@ struct CombatHUDView: View {
         }
     }
 
-    // MARK: - Wave Progress Indicator (polished capsule with fraction)
+    // MARK: - Wave Progress Indicator (Build 9 — Fix 6: wave number + flash protection)
 
     private var waveProgressIndicator: some View {
         HStack(spacing: 8) {
-            Text("\(viewModel.waveEnemiesCleared)/\(viewModel.waveEnemyTotal)")
-                .font(.system(size: 11, weight: .bold, design: .monospaced))
-                .foregroundColor(.pathriftTextSecondary)
+            // Wave numarası
+            VStack(spacing: 0) {
+                Text("WAVE")
+                    .font(.system(size: 7, weight: .bold, design: .monospaced))
+                    .foregroundColor(.pathriftTextSecondary)
+                    .kerning(1.5)
+                Text(viewModel.currentWave > 0 ? "\(viewModel.currentWave)" : "...")
+                    .font(.system(size: 14, weight: .black, design: .rounded))
+                    .foregroundColor(.pathriftNeonBlue)
+                    .monospacedDigit()
+            }
 
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
@@ -480,7 +489,12 @@ struct CombatHUDView: View {
                         .animation(.linear(duration: 0.2), value: viewModel.waveProgress)
                 }
             }
-            .frame(width: 100, height: 5)
+            .frame(width: 80, height: 5)
+
+            Text("\(viewModel.waveEnemiesCleared)/\(viewModel.waveEnemyTotal)")
+                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .foregroundColor(.pathriftTextSecondary)
+                .monospacedDigit()
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)

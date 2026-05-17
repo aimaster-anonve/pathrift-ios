@@ -103,10 +103,18 @@ struct GameView: View {
                 )
             }
 
-            // Drag-and-drop placement overlay (Build 8 — DEC-032: free-form + confirm button)
+            // Drag-and-drop placement overlay (Build 9 — ghost center, OK/Cancel below ghost)
             if viewModel.isDraggingTower {
                 GeometryReader { geo in
                     Color.clear
+                        .onAppear {
+                            // Only for new placement (not move) — start ghost at screen center
+                            if !viewModel.isMovingTower && viewModel.dragPosition == .zero {
+                                let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
+                                viewModel.dragPosition = center
+                                viewModel.updateDragFromScreen(center, sceneSize: geo.size)
+                            }
+                        }
                         .contentShape(Rectangle())
                         .gesture(
                             DragGesture(minimumDistance: 0, coordinateSpace: .local)
@@ -128,39 +136,54 @@ struct GameView: View {
                             .allowsHitTesting(false)
                     }
 
-                    // Confirm button — only appears when position is valid
-                    if viewModel.isDragPositionValid {
-                        Button(action: { viewModel.confirmPlacement() }) {
-                            Image(systemName: "checkmark.circle.fill")
-                                .font(.system(size: 52))
-                                .foregroundStyle(.white, Color.pathriftSuccess)
-                                .shadow(color: Color.pathriftSuccess.opacity(0.7), radius: 12)
+                    // Cancel (sol) + OK/Confirm (sağ) — ghost'un hemen altında, yan yana
+                    HStack(spacing: 20) {
+                        // Cancel — her zaman görünür
+                        Button(action: { viewModel.cancelDrag() }) {
+                            ZStack {
+                                Circle()
+                                    .fill(Color.pathriftDanger.opacity(0.20))
+                                    .frame(width: 52, height: 52)
+                                Image(systemName: "xmark")
+                                    .font(.system(size: 20, weight: .bold))
+                                    .foregroundColor(.pathriftDanger)
+                            }
                         }
-                        .position(
-                            x: viewModel.dragPosition.x,
-                            y: max(60, viewModel.dragPosition.y - 70)  // above ghost, clamped to top
-                        )
-                        .transition(.scale.combined(with: .opacity))
-                        .animation(.spring(duration: 0.2), value: viewModel.isDragPositionValid)
+                        .buttonStyle(ScaleButtonStyle())
+
+                        // OK — sadece geçerli konumda aktif
+                        if viewModel.isDragPositionValid {
+                            Button(action: { viewModel.confirmPlacement() }) {
+                                ZStack {
+                                    Circle()
+                                        .fill(Color.pathriftSuccess.opacity(0.25))
+                                        .frame(width: 52, height: 52)
+                                    Image(systemName: "checkmark")
+                                        .font(.system(size: 20, weight: .bold))
+                                        .foregroundColor(.pathriftSuccess)
+                                }
+                            }
+                            .buttonStyle(ScaleButtonStyle())
+                            .transition(.scale.combined(with: .opacity))
+                            .animation(.spring(duration: 0.2), value: viewModel.isDragPositionValid)
+                        } else {
+                            // Disabled OK placeholder — aynı boyut, soluk
+                            ZStack {
+                                Circle()
+                                    .fill(Color.white.opacity(0.05))
+                                    .frame(width: 52, height: 52)
+                                Image(systemName: "checkmark")
+                                    .font(.system(size: 20, weight: .bold))
+                                    .foregroundColor(.white.opacity(0.2))
+                            }
+                        }
                     }
+                    .position(
+                        x: viewModel.dragPosition.x,
+                        y: min(geo.size.height - 60, viewModel.dragPosition.y + 58)
+                    )
                 }
                 .ignoresSafeArea()
-
-                // Cancel drag by tapping anywhere outside (bottom-right corner X)
-                VStack {
-                    Spacer()
-                    HStack {
-                        Spacer()
-                        Button(action: { viewModel.cancelDrag() }) {
-                            Image(systemName: "xmark.circle.fill")
-                                .font(.system(size: 36))
-                                .foregroundStyle(.white, Color.pathriftDanger)
-                                .shadow(color: Color.pathriftDanger.opacity(0.5), radius: 8)
-                        }
-                        .padding(.trailing, 24)
-                        .padding(.bottom, 80)
-                    }
-                }
             }
 
             // Next wave info panel overlay
@@ -299,14 +322,15 @@ struct TowerDragGhost: View {
 
     var body: some View {
         ZStack {
+            // Glow halkası — haritadaki tower ile aynı boyut
             Circle()
-                .fill((isValid ? Color.pathriftSuccess : Color.pathriftDanger).opacity(0.22))
-                .frame(width: 60, height: 60)
-                .blur(radius: 6)
-            TowerShapeView(type: type, size: 40)
+                .fill((isValid ? Color.pathriftSuccess : Color.pathriftDanger).opacity(0.18))
+                .frame(width: 72, height: 72)
+                .blur(radius: 8)
+            // Tower shape — haritadaki boyutla aynı (52pt)
+            TowerShapeView(type: type, size: 52)
+                .shadow(color: type.swiftUIColor.opacity(0.7), radius: 8)
         }
-        .scaleEffect(1.1)
-        .shadow(color: (isValid ? Color.pathriftSuccess : Color.pathriftDanger).opacity(0.55), radius: 10)
         .animation(.easeInOut(duration: 0.15), value: isValid)
     }
 }

@@ -179,6 +179,14 @@ final class GameScene: SKScene {
 
     // MARK: - Tower Move Mechanic (Build 8 — DEC-032)
 
+    /// Returns the screen-space position of a tower (Y flipped from scene coordinates).
+    /// Build 9 Fix 5: used by beginMoveMode to start ghost at tower's current on-screen position.
+    func towerScreenPosition(for towerId: Int) -> CGPoint? {
+        guard let tower = activeTowers.first(where: { $0.slotId == towerId }) else { return nil }
+        // Scene: Y=0 at bottom. Screen: Y=0 at top. Flip Y.
+        return CGPoint(x: tower.position.x, y: size.height - tower.position.y)
+    }
+
     func completeMoveTower(towerId: Int, toPoint: CGPoint, goldCost: Int) -> Bool {
         guard gridSystem.record(for: towerId) != nil,
               goldManager.canAfford(goldCost),
