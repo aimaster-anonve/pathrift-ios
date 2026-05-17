@@ -280,9 +280,9 @@ struct CombatHUDView: View {
 
     private var bottomBar: some View {
         HStack {
-            if !isLandscape {
-                killsStat.padding(.leading, 16)
-            }
+            // Tower counter pill — bottom-left (Build 7 — DEC-030)
+            towerCounterPill
+                .padding(.leading, 16)
 
             Spacer()
 
@@ -305,6 +305,52 @@ struct CombatHUDView: View {
         )
     }
 
+    // MARK: - Tower Counter Pill (Build 7 — DEC-030)
+
+    private var towerCounterPill: some View {
+        let isFull = !viewModel.canAddTower
+        return HStack(spacing: 8) {
+            Image(systemName: "square.grid.2x2.fill")
+                .font(.system(size: 12))
+                .foregroundColor(.pathriftNeonBlue)
+            HStack(spacing: 3) {
+                Text("\(viewModel.activeTowerCount)")
+                    .font(.system(size: 17, weight: .black, design: .monospaced))
+                    .foregroundColor(.pathriftTextPrimary)
+                    .monospacedDigit()
+                Text("/")
+                    .font(.system(size: 13, weight: .regular, design: .monospaced))
+                    .foregroundColor(.pathriftTextSecondary)
+                Text("\(viewModel.maxTowerCount)")
+                    .font(.system(size: 13, weight: .bold, design: .monospaced))
+                    .foregroundColor(.pathriftTextSecondary)
+                    .monospacedDigit()
+            }
+            Button {
+                viewModel.isShowingTowerMenu = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundColor(isFull ? .pathriftTextSecondary : .pathriftNeonBlue)
+                    .frame(width: 26, height: 26)
+                    .background(isFull ? Color.white.opacity(0.05) : Color.pathriftNeonBlue.opacity(0.18))
+                    .clipShape(Circle())
+                    .overlay(Circle().strokeBorder(
+                        isFull ? Color.pathriftTextSecondary.opacity(0.2) : Color.pathriftNeonBlue.opacity(0.5),
+                        lineWidth: 1))
+                    .opacity(isFull ? 0.45 : 1.0)
+            }
+            .disabled(isFull)
+            .buttonStyle(ScaleButtonStyle())
+        }
+        .padding(.leading, 10).padding(.trailing, 6)
+        .frame(height: 36)
+        .background(.ultraThinMaterial)
+        .background(Color.pathriftBackground.opacity(0.88))
+        .clipShape(Capsule())
+        .overlay(Capsule().strokeBorder(Color.pathriftNeonBlue.opacity(0.25), lineWidth: 1))
+    }
+
     private var killsStat: some View {
         HStack(spacing: 5) {
             Image(systemName: "bolt.fill")
@@ -321,29 +367,95 @@ struct CombatHUDView: View {
     }
 
     // MARK: - Send Wave Button (gradient + shadow polish)
+    // Build 7: shows inter-wave countdown when timer is running (DEC-029)
+
+    @State private var isPulsingCountdown: Bool = false
 
     private var sendWaveButton: some View {
-        Button(action: onStartWave) {
-            HStack(spacing: 6) {
-                Image(systemName: "chevron.right.2")
-                    .font(.system(size: 11, weight: .bold))
-                Text(viewModel.currentWave == 0 ? "START" : "NEXT WAVE")
-                    .font(.system(size: 12, weight: .bold, design: .rounded))
-                    .kerning(0.5)
+        let seconds = viewModel.interWaveSecondsRemaining
+        let isCountingDown = seconds > 0
+        let isUrgent = isCountingDown && seconds <= 5
+
+        return Button(action: {
+            onStartWave()
+        }) {
+            Group {
+                if isCountingDown {
+                    if isUrgent {
+                        // Urgency state (≤5s): large red number only
+                        Text("\(seconds)")
+                            .font(.system(size: 22, weight: .black, design: .rounded))
+                            .foregroundColor(.pathriftDanger)
+                            .monospacedDigit()
+                    } else {
+                        // Normal countdown (6s–20s)
+                        HStack(spacing: 5) {
+                            Image(systemName: "clock.fill")
+                                .font(.system(size: 11))
+                                .foregroundColor(.pathriftTextSecondary)
+                            HStack(spacing: 1) {
+                                Text("\(seconds)")
+                                    .font(.system(size: 16, weight: .black, design: .monospaced))
+                                    .foregroundColor(.pathriftTextPrimary)
+                                    .monospacedDigit()
+                                Text("s")
+                                    .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                    .foregroundColor(.pathriftTextSecondary)
+                            }
+                        }
+                    }
+                } else {
+                    // Normal NEXT WAVE / START button
+                    HStack(spacing: 6) {
+                        Image(systemName: "chevron.right.2")
+                            .font(.system(size: 11, weight: .bold))
+                        Text(viewModel.currentWave == 0 ? "START" : "NEXT WAVE")
+                            .font(.system(size: 12, weight: .bold, design: .rounded))
+                            .kerning(0.5)
+                    }
+                    .foregroundColor(Color.pathriftBackground)
+                }
             }
-            .foregroundColor(Color.pathriftBackground)
             .padding(.horizontal, 14)
             .frame(height: 36)
             .background(
-                LinearGradient(
-                    colors: [.pathriftNeonBlue, .pathriftPurple],
-                    startPoint: .leading, endPoint: .trailing
-                )
+                Group {
+                    if isUrgent {
+                        Color.pathriftDanger.opacity(0.18)
+                    } else if isCountingDown {
+                        Color.pathriftNeonBlue.opacity(0.18)
+                    } else {
+                        AnyView(LinearGradient(
+                            colors: [.pathriftNeonBlue, .pathriftPurple],
+                            startPoint: .leading, endPoint: .trailing
+                        ))
+                    }
+                }
             )
             .cornerRadius(18)
-            .shadow(color: .pathriftNeonBlue.opacity(0.3), radius: 6, y: 2)
+            .overlay(
+                RoundedRectangle(cornerRadius: 18)
+                    .strokeBorder(
+                        isUrgent ? Color.pathriftDanger.opacity(0.5) :
+                            (isCountingDown ? Color.pathriftNeonBlue.opacity(0.35) : Color.clear),
+                        lineWidth: isUrgent ? 1.5 : 1.0
+                    )
+            )
+            .shadow(
+                color: isUrgent ? Color.pathriftDanger.opacity(0.4) :
+                    (isCountingDown ? Color.clear : Color.pathriftNeonBlue.opacity(0.3)),
+                radius: 6, y: 2
+            )
+            .scaleEffect(isUrgent && isPulsingCountdown ? 1.06 : 1.0)
+            .animation(
+                isUrgent ? .easeInOut(duration: 0.45).repeatForever(autoreverses: true) : .default,
+                value: isPulsingCountdown
+            )
         }
         .buttonStyle(ScaleButtonStyle())
+        .onChange(of: isUrgent) { _, urgent in
+            isPulsingCountdown = urgent
+        }
     }
 
     // MARK: - Wave Progress Indicator (polished capsule with fraction)

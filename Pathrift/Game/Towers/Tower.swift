@@ -23,13 +23,13 @@ enum TowerType: String, CaseIterable, Identifiable {
         case .bolt:      return EconomyConstants.TowerCost.bolt
         case .blast:     return EconomyConstants.TowerCost.blast
         case .frost:     return EconomyConstants.TowerCost.frost
-        case .pierce:    return 130
-        case .core:      return 180
-        case .inferno:   return 200
-        case .tesla:     return 300
-        case .nova:      return 500
-        case .sniper:    return 220
-        case .artillery: return 160
+        case .pierce:    return EconomyConstants.TowerCost.pierce
+        case .core:      return EconomyConstants.TowerCost.core
+        case .inferno:   return EconomyConstants.TowerCost.inferno
+        case .tesla:     return EconomyConstants.TowerCost.tesla
+        case .nova:      return EconomyConstants.TowerCost.nova
+        case .sniper:    return EconomyConstants.TowerCost.sniper
+        case .artillery: return EconomyConstants.TowerCost.artillery
         }
     }
 
@@ -151,16 +151,16 @@ enum TowerType: String, CaseIterable, Identifiable {
 
     var diamondCost: Int {
         switch self {
-        case .bolt:      return 0
-        case .blast:     return 10
-        case .frost:     return 15
-        case .pierce:    return 30
-        case .core:      return 50
-        case .inferno:   return 80
-        case .tesla:     return 150
-        case .nova:      return 300
-        case .sniper:    return 0   // free
-        case .artillery: return 0   // free
+        case .bolt:      return 0    // FREE — starter, always unlocked
+        case .blast:     return 10   // BASIC
+        case .frost:     return 15   // BASIC
+        case .pierce:    return 30   // ADVANCED
+        case .core:      return 50   // ADVANCED
+        case .inferno:   return 80   // ELITE
+        case .tesla:     return 150  // ELITE
+        case .nova:      return 300  // ELITE
+        case .sniper:    return 0    // FREE — second starter for new players
+        case .artillery: return 20   // BASIC — was 0, now requires diamond (Build 7)
         }
     }
 

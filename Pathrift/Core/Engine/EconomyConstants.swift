@@ -20,14 +20,20 @@ enum EconomyConstants {
     }
 
     enum TowerCost {
-        static let bolt: Int    = 80           // cheaper to encourage building
-        static let blast: Int   = 130
-        static let frost: Int   = 100
-        static let pierce: Int  = 130
-        static let core: Int    = 180
-        static let inferno: Int = 200
-        static let tesla: Int   = 300
-        static let nova: Int    = 500
+        static let bolt: Int      = 80     // Tier 1 starter — affordable from wave 1
+        static let blast: Int     = 100    // was 130 — Tier 1 AoE generalist
+        static let frost: Int     = 100    // Tier 1 utility/support
+        static let pierce: Int    = 140    // was 130 — Tier 2 anti-Shield
+        static let core: Int      = 170    // was 180 — Tier 2 armor pen
+        static let sniper: Int    = 190    // was 220 — Tier 2 all-layer
+        static let artillery: Int = 160    // Tier 2 bridge AoE (unchanged)
+        static let inferno: Int   = 210    // was 200 — Tier 3 premium opener
+        static let tesla: Int     = 300    // Tier 3 chain lightning (unchanged)
+        static let nova: Int      = 500    // Tier 3 prestige AoE (unchanged)
+    }
+
+    enum MoveCost {
+        static let percent: Double = 0.30  // ceil(totalInvested * 0.30)
     }
 
     enum EnemyGoldReward {

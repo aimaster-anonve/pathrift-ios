@@ -38,15 +38,17 @@ struct GameView: View {
                 }
             )
 
-            // Tower menüsü
-            if showTowerMenu, let slotId = selectedSlotId {
+            // Tower menüsü — shown via slot tap or counter pill "+"
+            if showTowerMenu || viewModel.isShowingTowerMenu, let slotId = selectedSlotId {
                 TowerMenuView(
                     slotId: slotId,
                     goldAvailable: viewModel.gold,
                     diamonds: viewModel.diamonds,
                     onSelect: { towerType in
-                        viewModel.placeTower(type: towerType, at: slotId)
+                        // Use drag mode instead of direct placement
+                        viewModel.startDragPlacement(type: towerType)
                         showTowerMenu = false
+                        viewModel.isShowingTowerMenu = false
                         selectedSlotId = nil
                     },
                     onUnlockTower: { towerType in
@@ -54,21 +56,44 @@ struct GameView: View {
                     },
                     onDismiss: {
                         showTowerMenu = false
+                        viewModel.isShowingTowerMenu = false
                         selectedSlotId = nil
+                    }
+                )
+            } else if viewModel.isShowingTowerMenu && selectedSlotId == nil {
+                // Opened from tower counter pill — no pre-selected slot
+                TowerMenuView(
+                    slotId: -1,
+                    goldAvailable: viewModel.gold,
+                    diamonds: viewModel.diamonds,
+                    onSelect: { towerType in
+                        viewModel.startDragPlacement(type: towerType)
+                        viewModel.isShowingTowerMenu = false
+                    },
+                    onUnlockTower: { towerType in
+                        viewModel.unlockTower(towerType)
+                    },
+                    onDismiss: {
+                        viewModel.isShowingTowerMenu = false
                     }
                 )
             }
 
-            // Tower info panel (upgrade/sell)
+            // Tower info panel (upgrade/sell/move)
             if let info = viewModel.selectedTowerInfo {
                 TowerInfoPanel(
                     info: info,
                     gold: viewModel.gold,
+                    isWaveActive: viewModel.isWaveActive,
                     onUpgrade: {
                         viewModel.upgradeSelectedTower()
                     },
                     onSell: {
                         viewModel.sellSelectedTower()
+                    },
+                    onMove: {
+                        let cost = Int(ceil(Double(info.totalInvested) * EconomyConstants.MoveCost.percent))
+                        viewModel.beginMoveMode(slotId: info.slotId, moveCostValue: cost)
                     },
                     onDismiss: {
                         viewModel.selectedTowerSlotId = nil
@@ -76,6 +101,41 @@ struct GameView: View {
                         viewModel.scene.hideRangeRing()
                     }
                 )
+            }
+
+            // Drag-and-drop placement overlay (Build 7 — DEC-030)
+            if viewModel.isDraggingTower {
+                Color.clear
+                    .contentShape(Rectangle())
+                    .ignoresSafeArea()
+                    .gesture(
+                        DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                            .onChanged { value in
+                                viewModel.dragPosition = value.location
+                                let scenePoint = sceneCoordinate(from: value.location)
+                                viewModel.updateDrag(scenePoint: scenePoint)
+                            }
+                            .onEnded { value in
+                                let scenePoint = sceneCoordinate(from: value.location)
+                                viewModel.dropTower(scenePoint: scenePoint)
+                            }
+                    )
+
+                // Ghost icon follows the finger
+                if let dragType = viewModel.dragTowerType {
+                    TowerDragGhost(type: dragType)
+                        .position(viewModel.dragPosition)
+                        .allowsHitTesting(false)
+                } else if viewModel.isMovingTower {
+                    // Moving tower — ghost uses the type of the tower being moved
+                    let movingTowerType = viewModel.scene.activeTowers
+                        .first(where: { $0.slotId == viewModel.movingFromSlotId })?.type
+                    if let t = movingTowerType {
+                        TowerDragGhost(type: t)
+                            .position(viewModel.dragPosition)
+                            .allowsHitTesting(false)
+                    }
+                }
             }
 
             // Next wave info panel overlay
@@ -164,6 +224,12 @@ struct GameView: View {
                 }
             }
         }
+        .onChange(of: viewModel.isShowingTowerMenu) { _, showing in
+            // When opened from counter pill, ensure a dummy slot is used
+            if showing && selectedSlotId == nil {
+                // No slot selected — menu will dismiss after type selection and start drag
+            }
+        }
         .sheet(isPresented: $viewModel.showPremiumPrompt) {
             VStack(spacing: 16) {
                 Text("⚡ PREMIUM FEATURE")
@@ -193,6 +259,30 @@ struct GameView: View {
             .presentationDetents([.height(280)])
             .presentationBackground(Color.pathriftBackground)
         }
+    }
+}
+
+// MARK: - Drag Coordinate Helper
+
+extension GameView {
+    /// Convert a SwiftUI local coordinate to SpriteKit scene coordinate.
+    /// SpriteKit uses anchorPoint = .zero with Y flipped relative to UIKit.
+    func sceneCoordinate(from point: CGPoint) -> CGPoint {
+        let sceneHeight = viewModel.scene.size.height
+        return CGPoint(x: point.x, y: sceneHeight - point.y)
+    }
+}
+
+// MARK: - Tower Drag Ghost
+
+struct TowerDragGhost: View {
+    let type: TowerType
+
+    var body: some View {
+        TowerShapeView(type: type, size: 44)
+            .opacity(0.70)
+            .shadow(color: type.swiftUIColor.opacity(0.55), radius: 12, y: 4)
+            .scaleEffect(1.25)
     }
 }
 

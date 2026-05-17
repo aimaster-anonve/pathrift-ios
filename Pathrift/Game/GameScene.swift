@@ -31,12 +31,15 @@ final class GameScene: SKScene {
     private(set) var currentLayoutIndex: Int = 0
 
     /// Slots available increases with wave — more room to defend as game gets harder.
-    private func activeSlotCount() -> Int {
+    /// Updated in Build 7 per BUILD7_PO_SPEC.md (Eleanor) to extend beyond wave 20.
+    func activeSlotCount() -> Int {
         switch currentWaveNumber {
         case ..<5:    return 5
         case 5..<10:  return 7
         case 10..<20: return 9
-        default:      return 11
+        case 20..<30: return 11
+        case 30..<50: return 13
+        default:      return 15
         }
     }
 
@@ -102,6 +105,120 @@ final class GameScene: SKScene {
     var onWaveComplete: ((Int) -> Void)?
     var onTowerTapped: ((Int) -> Void)?
     var onRiftShift: (() -> Void)?
+
+    // MARK: - Inter-Wave Countdown (Build 7 — DEC-029)
+    private(set) var interWaveSecondsRemaining: Int = 0
+    private var interWaveTimerRunning: Bool = false
+    private var interWaveAccumulator: TimeInterval = 0
+    var onInterWaveTimerChanged: ((Int) -> Void)?
+
+    func startInterWaveCountdown() {
+        interWaveSecondsRemaining = 20
+        interWaveTimerRunning = true
+        interWaveAccumulator = 0
+        onInterWaveTimerChanged?(20)
+    }
+
+    func cancelInterWaveCountdown() {
+        interWaveTimerRunning = false
+        interWaveSecondsRemaining = 0
+        interWaveAccumulator = 0
+        onInterWaveTimerChanged?(0)
+    }
+
+    // MARK: - Drag Placement Support (Build 7 — DEC-030)
+
+    func nearestValidSlot(atScenePoint point: CGPoint) -> (slotId: Int, position: CGPoint, isValid: Bool)? {
+        let threshold: CGFloat = 80
+        var best: (slotId: Int, position: CGPoint, dist: CGFloat)? = nil
+        for slot in gridSystem.slots where !slot.state.isOccupied {
+            let dx = slot.position.x - point.x
+            let dy = slot.position.y - point.y
+            let dist = sqrt(dx * dx + dy * dy)
+            if dist < threshold && (best == nil || dist < best!.dist) {
+                best = (slot.id, slot.position, dist)
+            }
+        }
+        guard let hit = best else { return nil }
+        return (hit.slotId, hit.position, true)
+    }
+
+    private var highlightedSlotId: Int? = nil
+
+    func highlightSlot(_ slotId: Int, valid: Bool) {
+        if highlightedSlotId == slotId { return }
+        clearSlotHighlight()
+        highlightedSlotId = slotId
+        guard let node = towerSlotLayer.childNode(withName: "slot_\(slotId)") as? SKShapeNode else {
+            // Container node — find the bg child shape
+            guard let container = towerSlotLayer.childNode(withName: "slot_\(slotId)"),
+                  let bg = container.children.first as? SKShapeNode else { return }
+            let color: SKColor = valid
+                ? SKColor(red: 0.19, green: 0.82, blue: 0.34, alpha: 1)
+                : SKColor(red: 1.0, green: 0.18, blue: 0.33, alpha: 1)
+            bg.strokeColor = color
+            bg.fillColor = color.withAlphaComponent(0.18)
+            bg.lineWidth = 2.5
+            return
+        }
+        let color: SKColor = valid
+            ? SKColor(red: 0.19, green: 0.82, blue: 0.34, alpha: 1)
+            : SKColor(red: 1.0, green: 0.18, blue: 0.33, alpha: 1)
+        node.strokeColor = color
+        node.fillColor = color.withAlphaComponent(0.18)
+        node.lineWidth = 2.5
+    }
+
+    func clearSlotHighlight() {
+        guard let id = highlightedSlotId else { return }
+        if let container = towerSlotLayer.childNode(withName: "slot_\(id)"),
+           let bg = container.children.first as? SKShapeNode {
+            bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.55)
+            bg.fillColor = SKColor(red: 0.05, green: 0.09, blue: 0.14, alpha: 1.0)
+            bg.lineWidth = 1.0
+        }
+        highlightedSlotId = nil
+    }
+
+    // MARK: - Tower Move Mechanic (Build 7 — DEC-031)
+
+    func completeMoveTower(fromSlot: Int, toSlot: Int, goldCost: Int) -> Bool {
+        guard goldManager.canAfford(goldCost) else { return false }
+        guard let fromIdx = activeTowers.firstIndex(where: { $0.slotId == fromSlot }),
+              let targetSlot = gridSystem.slot(at: toSlot),
+              !targetSlot.state.isOccupied else { return false }
+
+        let tower = activeTowers[fromIdx]
+        let towerType = tower.type
+
+        // Update grid
+        gridSystem.removeTower(at: fromSlot)
+        gridSystem.placeTower(type: towerType, at: toSlot)
+
+        // Update tower position and slotId
+        tower.position = targetSlot.position
+        tower.slotId = toSlot
+        tower.node.run(SKAction.sequence([
+            SKAction.group([
+                SKAction.move(to: targetSlot.position, duration: 0.25),
+                SKAction.sequence([SKAction.scale(to: 1.15, duration: 0.1), SKAction.scale(to: 1.0, duration: 0.15)])
+            ])
+        ]))
+
+        // Update tap detectors
+        towerLayer.childNode(withName: "slot_\(fromSlot)")?.removeFromParent()
+        let tapDet = SKShapeNode(circleOfRadius: 22)
+        tapDet.fillColor = SKColor.clear; tapDet.strokeColor = SKColor.clear
+        tapDet.name = "slot_\(toSlot)"; tapDet.position = targetSlot.position; tapDet.zPosition = 6
+        towerLayer.addChild(tapDet)
+
+        // Show old slot, hide new slot
+        towerSlotLayer.childNode(withName: "slot_\(fromSlot)")?.isHidden = false
+        towerSlotLayer.childNode(withName: "slot_\(toSlot)")?.isHidden = true
+
+        goldManager.spend(goldCost)
+        return true
+    }
     var onSelectedTowerSlotId: Int? {
         didSet {
             if onSelectedTowerSlotId == nil { hideRangeRing() }
@@ -648,6 +765,8 @@ final class GameScene: SKScene {
 
     func startNextWave() {
         guard !isGameOver else { return }
+        // Cancel any running inter-wave countdown
+        cancelInterWaveCountdown()
         let waveDef = waveSystem.nextWave()
         currentWaveNumber = waveDef.waveNumber
         spawnInterval = waveDef.spawnInterval
@@ -767,6 +886,20 @@ final class GameScene: SKScene {
             }
         }
 
+        // Inter-wave countdown tick — pauses when scene is paused (isPaused stops update calls)
+        if interWaveTimerRunning && !isWaveActive && interWaveSecondsRemaining > 0 {
+            interWaveAccumulator += deltaTime  // use real deltaTime (not speed-scaled)
+            if interWaveAccumulator >= 1.0 {
+                interWaveAccumulator -= 1.0
+                interWaveSecondsRemaining -= 1
+                onInterWaveTimerChanged?(interWaveSecondsRemaining)
+                if interWaveSecondsRemaining <= 0 {
+                    interWaveTimerRunning = false
+                    startNextWave()
+                }
+            }
+        }
+
         updateEnemies(deltaTime: adjustedDelta, currentTime: currentTime)
         updateTowers(currentTime: currentTime)
         checkWaveCompletion()
@@ -870,6 +1003,8 @@ final class GameScene: SKScene {
             isWaveActive = false
             goldManager.awardWaveReward(wave: currentWaveNumber)
             onWaveComplete?(currentWaveNumber)
+            // Start the inter-wave countdown timer (DEC-029)
+            startInterWaveCountdown()
 
             // Diamond reward every 10 waves
             if currentWaveNumber % 10 == 0 {

@@ -1,13 +1,21 @@
 import SwiftUI
+import Foundation
 
 struct TowerInfoPanel: View {
     let info: GameViewModel.TowerInfo
     let gold: Int
+    let isWaveActive: Bool
     let onUpgrade: () -> Void
     let onSell: () -> Void
+    let onMove: () -> Void
     let onDismiss: () -> Void
 
     var canAffordUpgrade: Bool { gold >= info.upgradeCost }
+
+    private var moveCost: Int {
+        Int(ceil(Double(info.totalInvested) * EconomyConstants.MoveCost.percent))
+    }
+    private var canAffordMove: Bool { gold >= moveCost }
 
     var body: some View {
         ZStack {
@@ -111,6 +119,29 @@ struct TowerInfoPanel: View {
                         .strokeBorder(Color.pathriftDanger.opacity(0.35), lineWidth: 1))
                 }
                 .buttonStyle(ScaleButtonStyle())
+
+                // MOVE button — only shown between waves (Build 7 — DEC-031)
+                if !isWaveActive {
+                    Button(action: onMove) {
+                        VStack(spacing: 1) {
+                            Image(systemName: "arrow.up.and.down.and.left.and.right")
+                                .font(.system(size: 12, weight: .bold))
+                            Text("\(moveCost)g")
+                                .font(.system(size: 8, design: .monospaced)).opacity(0.8)
+                        }
+                        .foregroundColor(canAffordMove ? .pathriftGold : .pathriftTextSecondary)
+                        .frame(width: 52, height: 38)
+                        .background(canAffordMove ? Color.pathriftGold.opacity(0.10) : Color.white.opacity(0.06))
+                        .cornerRadius(10)
+                        .overlay(RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(
+                                canAffordMove ? Color.pathriftGold.opacity(0.40) : Color.pathriftTextSecondary.opacity(0.25),
+                                lineWidth: 1))
+                    }
+                    .disabled(!canAffordMove)
+                    .buttonStyle(ScaleButtonStyle())
+                    .transition(.opacity.combined(with: .scale(scale: 0.85)))
+                }
 
                 Button(action: onDismiss) {
                     Image(systemName: "xmark")

@@ -22,12 +22,32 @@ final class GameViewModel: ObservableObject {
     @Published var showRevivePrompt: Bool = false
     @Published var reviveCountdown: Int = 5
 
+    // MARK: - Inter-Wave Countdown (Build 7 — DEC-029)
+    @Published var interWaveSecondsRemaining: Int = 0
+
+    // MARK: - Drag-and-Drop Placement (Build 7 — DEC-030)
+    @Published var isDraggingTower: Bool = false
+    @Published var dragTowerType: TowerType? = nil
+    @Published var dragPosition: CGPoint = .zero
+    @Published var dragValidSlotId: Int? = nil
+    @Published var isShowingTowerMenu: Bool = false
+
+    // MARK: - Tower Move Mechanic (Build 7 — DEC-031)
+    @Published var isMovingTower: Bool = false
+    @Published var movingFromSlotId: Int? = nil
+    @Published var moveCost: Int = 0
+
     private var reviveTimer: Timer?
 
     var waveProgress: Double {
         guard waveEnemyTotal > 0 else { return 0 }
         return min(1.0, Double(waveEnemiesCleared) / Double(waveEnemyTotal))
     }
+
+    // MARK: - Tower Counter (Build 7)
+    var activeTowerCount: Int { scene.activeTowers.count }
+    var maxTowerCount: Int { scene.activeSlotCount() }
+    var canAddTower: Bool { !isWaveActive && activeTowerCount < maxTowerCount }
 
     var nextWaveDefinition: WaveDefinition {
         scene.waveSystem.waveDefinition(for: scene.currentWaveNumber + 1)
@@ -149,6 +169,9 @@ final class GameViewModel: ObservableObject {
                 self?.startReviveCountdown()
             }
         }
+        scene.onInterWaveTimerChanged = { [weak self] seconds in
+            DispatchQueue.main.async { self?.interWaveSecondsRemaining = seconds }
+        }
     }
 
     private func startReviveCountdown() {
@@ -229,5 +252,70 @@ final class GameViewModel: ObservableObject {
         if DiamondStore.shared.unlock(type) {
             diamonds = DiamondStore.shared.balance
         }
+    }
+
+    // MARK: - Drag-and-Drop Placement (Build 7 — DEC-030)
+
+    func startDragPlacement(type: TowerType) {
+        isDraggingTower = true
+        dragTowerType = type
+        selectedTowerSlotId = nil
+        selectedTowerInfo = nil
+        isShowingTowerMenu = false
+    }
+
+    func updateDrag(scenePoint: CGPoint) {
+        guard isDraggingTower else { return }
+        dragPosition = .zero  // position managed by SwiftUI drag
+        if let hit = scene.nearestValidSlot(atScenePoint: scenePoint) {
+            scene.highlightSlot(hit.slotId, valid: hit.isValid)
+            dragValidSlotId = hit.slotId
+        } else {
+            scene.clearSlotHighlight()
+            dragValidSlotId = nil
+        }
+    }
+
+    func dropTower(scenePoint: CGPoint) {
+        defer {
+            isDraggingTower = false
+            dragTowerType = nil
+            dragValidSlotId = nil
+            isMovingTower = false
+            movingFromSlotId = nil
+            scene.clearSlotHighlight()
+        }
+        if isMovingTower, let fromSlot = movingFromSlotId {
+            if let hit = scene.nearestValidSlot(atScenePoint: scenePoint), hit.slotId != fromSlot {
+                let _ = scene.completeMoveTower(fromSlot: fromSlot, toSlot: hit.slotId, goldCost: moveCost)
+            }
+        } else {
+            guard let type = dragTowerType else { return }
+            if let hit = scene.nearestValidSlot(atScenePoint: scenePoint), hit.isValid {
+                scene.placeTower(type: type, at: hit.slotId)
+            }
+        }
+    }
+
+    func cancelDrag() {
+        isDraggingTower = false
+        dragTowerType = nil
+        dragValidSlotId = nil
+        isMovingTower = false
+        movingFromSlotId = nil
+        scene.clearSlotHighlight()
+    }
+
+    // MARK: - Tower Move Mode (Build 7 — DEC-031)
+
+    func beginMoveMode(slotId: Int, moveCostValue: Int) {
+        isMovingTower = true
+        movingFromSlotId = slotId
+        moveCost = moveCostValue
+        selectedTowerSlotId = nil
+        selectedTowerInfo = nil
+        isDraggingTower = true
+        dragTowerType = nil
+        scene.hideRangeRing()
     }
 }
