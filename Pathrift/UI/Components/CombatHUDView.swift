@@ -459,22 +459,11 @@ struct CombatHUDView: View {
         }
     }
 
-    // MARK: - Wave Progress Indicator (Build 9 — Fix 6: wave number + flash protection)
+    // MARK: - Wave Progress Indicator (Build 9 — WAVE label removed, shows only bar + counter)
 
     private var waveProgressIndicator: some View {
         HStack(spacing: 8) {
-            // Wave numarası
-            VStack(spacing: 0) {
-                Text("WAVE")
-                    .font(.system(size: 7, weight: .bold, design: .monospaced))
-                    .foregroundColor(.pathriftTextSecondary)
-                    .kerning(1.5)
-                Text(viewModel.currentWave > 0 ? "\(viewModel.currentWave)" : "...")
-                    .font(.system(size: 14, weight: .black, design: .rounded))
-                    .foregroundColor(.pathriftNeonBlue)
-                    .monospacedDigit()
-            }
-
+            // WAVE label removed — shows only progress bar + counter
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
@@ -489,10 +478,10 @@ struct CombatHUDView: View {
                         .animation(.linear(duration: 0.2), value: viewModel.waveProgress)
                 }
             }
-            .frame(width: 80, height: 5)
+            .frame(width: 100, height: 5)
 
             Text("\(viewModel.waveEnemiesCleared)/\(viewModel.waveEnemyTotal)")
-                .font(.system(size: 9, weight: .bold, design: .monospaced))
+                .font(.system(size: 11, weight: .bold, design: .monospaced))
                 .foregroundColor(.pathriftTextSecondary)
                 .monospacedDigit()
         }

@@ -1451,6 +1451,46 @@ final class GameScene: SKScene {
         return (waypoints, layers, slots)
     }
 
+    /// Pushes a position off the current path using perpendicular projection.
+    /// Returns the nearest valid point perpendicular to the closest path segment.
+    private func relocateTowerOffPath(position: CGPoint) -> CGPoint {
+        let pts = PathSystem.waypoints
+        guard pts.count > 1 else { return position }
+
+        var minDist = CGFloat.infinity
+        var nearestPoint = position
+        var perpDx: CGFloat = 0; var perpDy: CGFloat = 1
+
+        for i in 1..<pts.count {
+            let a = pts[i-1]; let b = pts[i]
+            let dx = b.x - a.x; let dy = b.y - a.y
+            let len2 = dx*dx + dy*dy
+            if len2 == 0 { continue }
+            let t = max(0, min(1, ((position.x-a.x)*dx + (position.y-a.y)*dy) / len2))
+            let cx = a.x + t*dx; let cy = a.y + t*dy
+            let dist = hypot(position.x-cx, position.y-cy)
+            if dist < minDist {
+                minDist = dist
+                nearestPoint = CGPoint(x: cx, y: cy)
+                if dist > 0.5 {
+                    perpDx = (position.x - cx) / dist
+                    perpDy = (position.y - cy) / dist
+                } else {
+                    // Tower exactly on path — use segment's 90° normal
+                    let segLen = sqrt(len2)
+                    perpDx = -dy / segLen
+                    perpDy =  dx / segLen
+                }
+            }
+        }
+
+        // Push 44pt along perpendicular (outside 38pt clearance threshold)
+        let pushDist: CGFloat = 44
+        let newX = max(15, min(size.width - 15, nearestPoint.x + perpDx * pushDist))
+        let newY = max(contentMinY + 15, min(contentMaxY - 15, nearestPoint.y + perpDy * pushDist))
+        return CGPoint(x: newX, y: newY)
+    }
+
     private func performRiftShift() {
         // Pick a completely different layout — never repeat the same one
         var newIndex = Int.random(in: 0..<totalLayoutCount)
@@ -1490,15 +1530,33 @@ final class GameScene: SKScene {
         }
         activeTowers.removeAll { snap in destroyedTowers.contains(where: { $0.towerId == snap.slotId }) }
 
-        // Survivors keep their current positions — no forced relocation in free-form mode.
-        // Animate a brief pulse to indicate survival.
+        // Survivors: relocate off new path if needed, then animate survival pulse.
         for snap in survivors {
+            var finalPosition = snap.tower.position
+
+            // Relocate if tower now collides with new path (DEC-032: free-form mode)
+            if !isValidPlacement(finalPosition, excludingTowerId: snap.towerId) {
+                let relocated = relocateTowerOffPath(position: finalPosition)
+                // Only accept if relocated position is actually valid
+                if isValidPlacement(relocated, excludingTowerId: snap.towerId) {
+                    finalPosition = relocated
+                }
+                // else: keep original position (best effort — at least we tried)
+            }
+
+            // Apply position to node, tap detector, and grid record
+            snap.tower.node.position = finalPosition
+            if let idx = activeTowers.firstIndex(where: { $0.slotId == snap.towerId }) {
+                activeTowers[idx].position = finalPosition
+            }
+            towerLayer.childNode(withName: "tower_\(snap.towerId)")?.position = finalPosition
+            gridSystem.moveTower(id: snap.towerId, to: finalPosition)
+
+            // Survival pulse
             snap.tower.node.run(SKAction.sequence([
                 SKAction.scale(to: 1.25, duration: 0.15),
                 SKAction.scale(to: 1.0, duration: 0.15)
             ]))
-            // Update gridSystem position record to match (position unchanged but keeps record valid)
-            gridSystem.moveTower(id: snap.towerId, to: snap.tower.position)
         }
 
         hideRangeRing()
