@@ -7,6 +7,7 @@ struct StoreScreen: View {
     @State private var dailyClaimed: Bool = false
     @State private var isPremium: Bool = false
     @State private var selectedTower: TowerType? = nil
+    @State private var adsWatchedToday: Int = 0
 
     private var isLandscape: Bool {
         UIScreen.main.bounds.width > UIScreen.main.bounds.height
@@ -28,6 +29,7 @@ struct StoreScreen: View {
             diamonds = DiamondStore.shared.balance
             dailyClaimed = UserDefaults.standard.bool(forKey: "daily_claimed_\(todayKey())")
             isPremium = PremiumStore.shared.isPremium
+            adsWatchedToday = AdRewardStore.shared.adsWatchedToday
         }
         .sheet(item: $selectedTower) { type in
             TowerDetailSheet(type: type, diamonds: $diamonds)
@@ -74,7 +76,8 @@ struct StoreScreen: View {
             VStack(spacing: 24) {
                 premiumSection
                 towersSection
-                diamondsSection
+                diamondPacksSection
+                watchAdSection
                 dailyBonusCard
             }
             .padding(.horizontal, 20)
@@ -87,11 +90,12 @@ struct StoreScreen: View {
 
     private var landscapeContent: some View {
         HStack(alignment: .top, spacing: 0) {
-            // LEFT column: premium + diamonds + daily bonus
+            // LEFT column: premium + diamond packs + watch ad + daily bonus
             ScrollView {
                 VStack(spacing: 16) {
                     premiumSection
-                    diamondsSection
+                    diamondPacksSection
+                    watchAdSection
                     dailyBonusCard
                 }
                 .padding(.horizontal, 12)
@@ -278,6 +282,11 @@ struct StoreScreen: View {
                         Text("OWNED ✓")
                             .foregroundColor(.pathriftSuccess)
                             .background(Color.pathriftSuccess.opacity(0.15))
+                    } else if let price = type.iapPrice {
+                        // IAP tower — show money price
+                        Text(price)
+                            .foregroundColor(.pathriftGold)
+                            .background(Color.pathriftGold.opacity(0.12))
                     } else {
                         HStack(spacing: 3) {
                             Text("♦").foregroundColor(Color(red: 0, green: 0.8, blue: 1))
@@ -304,51 +313,121 @@ struct StoreScreen: View {
         .buttonStyle(ScaleButtonStyle())
     }
 
-    // MARK: - Section 3: Diamonds
+    // MARK: - Section 3: Diamond Packs (mock IAP)
 
-    private var diamondsSection: some View {
+    private var diamondPacksSection: some View {
         VStack(alignment: .leading, spacing: 12) {
-            sectionHeader("DIAMONDS", icon: "diamond.fill")
-            VStack(spacing: 12) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("DIAMONDS")
-                            .font(.system(size: 11, weight: .bold, design: .monospaced))
-                            .foregroundColor(.pathriftTextSecondary)
-                            .kerning(2)
-                        HStack(spacing: 8) {
-                            Image(systemName: "diamond.fill")
-                                .font(.system(size: 26))
-                                .foregroundColor(.pathriftNeonBlue)
-                                .shadow(color: .pathriftNeonBlue.opacity(0.6), radius: 8)
-                            Text("\(diamonds)")
-                                .font(.system(size: 34, weight: .black, design: .rounded))
+            sectionHeader("BUY DIAMONDS", icon: "diamond.fill")
+
+            let packs: [(label: String, diamonds: Int, price: String, color: Color)] = [
+                ("STARTER",  100,  "$0.99",  .pathriftNeonBlue),
+                ("GAMER",    350,  "$2.99",  .pathriftPurple),
+                ("PRO",      800,  "$5.99",  .pathriftGold),
+                ("ELITE",   2000, "$12.99",  Color(red: 1, green: 0.3, blue: 0.3)),
+            ]
+
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                ForEach(packs, id: \.label) { pack in
+                    Button(action: {
+                        // Mock purchase — real StoreKit in Phase 7
+                        DiamondStore.shared.earn(pack.diamonds)
+                        diamonds = DiamondStore.shared.balance
+                    }) {
+                        VStack(spacing: 6) {
+                            Text(pack.label)
+                                .font(.system(size: 10, weight: .bold, design: .monospaced))
+                                .foregroundColor(.pathriftTextSecondary)
+                                .kerning(1.5)
+                            HStack(spacing: 4) {
+                                Image(systemName: "diamond.fill")
+                                    .font(.system(size: 14))
+                                    .foregroundColor(pack.color)
+                                Text("\(pack.diamonds)")
+                                    .font(.system(size: 20, weight: .black, design: .rounded))
+                                    .foregroundColor(pack.color)
+                            }
+                            Text(pack.price)
+                                .font(.system(size: 13, weight: .bold))
                                 .foregroundColor(.pathriftTextPrimary)
-                                .monospacedDigit()
+                                .frame(maxWidth: .infinity, minHeight: 36)
+                                .background(pack.color.opacity(0.18))
+                                .cornerRadius(8)
+                        }
+                        .padding(12)
+                        .background(Color.pathriftSurface)
+                        .cornerRadius(12)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12)
+                                .strokeBorder(pack.color.opacity(0.3), lineWidth: 1)
+                        )
+                    }
+                    .buttonStyle(ScaleButtonStyle())
+                }
+            }
+        }
+    }
+
+    // MARK: - Section 4: Watch Ad (rewarded ads)
+
+    private var watchAdSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            sectionHeader("FREE DIAMONDS", icon: "play.rectangle.fill")
+
+            VStack(spacing: 10) {
+                // Progress indicator
+                HStack {
+                    ForEach(0..<AdRewardStore.shared.maxDailyAds, id: \.self) { i in
+                        Circle()
+                            .fill(i < adsWatchedToday ? Color.pathriftGold : Color.pathriftSurface)
+                            .frame(width: 12, height: 12)
+                            .overlay(Circle().strokeBorder(Color.pathriftGold.opacity(0.4), lineWidth: 1))
+                    }
+                    Text("\(adsWatchedToday)/\(AdRewardStore.shared.maxDailyAds) today")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundColor(.pathriftTextSecondary)
+                    Spacer()
+                    Text("+\(AdRewardStore.shared.rewardPerAd) ♦ per ad")
+                        .font(.system(size: 11, weight: .bold, design: .monospaced))
+                        .foregroundColor(.pathriftGold)
+                }
+
+                let canWatch = AdRewardStore.shared.canWatch
+                Button(action: {
+                    if AdRewardStore.shared.watchAd() {
+                        diamonds = DiamondStore.shared.balance
+                        adsWatchedToday = AdRewardStore.shared.adsWatchedToday
+                    }
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: canWatch ? "play.circle.fill" : "checkmark.circle.fill")
+                            .font(.system(size: 18))
+                        Text(canWatch ? "WATCH AD — GET +\(AdRewardStore.shared.rewardPerAd) ♦" : "DAILY LIMIT REACHED")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                        Spacer()
+                        if canWatch {
+                            Text("\(AdRewardStore.shared.adsRemaining) left")
+                                .font(.system(size: 11, design: .monospaced))
+                                .foregroundColor(.pathriftGold.opacity(0.7))
                         }
                     }
-                    Spacer()
-                    Image(systemName: "lock.fill")
-                        .font(.system(size: 30))
-                        .foregroundColor(.pathriftTextSecondary.opacity(0.3))
+                    .foregroundColor(canWatch ? .pathriftBackground : .pathriftTextSecondary)
+                    .padding(.horizontal, 16).padding(.vertical, 12)
+                    .background(canWatch ? Color.pathriftGold : Color.pathriftSurface)
+                    .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .strokeBorder(canWatch ? Color.clear : Color.pathriftTextSecondary.opacity(0.2), lineWidth: 1)
+                    )
                 }
-                Text("Buy Diamonds – Coming Soon (Phase 7)")
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundColor(.pathriftTextSecondary.opacity(0.6))
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                .buttonStyle(ScaleButtonStyle())
+                .disabled(!canWatch)
             }
-            .padding(20)
-            .background(
-                LinearGradient(
-                    colors: [Color.pathriftSurface, Color.pathriftNeonBlue.opacity(0.08)],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
-                )
-            )
-            .cornerRadius(16)
+            .padding(16)
+            .background(Color.pathriftSurface)
+            .cornerRadius(14)
             .overlay(
-                RoundedRectangle(cornerRadius: 16)
-                    .strokeBorder(Color.pathriftNeonBlue.opacity(0.2), lineWidth: 1)
+                RoundedRectangle(cornerRadius: 14)
+                    .strokeBorder(Color.pathriftGold.opacity(0.2), lineWidth: 1)
             )
         }
     }
@@ -434,7 +513,6 @@ struct TowerDetailSheet: View {
     @Environment(\.dismiss) private var dismiss
 
     var isUnlocked: Bool { DiamondStore.shared.isUnlocked(type) }
-    var canAfford: Bool { diamonds >= type.diamondCost }
 
     var body: some View {
         ZStack {
@@ -562,16 +640,76 @@ struct TowerDetailSheet: View {
 
     @ViewBuilder
     private var unlockOrOwnedButton: some View {
-        if isUnlocked {
+        let isFreeT = type.diamondCost == 0
+        if isUnlocked || isFreeT {
+            // Owned / Free
             HStack(spacing: 6) {
                 Image(systemName: "checkmark.circle.fill").foregroundColor(.pathriftSuccess)
-                Text("OWNED").font(.system(size: 15, weight: .bold)).foregroundColor(.pathriftSuccess)
+                Text(isFreeT ? "FREE" : "OWNED").font(.system(size: 15, weight: .bold)).foregroundColor(.pathriftSuccess)
             }
             .frame(maxWidth: .infinity, minHeight: 50)
             .background(Color.pathriftSuccess.opacity(0.12))
             .cornerRadius(14)
             .padding(.horizontal, 24)
+        } else if let price = type.iapPrice {
+            // IAP tower (Tesla / Nova) — real money + diamond alternative
+            VStack(spacing: 10) {
+                // Primary: Buy with money
+                Button(action: {
+                    // Mock IAP purchase — real StoreKit in Phase 7
+                    DiamondStore.shared.iapUnlock(type)
+                    dismiss()
+                }) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "creditcard.fill").font(.system(size: 13))
+                        Text("BUY NOW — \(price)")
+                            .font(.system(size: 14, weight: .bold, design: .rounded))
+                    }
+                    .foregroundColor(.pathriftBackground)
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .background(
+                        LinearGradient(colors: [.pathriftGold, Color(red: 1, green: 0.6, blue: 0)],
+                                       startPoint: .leading, endPoint: .trailing)
+                    )
+                    .cornerRadius(14)
+                    .shadow(color: Color.pathriftGold.opacity(0.4), radius: 8, y: 3)
+                }
+                .buttonStyle(ScaleButtonStyle())
+                .padding(.horizontal, 24)
+
+                // Secondary: diamond unlock
+                let canAffordD = diamonds >= type.diamondCost
+                Button(action: {
+                    if DiamondStore.shared.unlock(type) {
+                        diamonds = DiamondStore.shared.balance
+                        dismiss()
+                    }
+                }) {
+                    HStack(spacing: 4) {
+                        Text("♦")
+                        Text("Unlock with \(type.diamondCost) diamonds")
+                            .font(.system(size: 12, weight: .medium))
+                    }
+                    .foregroundColor(canAffordD ? .pathriftNeonBlue : .pathriftTextSecondary.opacity(0.5))
+                    .frame(maxWidth: .infinity, minHeight: 40)
+                    .background(Color.pathriftSurface)
+                    .cornerRadius(10)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .strokeBorder(canAffordD ? Color.pathriftNeonBlue.opacity(0.4) : Color.clear, lineWidth: 1)
+                    )
+                }
+                .disabled(!canAffordD)
+                .padding(.horizontal, 24)
+
+                if !canAffordD {
+                    Text("Need \(type.diamondCost - diamonds) more ♦")
+                        .font(.system(size: 11)).foregroundColor(.pathriftDanger)
+                }
+            }
         } else {
+            // Diamond-only tower
+            let canAffordD = diamonds >= type.diamondCost
             VStack(spacing: 4) {
                 Button(action: {
                     if DiamondStore.shared.unlock(type) {
@@ -584,21 +722,20 @@ struct TowerDetailSheet: View {
                         Text("UNLOCK FOR \(type.diamondCost) DIAMONDS")
                             .font(.system(size: 14, weight: .bold))
                     }
-                    .foregroundColor(canAfford ? .pathriftBackground : .pathriftTextSecondary)
+                    .foregroundColor(canAffordD ? .pathriftBackground : .pathriftTextSecondary)
                     .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(canAfford ? Color.pathriftNeonBlue : Color.pathriftSurface)
+                    .background(canAffordD ? Color.pathriftNeonBlue : Color.pathriftSurface)
                     .cornerRadius(14)
                     .overlay(
                         RoundedRectangle(cornerRadius: 14)
-                            .strokeBorder(canAfford ? Color.clear : Color.pathriftTextSecondary.opacity(0.3), lineWidth: 1)
+                            .strokeBorder(canAffordD ? Color.clear : Color.pathriftTextSecondary.opacity(0.3), lineWidth: 1)
                     )
                 }
-                .disabled(!canAfford)
+                .disabled(!canAffordD)
                 .padding(.horizontal, 24)
-                if !canAfford {
-                    Text("Not enough diamonds (need \(type.diamondCost - diamonds) more)")
-                        .font(.system(size: 11))
-                        .foregroundColor(.pathriftDanger)
+                if !canAffordD {
+                    Text("Need \(type.diamondCost - diamonds) more ♦")
+                        .font(.system(size: 11)).foregroundColor(.pathriftDanger)
                 }
             }
         }

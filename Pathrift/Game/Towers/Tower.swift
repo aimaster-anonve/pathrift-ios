@@ -151,18 +151,30 @@ enum TowerType: String, CaseIterable, Identifiable {
 
     var diamondCost: Int {
         switch self {
-        case .bolt:      return 0    // FREE — starter, always unlocked
-        case .blast:     return 10   // BASIC
-        case .frost:     return 15   // BASIC
-        case .pierce:    return 30   // ADVANCED
-        case .core:      return 50   // ADVANCED
-        case .inferno:   return 80   // ELITE
-        case .tesla:     return 150  // ELITE
-        case .nova:      return 300  // ELITE
-        case .sniper:    return 0    // FREE — second starter for new players
-        case .artillery: return 20   // BASIC — was 0, now requires diamond (Build 7)
+        case .bolt:      return 0    // FREE
+        case .blast:     return 0    // FREE
+        case .frost:     return 0    // FREE
+        case .pierce:    return 80
+        case .artillery: return 80
+        case .sniper:    return 100
+        case .core:      return 120
+        case .inferno:   return 200
+        case .tesla:     return 600  // OR $2.99 IAP
+        case .nova:      return 1000 // OR $4.99 IAP
         }
     }
+
+    /// Real-money purchase price string. nil = diamond-only tower.
+    var iapPrice: String? {
+        switch self {
+        case .tesla: return "$2.99"
+        case .nova:  return "$4.99"
+        default:     return nil
+        }
+    }
+
+    /// True if this tower can be bought with real money (IAP).
+    var isIAPTower: Bool { iapPrice != nil }
 
     var isPremium: Bool { diamondCost > 0 }
 

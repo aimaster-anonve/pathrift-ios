@@ -6,12 +6,8 @@ final class DiamondStore {
     private let unlockedKey = "pathrift_unlocked_towers"
 
     private init() {
-        // Always ensure bolt is unlocked
-        if !unlockedTowers.contains(TowerType.bolt.rawValue) {
-            var set = unlockedTowers
-            set.insert(TowerType.bolt.rawValue)
-            unlockedTowers = set
-        }
+        // Bolt/Blast/Frost are free (diamondCost == 0) — no explicit unlock needed.
+        // Legacy: if bolt was previously stored, it stays harmless.
     }
 
     var balance: Int {
@@ -41,7 +37,7 @@ final class DiamondStore {
 
     func isUnlocked(_ type: TowerType) -> Bool {
         if PremiumStore.shared.isPremium { return true }
-        guard type.diamondCost > 0 else { return true }
+        if type.diamondCost == 0 { return true }  // FREE tiers: Bolt, Blast, Frost
         return unlockedTowers.contains(type.rawValue)
     }
 
@@ -52,5 +48,13 @@ final class DiamondStore {
         set.insert(type.rawValue)
         unlockedTowers = set
         return true
+    }
+
+    /// Simulate IAP purchase — marks tower unlocked without spending diamonds.
+    /// Real StoreKit integration will replace this in Phase 7.
+    func iapUnlock(_ type: TowerType) {
+        var set = unlockedTowers
+        set.insert(type.rawValue)
+        unlockedTowers = set
     }
 }
