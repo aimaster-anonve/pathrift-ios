@@ -25,14 +25,16 @@ final class GameViewModel: ObservableObject {
     // MARK: - Inter-Wave Countdown (Build 7 — DEC-029)
     @Published var interWaveSecondsRemaining: Int = 0
 
-    // MARK: - Drag-and-Drop Placement (Build 7 — DEC-030)
+    // MARK: - Drag-and-Drop Placement (Build 8 — DEC-032)
     @Published var isDraggingTower: Bool = false
     @Published var dragTowerType: TowerType? = nil
     @Published var dragPosition: CGPoint = .zero
-    @Published var dragValidSlotId: Int? = nil
+    @Published var dragValidSlotId: Int? = nil      // kept for legacy compatibility
     @Published var isShowingTowerMenu: Bool = false
+    @Published var isDragPositionValid: Bool = false
+    @Published var lastValidScenePoint: CGPoint? = nil
 
-    // MARK: - Tower Move Mechanic (Build 7 — DEC-031)
+    // MARK: - Tower Move Mechanic (Build 8 — DEC-032)
     @Published var isMovingTower: Bool = false
     @Published var movingFromSlotId: Int? = nil
     @Published var moveCost: Int = 0
@@ -110,9 +112,17 @@ final class GameViewModel: ObservableObject {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
                     self.waveCompleteMessage = nil
                 }
-                // Save game state after each wave
-                let towers = self.scene.activeTowers.map {
-                    SavedTower(slotId: $0.slotId, type: $0.type.rawValue, level: $0.level, totalInvested: $0.totalInvested)
+                // Save game state after each wave (Build 8: position fraction format — DEC-032)
+                let sceneW = self.scene.size.width
+                let sceneH = self.scene.size.height
+                let towers = self.scene.activeTowers.map { tower in
+                    SavedTower(
+                        xFrac: sceneW > 0 ? Double(tower.position.x / sceneW) : 0,
+                        yFrac: sceneH > 0 ? Double(tower.position.y / sceneH) : 0,
+                        type: tower.type.rawValue,
+                        level: tower.level,
+                        totalInvested: tower.totalInvested
+                    )
                 }
                 GameSaveStore.shared.save(
                     wave: wave,
@@ -254,7 +264,7 @@ final class GameViewModel: ObservableObject {
         }
     }
 
-    // MARK: - Drag-and-Drop Placement (Build 7 — DEC-030)
+    // MARK: - Drag-and-Drop Placement (Build 8 — DEC-032)
 
     func startDragPlacement(type: TowerType) {
         isDraggingTower = true
@@ -262,38 +272,29 @@ final class GameViewModel: ObservableObject {
         selectedTowerSlotId = nil
         selectedTowerInfo = nil
         isShowingTowerMenu = false
+        isDragPositionValid = false
+        lastValidScenePoint = nil
     }
 
-    func updateDrag(scenePoint: CGPoint) {
-        guard isDraggingTower else { return }
-        dragPosition = .zero  // position managed by SwiftUI drag
-        if let hit = scene.nearestValidSlot(atScenePoint: scenePoint) {
-            scene.highlightSlot(hit.slotId, valid: hit.isValid)
-            dragValidSlotId = hit.slotId
-        } else {
-            scene.clearSlotHighlight()
-            dragValidSlotId = nil
-        }
+    /// Called from drag gesture — converts screen point to scene coords and validates.
+    func updateDragFromScreen(_ screenPoint: CGPoint, sceneSize: CGSize) {
+        dragPosition = screenPoint
+        // SpriteKit Y is flipped relative to UIKit
+        let sp = CGPoint(x: screenPoint.x, y: sceneSize.height - screenPoint.y)
+        let excludeId: Int? = isMovingTower ? movingFromSlotId : nil
+        let valid = scene.isValidPlacement(sp, excludingTowerId: excludeId)
+        isDragPositionValid = valid
+        if valid { lastValidScenePoint = sp }
     }
 
-    func dropTower(scenePoint: CGPoint) {
-        defer {
-            isDraggingTower = false
-            dragTowerType = nil
-            dragValidSlotId = nil
-            isMovingTower = false
-            movingFromSlotId = nil
-            scene.clearSlotHighlight()
-        }
-        if isMovingTower, let fromSlot = movingFromSlotId {
-            if let hit = scene.nearestValidSlot(atScenePoint: scenePoint), hit.slotId != fromSlot {
-                let _ = scene.completeMoveTower(fromSlot: fromSlot, toSlot: hit.slotId, goldCost: moveCost)
-            }
-        } else {
-            guard let type = dragTowerType else { return }
-            if let hit = scene.nearestValidSlot(atScenePoint: scenePoint), hit.isValid {
-                scene.placeTower(type: type, at: hit.slotId)
-            }
+    /// Confirm button tapped — place or move tower at last valid scene point.
+    func confirmPlacement() {
+        guard let sp = lastValidScenePoint else { cancelDrag(); return }
+        defer { cancelDrag() }
+        if isMovingTower, let towerId = movingFromSlotId {
+            let _ = scene.completeMoveTower(towerId: towerId, toPoint: sp, goldCost: moveCost)
+        } else if let type = dragTowerType {
+            let _ = scene.placeTowerFreeform(type: type, at: sp)
         }
     }
 
@@ -301,21 +302,23 @@ final class GameViewModel: ObservableObject {
         isDraggingTower = false
         dragTowerType = nil
         dragValidSlotId = nil
+        isDragPositionValid = false
+        lastValidScenePoint = nil
         isMovingTower = false
         movingFromSlotId = nil
-        scene.clearSlotHighlight()
     }
 
-    // MARK: - Tower Move Mode (Build 7 — DEC-031)
+    // MARK: - Tower Move Mode (Build 8 — DEC-032)
 
-    func beginMoveMode(slotId: Int, moveCostValue: Int) {
+    func beginMoveMode(towerId: Int, moveCost: Int) {
         isMovingTower = true
-        movingFromSlotId = slotId
-        moveCost = moveCostValue
+        movingFromSlotId = towerId
+        self.moveCost = moveCost
         selectedTowerSlotId = nil
         selectedTowerInfo = nil
         isDraggingTower = true
-        dragTowerType = nil
+        isDragPositionValid = false
+        lastValidScenePoint = nil
         scene.hideRangeRing()
     }
 }

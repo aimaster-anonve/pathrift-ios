@@ -93,7 +93,7 @@ struct GameView: View {
                     },
                     onMove: {
                         let cost = Int(ceil(Double(info.totalInvested) * EconomyConstants.MoveCost.percent))
-                        viewModel.beginMoveMode(slotId: info.slotId, moveCostValue: cost)
+                        viewModel.beginMoveMode(towerId: info.slotId, moveCost: cost)
                     },
                     onDismiss: {
                         viewModel.selectedTowerSlotId = nil
@@ -103,37 +103,62 @@ struct GameView: View {
                 )
             }
 
-            // Drag-and-drop placement overlay (Build 7 — DEC-030)
+            // Drag-and-drop placement overlay (Build 8 — DEC-032: free-form + confirm button)
             if viewModel.isDraggingTower {
-                Color.clear
-                    .contentShape(Rectangle())
-                    .ignoresSafeArea()
-                    .gesture(
-                        DragGesture(minimumDistance: 0, coordinateSpace: .local)
-                            .onChanged { value in
-                                viewModel.dragPosition = value.location
-                                let scenePoint = sceneCoordinate(from: value.location)
-                                viewModel.updateDrag(scenePoint: scenePoint)
-                            }
-                            .onEnded { value in
-                                let scenePoint = sceneCoordinate(from: value.location)
-                                viewModel.dropTower(scenePoint: scenePoint)
-                            }
-                    )
+                GeometryReader { geo in
+                    Color.clear
+                        .contentShape(Rectangle())
+                        .gesture(
+                            DragGesture(minimumDistance: 0, coordinateSpace: .local)
+                                .onChanged { value in
+                                    viewModel.updateDragFromScreen(value.location, sceneSize: geo.size)
+                                }
+                                .onEnded { _ in
+                                    // Don't auto-place on release — user must tap confirm button
+                                }
+                        )
 
-                // Ghost icon follows the finger
-                if let dragType = viewModel.dragTowerType {
-                    TowerDragGhost(type: dragType)
-                        .position(viewModel.dragPosition)
-                        .allowsHitTesting(false)
-                } else if viewModel.isMovingTower {
-                    // Moving tower — ghost uses the type of the tower being moved
-                    let movingTowerType = viewModel.scene.activeTowers
-                        .first(where: { $0.slotId == viewModel.movingFromSlotId })?.type
-                    if let t = movingTowerType {
-                        TowerDragGhost(type: t)
+                    // Ghost icon follows the finger
+                    let ghostType: TowerType? = viewModel.dragTowerType
+                        ?? viewModel.scene.activeTowers.first(where: { $0.slotId == viewModel.movingFromSlotId })?.type
+
+                    if let dragType = ghostType {
+                        TowerDragGhost(type: dragType, isValid: viewModel.isDragPositionValid)
                             .position(viewModel.dragPosition)
                             .allowsHitTesting(false)
+                    }
+
+                    // Confirm button — only appears when position is valid
+                    if viewModel.isDragPositionValid {
+                        Button(action: { viewModel.confirmPlacement() }) {
+                            Image(systemName: "checkmark.circle.fill")
+                                .font(.system(size: 52))
+                                .foregroundStyle(.white, Color.pathriftSuccess)
+                                .shadow(color: Color.pathriftSuccess.opacity(0.7), radius: 12)
+                        }
+                        .position(
+                            x: viewModel.dragPosition.x,
+                            y: max(60, viewModel.dragPosition.y - 70)  // above ghost, clamped to top
+                        )
+                        .transition(.scale.combined(with: .opacity))
+                        .animation(.spring(duration: 0.2), value: viewModel.isDragPositionValid)
+                    }
+                }
+                .ignoresSafeArea()
+
+                // Cancel drag by tapping anywhere outside (bottom-right corner X)
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button(action: { viewModel.cancelDrag() }) {
+                            Image(systemName: "xmark.circle.fill")
+                                .font(.system(size: 36))
+                                .foregroundStyle(.white, Color.pathriftDanger)
+                                .shadow(color: Color.pathriftDanger.opacity(0.5), radius: 8)
+                        }
+                        .padding(.trailing, 24)
+                        .padding(.bottom, 80)
                     }
                 }
             }
@@ -207,14 +232,7 @@ struct GameView: View {
             viewModel.scene.hudTopInset = 56   // HUD bar + safe area clearance
             viewModel.scene.hudBottomInset = 48  // bottom bar clearance
             viewModel.configure(appState: appState)
-            viewModel.scene.onSlotTapped = { [weak viewModel] slotId in
-                guard let vm = viewModel, !isPaused else { return }
-                if let slot = vm.scene.gridSystem.slot(at: slotId),
-                   !slot.state.isOccupied {
-                    selectedSlotId = slotId
-                    showTowerMenu = true
-                }
-            }
+            // Build 8: no slot tap handler — free-form placement via counter pill "+" (DEC-032)
         }
         .onChange(of: viewModel.isGameOver) { _, isOver in
             if isOver, let result = viewModel.runResult {
@@ -273,16 +291,23 @@ extension GameView {
     }
 }
 
-// MARK: - Tower Drag Ghost
+// MARK: - Tower Drag Ghost (Build 8 — DEC-032)
 
 struct TowerDragGhost: View {
     let type: TowerType
+    var isValid: Bool = false
 
     var body: some View {
-        TowerShapeView(type: type, size: 44)
-            .opacity(0.70)
-            .shadow(color: type.swiftUIColor.opacity(0.55), radius: 12, y: 4)
-            .scaleEffect(1.25)
+        ZStack {
+            Circle()
+                .fill((isValid ? Color.pathriftSuccess : Color.pathriftDanger).opacity(0.22))
+                .frame(width: 60, height: 60)
+                .blur(radius: 6)
+            TowerShapeView(type: type, size: 40)
+        }
+        .scaleEffect(1.1)
+        .shadow(color: (isValid ? Color.pathriftSuccess : Color.pathriftDanger).opacity(0.55), radius: 10)
+        .animation(.easeInOut(duration: 0.15), value: isValid)
     }
 }
 

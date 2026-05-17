@@ -82,3 +82,28 @@ struct PathSystem {
         return waypointLayers[clamped]
     }
 }
+
+// MARK: - Free-Form Placement Helper (Build 8 — DEC-032)
+
+extension PathSystem {
+    /// Minimum perpendicular distance from point `p` to any path segment.
+    static func minDistanceToPath(_ p: CGPoint) -> CGFloat {
+        var minDist = CGFloat.infinity
+        let pts = waypoints
+        guard pts.count > 1 else { return minDist }
+        for i in 1..<pts.count {
+            let a = pts[i-1]; let b = pts[i]
+            let dx = b.x - a.x; let dy = b.y - a.y
+            let len2 = dx*dx + dy*dy
+            let dist: CGFloat
+            if len2 == 0 {
+                dist = hypot(p.x - a.x, p.y - a.y)
+            } else {
+                let t = max(0, min(1, ((p.x-a.x)*dx + (p.y-a.y)*dy) / len2))
+                dist = hypot(p.x - (a.x + t*dx), p.y - (a.y + t*dy))
+            }
+            minDist = min(minDist, dist)
+        }
+        return minDist
+    }
+}

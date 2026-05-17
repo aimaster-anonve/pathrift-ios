@@ -1,7 +1,12 @@
 import Foundation
 
+// MARK: - SavedTower (Build 8 — DEC-032)
+// Position stored as fractions of scene size for device independence.
+// Old slotId-based saves (version 1) will not decode — towers are skipped,
+// wave/gold/lives still restore correctly.
 struct SavedTower: Codable {
-    let slotId: Int
+    let xFrac: Double    // position.x / scene.width
+    let yFrac: Double    // position.y / scene.height
     let type: String
     let level: Int
     let totalInvested: Int
@@ -21,7 +26,7 @@ struct GameSaveState: Codable {
 final class GameSaveStore {
     static let shared = GameSaveStore()
     private let key = "pathrift_game_save"
-    private let currentVersion = 1
+    private let currentVersion = 2   // bumped from 1 → 2 for free-form placement (DEC-032)
     private init() {}
 
     func save(wave: Int, lives: Int, gold: Int, kills: Int, layoutIndex: Int, towers: [SavedTower]) {

@@ -126,97 +126,79 @@ final class GameScene: SKScene {
         onInterWaveTimerChanged?(0)
     }
 
-    // MARK: - Drag Placement Support (Build 7 — DEC-030)
+    // MARK: - Free-Form Placement Validation (Build 8 — DEC-032)
 
-    func nearestValidSlot(atScenePoint point: CGPoint) -> (slotId: Int, position: CGPoint, isValid: Bool)? {
-        let threshold: CGFloat = 80
-        var best: (slotId: Int, position: CGPoint, dist: CGFloat)? = nil
-        for slot in gridSystem.slots where !slot.state.isOccupied {
-            let dx = slot.position.x - point.x
-            let dy = slot.position.y - point.y
-            let dist = sqrt(dx * dx + dy * dy)
-            if dist < threshold && (best == nil || dist < best!.dist) {
-                best = (slot.id, slot.position, dist)
-            }
-        }
-        guard let hit = best else { return nil }
-        return (hit.slotId, hit.position, true)
+    /// Returns true if the point is a valid free-form tower placement position.
+    func isValidPlacement(_ p: CGPoint) -> Bool {
+        guard p.y > contentMinY + 15,
+              p.y < contentMaxY - 15,
+              p.x > 15, p.x < size.width - 15 else { return false }
+        let pathClear = PathSystem.minDistanceToPath(p) > 38
+        let towerClear = gridSystem.minDistanceToTower(p) > 22
+        return pathClear && towerClear
     }
 
-    private var highlightedSlotId: Int? = nil
-
-    func highlightSlot(_ slotId: Int, valid: Bool) {
-        if highlightedSlotId == slotId { return }
-        clearSlotHighlight()
-        highlightedSlotId = slotId
-        guard let node = towerSlotLayer.childNode(withName: "slot_\(slotId)") as? SKShapeNode else {
-            // Container node — find the bg child shape
-            guard let container = towerSlotLayer.childNode(withName: "slot_\(slotId)"),
-                  let bg = container.children.first as? SKShapeNode else { return }
-            let color: SKColor = valid
-                ? SKColor(red: 0.19, green: 0.82, blue: 0.34, alpha: 1)
-                : SKColor(red: 1.0, green: 0.18, blue: 0.33, alpha: 1)
-            bg.strokeColor = color
-            bg.fillColor = color.withAlphaComponent(0.18)
-            bg.lineWidth = 2.5
-            return
-        }
-        let color: SKColor = valid
-            ? SKColor(red: 0.19, green: 0.82, blue: 0.34, alpha: 1)
-            : SKColor(red: 1.0, green: 0.18, blue: 0.33, alpha: 1)
-        node.strokeColor = color
-        node.fillColor = color.withAlphaComponent(0.18)
-        node.lineWidth = 2.5
+    /// Placement check excluding a tower being moved (avoids self-collision).
+    func isValidPlacement(_ p: CGPoint, excludingTowerId excludeId: Int?) -> Bool {
+        guard p.y > contentMinY + 15,
+              p.y < contentMaxY - 15,
+              p.x > 15, p.x < size.width - 15 else { return false }
+        let pathClear = PathSystem.minDistanceToPath(p) > 38
+        let towerClear = gridSystem.minDistanceToTower(p, excluding: excludeId) > 22
+        return pathClear && towerClear
     }
 
-    func clearSlotHighlight() {
-        guard let id = highlightedSlotId else { return }
-        if let container = towerSlotLayer.childNode(withName: "slot_\(id)"),
-           let bg = container.children.first as? SKShapeNode {
-            bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.55)
-            bg.fillColor = SKColor(red: 0.05, green: 0.09, blue: 0.14, alpha: 1.0)
-            bg.lineWidth = 1.0
-        }
-        highlightedSlotId = nil
+    // MARK: - Free-Form Tower Placement (Build 8 — DEC-032)
+
+    /// Place a tower at an arbitrary scene-space position.
+    /// Returns the new tower's ID, or nil if placement was invalid / unaffordable.
+    @discardableResult
+    func placeTowerFreeform(type: TowerType, at point: CGPoint) -> Int? {
+        guard isValidPlacement(point) else { return nil }
+        guard goldManager.canAfford(type.cost) else { return nil }
+        guard activeTowers.count < activeSlotCount() else { return nil }
+
+        goldManager.spend(type.cost)
+        let towerId = gridSystem.addTower(type: type, at: point)
+        var tower = buildTowerInstance(type: type, position: point, slotId: towerId)
+        tower.level = 1; tower.totalInvested = type.cost
+        activeTowers.append(tower)
+        towerLayer.addChild(tower.node)
+        tower.node.position = point
+        addLevelBadge(to: tower)
+
+        // Transparent tap detector for selecting the tower
+        let tap = SKShapeNode(circleOfRadius: 22)
+        tap.fillColor = .clear; tap.strokeColor = .clear
+        tap.name = "tower_\(towerId)"; tap.position = point; tap.zPosition = 6
+        towerLayer.addChild(tap)
+
+        onGoldChanged?(goldManager.gold)
+        return towerId
     }
 
-    // MARK: - Tower Move Mechanic (Build 7 — DEC-031)
+    // MARK: - Tower Move Mechanic (Build 8 — DEC-032)
 
-    func completeMoveTower(fromSlot: Int, toSlot: Int, goldCost: Int) -> Bool {
-        guard goldManager.canAfford(goldCost) else { return false }
-        guard let fromIdx = activeTowers.firstIndex(where: { $0.slotId == fromSlot }),
-              let targetSlot = gridSystem.slot(at: toSlot),
-              !targetSlot.state.isOccupied else { return false }
+    func completeMoveTower(towerId: Int, toPoint: CGPoint, goldCost: Int) -> Bool {
+        guard gridSystem.record(for: towerId) != nil,
+              goldManager.canAfford(goldCost),
+              isValidPlacement(toPoint, excludingTowerId: towerId) else { return false }
+        guard let idx = activeTowers.firstIndex(where: { $0.slotId == towerId }) else { return false }
 
-        let tower = activeTowers[fromIdx]
-        let towerType = tower.type
-
-        // Update grid
-        gridSystem.removeTower(at: fromSlot)
-        gridSystem.placeTower(type: towerType, at: toSlot)
-
-        // Update tower position and slotId
-        tower.position = targetSlot.position
-        tower.slotId = toSlot
-        tower.node.run(SKAction.sequence([
+        gridSystem.moveTower(id: towerId, to: toPoint)
+        activeTowers[idx].position = toPoint
+        activeTowers[idx].node.run(SKAction.sequence([
             SKAction.group([
-                SKAction.move(to: targetSlot.position, duration: 0.25),
+                SKAction.move(to: toPoint, duration: 0.25),
                 SKAction.sequence([SKAction.scale(to: 1.15, duration: 0.1), SKAction.scale(to: 1.0, duration: 0.15)])
             ])
         ]))
-
-        // Update tap detectors
-        towerLayer.childNode(withName: "slot_\(fromSlot)")?.removeFromParent()
-        let tapDet = SKShapeNode(circleOfRadius: 22)
-        tapDet.fillColor = SKColor.clear; tapDet.strokeColor = SKColor.clear
-        tapDet.name = "slot_\(toSlot)"; tapDet.position = targetSlot.position; tapDet.zPosition = 6
-        towerLayer.addChild(tapDet)
-
-        // Show old slot, hide new slot
-        towerSlotLayer.childNode(withName: "slot_\(fromSlot)")?.isHidden = false
-        towerSlotLayer.childNode(withName: "slot_\(toSlot)")?.isHidden = true
-
+        // Move tap detector
+        if let tapNode = towerLayer.childNode(withName: "tower_\(towerId)") {
+            tapNode.position = toPoint
+        }
         goldManager.spend(goldCost)
+        onGoldChanged?(goldManager.gold)
         return true
     }
     var onSelectedTowerSlotId: Int? {
@@ -292,21 +274,25 @@ final class GameScene: SKScene {
         onLivesChanged?(lives)
         onKillsChanged?(enemyKills)
 
+        // Build 8 — towers stored as xFrac/yFrac (DEC-032)
         for savedTower in save.towers {
-            guard let type = TowerType(rawValue: savedTower.type),
-                  let slot = gridSystem.slot(at: savedTower.slotId) else { continue }
-            gridSystem.placeTower(type: type, at: savedTower.slotId)
-            var tower = buildTowerInstance(type: type, position: slot.position, slotId: savedTower.slotId)
+            guard let type = TowerType(rawValue: savedTower.type) else { continue }
+            let position = CGPoint(
+                x: CGFloat(savedTower.xFrac) * size.width,
+                y: CGFloat(savedTower.yFrac) * size.height
+            )
+            let towerId = gridSystem.addTower(type: type, at: position)
+            var tower = buildTowerInstance(type: type, position: position, slotId: towerId)
             tower.level = savedTower.level
             tower.totalInvested = savedTower.totalInvested
             activeTowers.append(tower)
             towerLayer.addChild(tower.node)
+            tower.node.position = position
             addLevelBadge(to: tower)
             let tap = SKShapeNode(circleOfRadius: 22)
             tap.fillColor = .clear; tap.strokeColor = .clear
-            tap.name = "slot_\(savedTower.slotId)"; tap.position = slot.position; tap.zPosition = 6
+            tap.name = "tower_\(towerId)"; tap.position = position; tap.zPosition = 6
             towerLayer.addChild(tap)
-            towerSlotLayer.childNode(withName: "slot_\(savedTower.slotId)")?.isHidden = true
         }
     }
 
@@ -359,7 +345,8 @@ final class GameScene: SKScene {
         let layout = layoutConfig(index: index)
         PathSystem.waypoints = layout.waypoints
         PathSystem.waypointLayers = layout.layers
-        gridSystem.updateSlots(layout.slots)
+        // Build 8: GridSystem no longer holds predefined slot positions (DEC-032)
+        // gridSystem.updateSlots is removed; placed towers persist across Rift Shifts
     }
 
     private func setupLayers() {
@@ -578,66 +565,7 @@ final class GameScene: SKScene {
     }
 
     private func setupTowerSlots() {
-        for slot in gridSystem.slots {
-            let container = SKNode()
-            container.position = slot.position
-            container.name = "slot_\(slot.id)"
-
-            // Square slot container 32×32pt (scaled down from 46×46)
-            let bg = SKShapeNode(rectOf: CGSize(width: 32, height: 32), cornerRadius: 5)
-            bg.fillColor = SKColor(red: 0.05, green: 0.09, blue: 0.14, alpha: 1.0)
-            bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.55)
-            bg.lineWidth = 1.0
-            bg.name = "slot_\(slot.id)"
-            container.addChild(bg)
-
-            // Inner cross lines
-            let hLine = SKShapeNode(rectOf: CGSize(width: 13, height: 2))
-            hLine.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.20)
-            hLine.strokeColor = .clear
-            container.addChild(hLine)
-
-            let vLine = SKShapeNode(rectOf: CGSize(width: 2, height: 13))
-            vLine.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.20)
-            vLine.strokeColor = .clear
-            container.addChild(vLine)
-
-            // Corner accent dots at 15pt offset from center
-            let dotAngles: [CGFloat] = [.pi/4, 3 * .pi/4, 5 * .pi/4, 7 * .pi/4]
-            for angle in dotAngles {
-                let dot = SKShapeNode(circleOfRadius: 1.5)
-                dot.fillColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.80)
-                dot.strokeColor = .clear
-                dot.position = CGPoint(x: cos(angle) * 15, y: sin(angle) * 15)
-                container.addChild(dot)
-            }
-
-            // Invisible tap detector — 22pt radius (44pt diameter touch target)
-            let tap = SKShapeNode(circleOfRadius: 22)
-            tap.fillColor = .clear
-            tap.strokeColor = .clear
-            tap.name = "slot_\(slot.id)"
-            container.addChild(tap)
-
-            // Idle pulse animation: stroke alpha 0.40 → 0.65
-            let breathe = SKAction.repeatForever(SKAction.sequence([
-                SKAction.run { bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.40) },
-                SKAction.customAction(withDuration: 1.2) { _, elapsed in
-                    let t = elapsed / 1.2
-                    let alpha = 0.40 + 0.25 * sin(t * .pi)
-                    bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: alpha)
-                },
-                SKAction.run { bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: 0.40) },
-                SKAction.customAction(withDuration: 1.2) { _, elapsed in
-                    let t = elapsed / 1.2
-                    let alpha = 0.40 + 0.25 * (1 - sin(t * .pi))
-                    bg.strokeColor = SKColor(red: 0.0, green: 0.78, blue: 1.0, alpha: alpha)
-                }
-            ]))
-            bg.run(breathe)
-
-            towerSlotLayer.addChild(container)
-        }
+        // Free-form placement — no predefined slot circles rendered (DEC-032)
     }
 
     // MARK: - Touch Handling
@@ -651,19 +579,13 @@ final class GameScene: SKScene {
     private func handleTap(at location: CGPoint) {
         let nodes = self.nodes(at: location)
         for node in nodes {
-            if let name = node.name, name.hasPrefix("slot_"),
+            // Tower tap detectors use "tower_<id>" naming (Build 8)
+            if let name = node.name, name.hasPrefix("tower_"),
                let idStr = name.components(separatedBy: "_").last,
-               let slotId = Int(idStr) {
-                if let slot = gridSystem.slot(at: slotId) {
-                    if slot.state.isOccupied {
-                        if let tower = activeTowers.first(where: { $0.slotId == slotId }) {
-                            showRangeRing(for: tower)
-                        }
-                        onTowerTapped?(slotId)
-                    } else {
-                        hideRangeRing()
-                        onSlotTapped?(slotId)
-                    }
+               let towerId = Int(idStr) {
+                if let tower = activeTowers.first(where: { $0.slotId == towerId }) {
+                    showRangeRing(for: tower)
+                    onTowerTapped?(towerId)
                 }
                 return
             }
@@ -676,89 +598,11 @@ final class GameScene: SKScene {
 
     // MARK: - Tower Placement
 
+    /// Legacy slot-based placement — kept for API compatibility but redirects to free-form.
+    /// Use placeTowerFreeform(type:at:) for new free-form placement (DEC-032).
     func placeTower(type: TowerType, at slotId: Int) {
-        guard let slot = gridSystem.slot(at: slotId),
-              case .empty = slot.state,
-              goldManager.spend(type.cost) else { return }
-
-        gridSystem.placeTower(type: type, at: slotId)
-
-        let tower: any Tower
-        switch type {
-        case .bolt:
-            tower = BoltTower(position: slot.position, slotId: slotId)
-        case .blast:
-            let blastTower = BlastTower(position: slot.position, slotId: slotId)
-            blastTower.blastDamageCallback = { [weak self] center, radius, damage in
-                guard let self = self else { return }
-                for enemy in self.activeEnemies {
-                    guard enemy.isAlive else { continue }
-                    let dx = enemy.node.position.x - center.x
-                    let dy = enemy.node.position.y - center.y
-                    if sqrt(dx * dx + dy * dy) <= radius {
-                        enemy.applyAoeDamage(damage)
-                    }
-                }
-            }
-            tower = blastTower
-        case .frost:
-            tower = FrostTower(position: slot.position, slotId: slotId)
-        case .pierce:
-            tower = PierceTower(position: slot.position, slotId: slotId)
-        case .core:
-            tower = CoreTower(position: slot.position, slotId: slotId)
-        case .inferno:
-            tower = InfernoTower(position: slot.position, slotId: slotId)
-        case .tesla:
-            tower = TeslaTower(position: slot.position, slotId: slotId)
-        case .nova:
-            let novaTower = NovaTower(position: slot.position, slotId: slotId)
-            novaTower.novaDamageCallback = { [weak self] center, radius, damage in
-                guard let self = self else { return }
-                for enemy in self.activeEnemies {
-                    guard enemy.isAlive else { continue }
-                    let dx = enemy.node.position.x - center.x
-                    let dy = enemy.node.position.y - center.y
-                    if sqrt(dx * dx + dy * dy) <= radius {
-                        enemy.applyAoeDamage(damage)
-                    }
-                }
-            }
-            tower = novaTower
-        case .sniper:
-            tower = SniperTower(position: slot.position, slotId: slotId)
-        case .artillery:
-            let artTower = ArtilleryTower(position: slot.position, slotId: slotId)
-            artTower.artilleryDamageCallback = { [weak self] center, radius, damage in
-                guard let self = self else { return }
-                for enemy in self.activeEnemies {
-                    guard enemy.isAlive else { continue }
-                    let dx = enemy.node.position.x - center.x
-                    let dy = enemy.node.position.y - center.y
-                    if sqrt(dx * dx + dy * dy) <= radius {
-                        enemy.applyAoeDamage(damage)
-                    }
-                }
-            }
-            tower = artTower
-        }
-
-        activeTowers.append(tower)
-        towerLayer.addChild(tower.node)
-        addLevelBadge(to: tower)
-
-        // Hidden slot node is NOT hit-testable — add transparent tap detector instead.
-        let tapDetector = SKShapeNode(circleOfRadius: 22)
-        tapDetector.fillColor = SKColor.clear
-        tapDetector.strokeColor = SKColor.clear
-        tapDetector.name = "slot_\(slotId)"
-        tapDetector.position = slot.position
-        tapDetector.zPosition = 6
-        towerLayer.addChild(tapDetector)
-
-        if let slotNode = towerSlotLayer.childNode(withName: "slot_\(slotId)") {
-            slotNode.isHidden = true
-        }
+        // Build 8: slot-based placement removed. This method is a no-op.
+        // Free-form placement is handled by placeTowerFreeform(type:at:) called from GameViewModel.confirmPlacement().
     }
 
     // MARK: - Wave Management
@@ -1095,14 +939,11 @@ final class GameScene: SKScene {
         let refund = Int(Double(tower.totalInvested) * EconomyConstants.TowerSellRefund.manualPercent)
         goldManager.earn(refund)
         tower.node.removeFromParent()
-        // Also remove the tap detector we added on placement
-        towerLayer.childNode(withName: "slot_\(slotId)")?.removeFromParent()
+        // Remove tap detector (Build 8: named "tower_<id>")
+        towerLayer.childNode(withName: "tower_\(slotId)")?.removeFromParent()
         activeTowers.remove(at: towerIdx)
-        gridSystem.removeTower(at: slotId)
+        gridSystem.removeTower(id: slotId)
         hideRangeRing()
-        if let slotNode = towerSlotLayer.childNode(withName: "slot_\(slotId)") {
-            slotNode.isHidden = false
-        }
     }
 
     func upgradeTower(at slotId: Int) {
@@ -1611,22 +1452,19 @@ final class GameScene: SKScene {
         currentLayoutIndex = newIndex
         let layout = layoutConfig(index: newIndex)
 
-        // Update path and slot data
+        // Update path data (Build 8: no slot grid to update — DEC-032)
         PathSystem.waypoints = layout.waypoints
         PathSystem.waypointLayers = layout.layers
-        let towerSnapshot = activeTowers.map { (slotId: $0.slotId, type: $0.type, tower: $0) }
-        gridSystem.updateSlots(layout.slots)
 
-        // Redraw map
+        let towerSnapshot = activeTowers.map { (towerId: $0.slotId, type: $0.type, tower: $0) }
+
+        // Redraw path only (no slot circles in Build 8)
         pathLayer.removeAllChildren()
         towerSlotLayer.removeAllChildren()
         setupPath()
         setupTowerSlots()
 
-        // Decide which towers survive the Rift
-        // Each tower independently: 60% survive, 40% destroyed. Always keep ≥1.
         // Deterministic survival: 65% of towers survive, minimum 2 (or all if ≤2).
-        // Shuffle then take prefix — no "unlucky wipe" possible.
         let n = towerSnapshot.count
         let survivorCount = n <= 2 ? n : min(n, max(2, Int(ceil(Double(n) * 0.65))))
         let shuffled = towerSnapshot.shuffled()
@@ -1637,48 +1475,22 @@ final class GameScene: SKScene {
         for snap in destroyedTowers {
             spawnDestroyedTowerEffect(at: snap.tower.position)
             snap.tower.node.removeFromParent()
-            towerLayer.childNode(withName: "slot_\(snap.slotId)")?.removeFromParent()
-            gridSystem.removeTower(at: snap.slotId)
+            towerLayer.childNode(withName: "tower_\(snap.towerId)")?.removeFromParent()
+            gridSystem.removeTower(id: snap.towerId)
             let refund = Int(Double(snap.tower.totalInvested) * EconomyConstants.TowerSellRefund.riftForcedPercent)
             goldManager.earn(refund)
         }
-        activeTowers.removeAll { snap in destroyedTowers.contains(where: { $0.slotId == snap.slotId }) }
+        activeTowers.removeAll { snap in destroyedTowers.contains(where: { $0.towerId == snap.slotId }) }
 
-        // Assign survivors to randomly-shuffled new slots
-        let availableSlotIds = Array(0..<gridSystem.slots.count).shuffled()
-        for (i, snap) in survivors.enumerated() {
-            let targetSlotId = i < availableSlotIds.count ? availableSlotIds[i] : snap.slotId
-            guard let newSlot = gridSystem.slot(at: targetSlotId) else { continue }
-            let newPos = newSlot.position
-
-            // Update tower's logical slot and position
-            snap.tower.position = newPos
-            // Reassign slotId via gridSystem
-            gridSystem.placeTower(type: snap.type, at: targetSlotId)
-
-            // Animate move
+        // Survivors keep their current positions — no forced relocation in free-form mode.
+        // Animate a brief pulse to indicate survival.
+        for snap in survivors {
             snap.tower.node.run(SKAction.sequence([
-                SKAction.group([
-                    SKAction.move(to: newPos, duration: 0.5),
-                    SKAction.sequence([SKAction.scale(to: 1.25, duration: 0.15), SKAction.scale(to: 1.0, duration: 0.15)])
-                ])
+                SKAction.scale(to: 1.25, duration: 0.15),
+                SKAction.scale(to: 1.0, duration: 0.15)
             ]))
-
-            // Move or recreate tap detector
-            towerLayer.childNode(withName: "slot_\(snap.slotId)")?.removeFromParent()
-            let tapDet = SKShapeNode(circleOfRadius: 22)
-            tapDet.fillColor = SKColor.clear; tapDet.strokeColor = SKColor.clear
-            tapDet.name = "slot_\(targetSlotId)"; tapDet.position = newPos; tapDet.zPosition = 6
-            towerLayer.addChild(tapDet)
-
-            // Hide new slot indicator
-            towerSlotLayer.childNode(withName: "slot_\(targetSlotId)")?.isHidden = true
-        }
-
-        // Update tower.slotId to match new assignment so tap lookup works correctly
-        for (i, snap) in survivors.enumerated() {
-            let targetSlotId = i < availableSlotIds.count ? availableSlotIds[i] : snap.slotId
-            snap.tower.slotId = targetSlotId   // now var — tap detection stays in sync
+            // Update gridSystem position record to match (position unchanged but keeps record valid)
+            gridSystem.moveTower(id: snap.towerId, to: snap.tower.position)
         }
 
         hideRangeRing()
